@@ -3,14 +3,17 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/dominhduc/agent-brain/internal/brain"
@@ -949,6 +952,9 @@ func cmdDaemonStatus() {
 	}
 }
 
+func recoverStaleProcessing(brainDir string) {
+}
+
 func runDaemon() {
 	fmt.Println("brain-daemon starting...")
 
@@ -972,9 +978,20 @@ func runDaemon() {
 	fmt.Printf("Model:           %s\n", cfg.LLM.Model)
 	fmt.Println("Watching for queue items...")
 
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	cycleCount := 0
 
 	for {
+		select {
+		case <-ctx.Done():
+			fmt.Println("\nShutting down gracefully...")
+			fmt.Println("Daemon stopped.")
+			return
+		default:
+		}
+
 		cycleCount++
 
 		if cycleCount%100 == 0 {
@@ -1017,6 +1034,15 @@ func runDaemon() {
 		}
 
 		for i := 0; i < maxPerCycle; i++ {
+			select {
+			case <-ctx.Done():
+				fmt.Println("\nShutting down gracefully...")
+				recoverStaleProcessing("")
+				fmt.Println("Daemon stopped.")
+				return
+			default:
+			}
+
 			itemPath := pending[i]
 			processingPath := itemPath + ".processing"
 
