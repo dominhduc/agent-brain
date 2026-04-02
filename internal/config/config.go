@@ -34,8 +34,18 @@ type DaemonConfig struct {
 }
 
 func ConfigDir() string {
-	home, _ := os.UserHomeDir()
-	return filepath.Join(home, ".config", "brain")
+	if xdg := os.Getenv("XDG_CONFIG_HOME"); xdg != "" {
+		return filepath.Join(xdg, "brain")
+	}
+	configDir, err := os.UserConfigDir()
+	if err == nil && configDir != "" {
+		return filepath.Join(configDir, "brain")
+	}
+	home, err := os.UserHomeDir()
+	if err == nil && home != "" {
+		return filepath.Join(home, ".config", "brain")
+	}
+	return filepath.Join(".", ".brain-config")
 }
 
 func ConfigPath() string {

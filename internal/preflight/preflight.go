@@ -33,7 +33,10 @@ func CheckHasCommits(cwd string) error {
 }
 
 func CheckLocalBinInPath() bool {
-	home, _ := os.UserHomeDir()
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return false
+	}
 	localBin := filepath.Join(home, ".local/bin")
 	path := os.Getenv("PATH")
 	for _, dir := range strings.Split(path, ":") {

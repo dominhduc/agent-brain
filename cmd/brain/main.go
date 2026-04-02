@@ -318,7 +318,10 @@ func registerDaemonService() error {
 }
 
 func registerLaunchd(execPath string) error {
-	home, _ := os.UserHomeDir()
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("cannot determine home directory: %w", err)
+	}
 	plistDir := filepath.Join(home, "Library", "LaunchAgents")
 	if err := os.MkdirAll(plistDir, 0755); err != nil {
 		return err
@@ -355,7 +358,10 @@ func registerLaunchd(execPath string) error {
 }
 
 func registerSystemd(execPath string) error {
-	home, _ := os.UserHomeDir()
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("cannot determine home directory: %w", err)
+	}
 	serviceDir := filepath.Join(home, ".config", "systemd", "user")
 	if err := os.MkdirAll(serviceDir, 0755); err != nil {
 		return err
@@ -820,7 +826,11 @@ func cmdDaemonStart() {
 
 	switch runtime.GOOS {
 	case "darwin":
-		home, _ := os.UserHomeDir()
+		home, err := os.UserHomeDir()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: cannot determine home directory: %v\nWhat to do: set the HOME environment variable.\n", err)
+			os.Exit(1)
+		}
 		plistPath := filepath.Join(home, "Library", "LaunchAgents", "com.dominhduc.brain-daemon.plist")
 		if _, err := os.Stat(plistPath); os.IsNotExist(err) {
 			if err := registerLaunchd(execPath); err != nil {
@@ -857,7 +867,11 @@ func cmdDaemonStart() {
 func cmdDaemonStop() {
 	switch runtime.GOOS {
 	case "darwin":
-		home, _ := os.UserHomeDir()
+		home, err := os.UserHomeDir()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: cannot determine home directory: %v\nWhat to do: set the HOME environment variable.\n", err)
+			os.Exit(1)
+		}
 		plistPath := filepath.Join(home, "Library", "LaunchAgents", "com.dominhduc.brain-daemon.plist")
 		exec.Command("launchctl", "unload", plistPath).Run()
 	case "linux":
