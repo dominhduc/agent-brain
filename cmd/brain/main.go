@@ -779,7 +779,11 @@ func cmdStatus(jsonFlag bool) {
 	} else {
 		fmt.Println("Knowledge Hub Status")
 		fmt.Println("====================")
-		fmt.Printf("MEMORY.md:       %d lines (%s, under 200)\n", lineCount, lineStatus)
+		limitHint := "OK"
+		if lineCount > 200 {
+			limitHint = "OVER LIMIT — run 'brain prune' or move entries to topic files"
+		}
+		fmt.Printf("MEMORY.md:       %d lines (%s)\n", lineCount, limitHint)
 		fmt.Printf("Topic files:     %d files\n", topicCount)
 		fmt.Printf("Session files:   %d sessions\n", sessionCount)
 		fmt.Printf("Total size:      %d KB\n", totalSize/1024)
