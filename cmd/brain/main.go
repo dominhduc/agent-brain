@@ -953,6 +953,28 @@ func cmdDaemonStatus() {
 }
 
 func recoverStaleProcessing(brainDir string) {
+	if brainDir == "" {
+		return
+	}
+	queueDir := filepath.Join(brainDir, ".queue")
+	entries, err := os.ReadDir(queueDir)
+	if err != nil {
+		return
+	}
+	recovered := 0
+	for _, e := range entries {
+		if !e.IsDir() && strings.HasSuffix(e.Name(), ".processing") {
+			oldPath := filepath.Join(queueDir, e.Name())
+			newName := strings.TrimSuffix(e.Name(), ".processing")
+			newPath := filepath.Join(queueDir, newName)
+			if err := os.Rename(oldPath, newPath); err == nil {
+				recovered++
+			}
+		}
+	}
+	if recovered > 0 {
+		fmt.Printf("Recovered %d stale processing item(s)\n", recovered)
+	}
 }
 
 func runDaemon() {
@@ -982,6 +1004,7 @@ func runDaemon() {
 	defer stop()
 
 	cycleCount := 0
+	startupRecoveryDone := false
 
 	for {
 		select {
@@ -1007,6 +1030,11 @@ func runDaemon() {
 		if err != nil {
 			time.Sleep(pollInterval)
 			continue
+		}
+
+		if !startupRecoveryDone {
+			recoverStaleProcessing(brainDir)
+			startupRecoveryDone = true
 		}
 
 		queueDir := filepath.Join(brainDir, ".queue")
