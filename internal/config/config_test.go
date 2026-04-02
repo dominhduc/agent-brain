@@ -139,6 +139,34 @@ func TestGetAPIKey_EnvOverridesFile(t *testing.T) {
 	}
 }
 
+func TestSetValue_InvalidNumeric(t *testing.T) {
+	setupTestConfig(t)
+
+	err := SetValue("analysis.max_diff_lines", "not-a-number")
+	if err == nil {
+		t.Error("expected error for non-numeric max_diff_lines value")
+	}
+
+	err = SetValue("daemon.max_retries", "abc")
+	if err == nil {
+		t.Error("expected error for non-numeric max_retries value")
+	}
+}
+
+func TestSetValue_NegativeNumeric(t *testing.T) {
+	setupTestConfig(t)
+
+	err := SetValue("analysis.max_diff_lines", "-1")
+	if err == nil {
+		t.Error("expected error for negative max_diff_lines value")
+	}
+
+	err = SetValue("daemon.max_retries", "0")
+	if err == nil {
+		t.Error("expected error for zero max_retries value")
+	}
+}
+
 func TestSetValue_LLMFields(t *testing.T) {
 	setupTestConfig(t)
 

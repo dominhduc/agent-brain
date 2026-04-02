@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -169,16 +170,37 @@ func SetValue(dotPath, value string) error {
 	case "analysis":
 		switch parts[1] {
 		case "max_diff_lines":
-			fmt.Sscanf(value, "%d", &cfg.Analysis.MaxDiffLines)
+			n, err := strconv.Atoi(value)
+			if err != nil {
+				return fmt.Errorf("invalid value for max_diff_lines: %q is not a number", value)
+			}
+			if n < 100 {
+				return fmt.Errorf("max_diff_lines must be at least 100, got %d", n)
+			}
+			cfg.Analysis.MaxDiffLines = n
 		default:
 			return fmt.Errorf("unknown analysis config key: %s", parts[1])
 		}
 	case "daemon":
 		switch parts[1] {
 		case "poll_interval":
+			d, err := time.ParseDuration(value)
+			if err != nil {
+				return fmt.Errorf("invalid duration for poll_interval: %q", value)
+			}
+			if d < time.Second {
+				return fmt.Errorf("poll_interval must be at least 1s, got %s", d)
+			}
 			cfg.Daemon.PollInterval = value
 		case "max_retries":
-			fmt.Sscanf(value, "%d", &cfg.Daemon.MaxRetries)
+			n, err := strconv.Atoi(value)
+			if err != nil {
+				return fmt.Errorf("invalid value for max_retries: %q is not a number", value)
+			}
+			if n < 1 {
+				return fmt.Errorf("max_retries must be at least 1, got %d", n)
+			}
+			cfg.Daemon.MaxRetries = n
 		case "retry_backoff":
 			cfg.Daemon.RetryBackoff = value
 		default:
