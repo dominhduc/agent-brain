@@ -22,6 +22,11 @@ import (
 
 const version = "v0.2"
 
+var (
+	commit string
+	date   string
+)
+
 func main() {
 	if len(os.Args) < 2 {
 		printUsage()
@@ -50,6 +55,8 @@ func main() {
 		cmdDaemon()
 	case "config":
 		cmdConfig()
+	case "version", "--version", "-v":
+		cmdVersion()
 	case "--help", "-h", "help":
 		printUsage()
 	default:
@@ -81,6 +88,7 @@ Usage:
   brain status [--json]               Show knowledge hub statistics
   brain daemon start|stop|status      Manage background daemon
   brain config [set <key> <value>]    View or set configuration
+  brain version                       Show version and build info
 
 Topics: memory, gotchas, patterns, decisions, architecture, all
 
@@ -1136,6 +1144,18 @@ func moveToDone(itemPath, queueDir string) {
 	doneDir := filepath.Join(queueDir, "done")
 	os.MkdirAll(doneDir, 0755)
 	os.Rename(itemPath, filepath.Join(doneDir, filepath.Base(itemPath)))
+}
+
+func cmdVersion() {
+	fmt.Printf("brain %s", version)
+	if commit != "" {
+		fmt.Printf("  commit: %s", commit)
+	}
+	if date != "" {
+		fmt.Printf("  built: %s", date)
+	}
+	fmt.Println()
+	fmt.Printf("  os/arch: %s/%s\n", runtime.GOOS, runtime.GOARCH)
 }
 
 func cmdConfig() {
