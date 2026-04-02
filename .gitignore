@@ -1,4 +1,5 @@
 bin/
+dist/
 *.exe
 *.exe~
 *.dll
@@ -6,3 +7,5 @@ bin/
 *.dylib
 .brain/archived/
 .brain/.queue/
+.brain/sessions/
+EXECUTION_PLAN.md

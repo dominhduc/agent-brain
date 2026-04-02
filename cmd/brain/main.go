@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -13,7 +15,12 @@ import (
 
 	"github.com/dominhduc/agent-brain/internal/brain"
 	"github.com/dominhduc/agent-brain/internal/config"
+	"github.com/dominhduc/agent-brain/internal/httpclient"
+	"github.com/dominhduc/agent-brain/internal/preflight"
+	"github.com/dominhduc/agent-brain/internal/secrets"
 )
+
+const version = "v0.2"
 
 func main() {
 	if len(os.Args) < 2 {
@@ -91,90 +98,63 @@ Examples:
 func cmdInit() {
 	cwd, err := os.Getwd()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: cannot determine current directory: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error: cannot determine current directory.\nWhat to do: make sure you are in a valid directory and try again.\n")
 		os.Exit(1)
 	}
+
+	warnings := preflight.RunAll(cwd)
 
 	if brain.BrainDirExists(cwd) {
 		fmt.Println("Knowledge hub already exists in this project.")
-		fmt.Println("To reinitialize, remove the .brain/ directory first.")
+		fmt.Println("What to do: to reinitialize, remove the .brain/ directory first: rm -rf .brain/")
 		return
-	}
-
-	if !brain.IsGitRepo(cwd) {
-		fmt.Println("Error: This doesn't appear to be a git repository.")
-		fmt.Println("brain needs git to track changes. Run 'git init' first.")
-		os.Exit(1)
 	}
 
 	fmt.Println("Initializing knowledge hub...")
 
-	// 1. Create .brain/ structure
 	if err := brain.EnsureBrainDir(cwd); err != nil {
-		fmt.Fprintf(os.Stderr, "Error creating .brain/ directory: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error creating .brain/ directory: %v\nWhat to do: check directory permissions.\n", err)
 		os.Exit(1)
 	}
 
-	// 2. Create skeleton topic files
 	skeletons := map[string]string{
-		"MEMORY.md": `# Project Memory Index
-
-## Project
-[Auto-populated by daemon analysis or first agent session]
-
-## Stack
-[Auto-populated by daemon analysis or first agent session]
-
-## Commands
-[Auto-populated by daemon analysis or first agent session]
-
-## Key Patterns
-[Auto-populated by daemon analysis]
-
-## Active Gotchas
-[Auto-populated by daemon analysis]
-
-## Topic Files
-- ` + "`gotchas.md`" + ` — Error patterns and fixes
-- ` + "`patterns.md`" + ` — Discovered conventions
-- ` + "`architecture.md`" + ` — Module structure and relationships
-- ` + "`decisions.md`" + ` — Architecture decisions and rationale
-
-## Last Updated
-[Auto-updated]
-`,
-		"gotchas.md":       "# Gotchas\n<!-- Entries added by brain add gotcha or daemon analysis -->\n",
-		"patterns.md":      "# Patterns\n<!-- Entries added by brain add pattern or daemon analysis -->\n",
-		"architecture.md":  "# Architecture\n<!-- Entries added by brain add architecture or daemon analysis -->\n",
-		"decisions.md":     "# Decisions\n<!-- Entries added by brain add decision or daemon analysis -->\n",
+		"MEMORY.md": "# Project Memory Index\n\n" +
+			"## Project\n[Auto-populated by daemon analysis or first agent session]\n\n" +
+			"## Stack\n[Auto-populated by daemon analysis or first agent session]\n\n" +
+			"## Commands\n[Auto-populated by daemon analysis or first agent session]\n\n" +
+			"## Key Patterns\n[Auto-populated by daemon analysis]\n\n" +
+			"## Active Gotchas\n[Auto-populated by daemon analysis]\n\n" +
+			"## Topic Files\n- gotchas.md — Error patterns and fixes\n- patterns.md — Discovered conventions\n- architecture.md — Module structure and relationships\n- decisions.md — Architecture decisions and rationale\n\n" +
+			"## Last Updated\n[Auto-updated]\n",
+		"gotchas.md":      "# Gotchas\n<!-- Entries added by brain add gotcha or daemon analysis -->\n",
+		"patterns.md":     "# Patterns\n<!-- Entries added by brain add pattern or daemon analysis -->\n",
+		"architecture.md": "# Architecture\n<!-- Entries added by brain add architecture or daemon analysis -->\n",
+		"decisions.md":    "# Decisions\n<!-- Entries added by brain add decision or daemon analysis -->\n",
 	}
 
 	brainDir := filepath.Join(cwd, ".brain")
 	for name, content := range skeletons {
 		path := filepath.Join(brainDir, name)
-		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
-			fmt.Fprintf(os.Stderr, "Error creating %s: %v\n", name, err)
+		if err := os.WriteFile(path, []byte(content), 0600); err != nil {
+			fmt.Fprintf(os.Stderr, "Error creating %s: %v\nWhat to do: check file permissions.\n", name, err)
 			os.Exit(1)
 		}
 	}
 
-	// 3. Create .gitkeep in sessions
 	sessionsDir := filepath.Join(brainDir, "sessions")
-	if err := os.WriteFile(filepath.Join(sessionsDir, ".gitkeep"), []byte{}, 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(sessionsDir, ".gitkeep"), []byte{}, 0600); err != nil {
 		fmt.Fprintf(os.Stderr, "Error creating .gitkeep: %v\n", err)
 		os.Exit(1)
 	}
 
-	// 4. Copy AGENTS.md
 	agentsPath := filepath.Join(cwd, "AGENTS.md")
 	if _, err := os.Stat(agentsPath); os.IsNotExist(err) {
 		if err := os.WriteFile(agentsPath, []byte(agentsTemplate), 0644); err != nil {
-			fmt.Fprintf(os.Stderr, "Error creating AGENTS.md: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Error creating AGENTS.md: %v\nWhat to do: check file permissions.\n", err)
 			os.Exit(1)
 		}
 	}
 
-	// 5. Copy wrapper files
 	wrappers := map[string]string{
 		"CLAUDE.md":      "See AGENTS.md for complete project instructions and knowledge base.\n",
 		".cursorrules":   "See AGENTS.md for complete project instructions and knowledge base.\n",
@@ -190,7 +170,6 @@ func cmdInit() {
 		}
 	}
 
-	// 6. Update .gitignore
 	gitignorePath := filepath.Join(cwd, ".gitignore")
 	entries := []string{".brain/archived/", ".brain/.queue/"}
 	existing := ""
@@ -206,7 +185,7 @@ func cmdInit() {
 	if len(newEntries) > 0 {
 		f, err := os.OpenFile(gitignorePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error updating .gitignore: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Error updating .gitignore: %v\nWhat to do: check file permissions.\n", err)
 			os.Exit(1)
 		}
 		defer f.Close()
@@ -219,25 +198,20 @@ func cmdInit() {
 		}
 	}
 
-	// 7. Install git post-commit hook
 	if err := installGitHook(cwd); err != nil {
-		fmt.Fprintf(os.Stderr, "Warning: Could not install git hook: %v\n", err)
-		fmt.Println("The daemon will still work, but commits won't be auto-queued.")
+		fmt.Fprintf(os.Stderr, "Warning: Could not install git hook: %v\nWhat to do: the daemon will still work, but commits won't be auto-queued.\n", err)
 	}
 
-	// 8. Check API key (no interactive prompt — user sets via config command)
 	apiKey := config.GetAPIKey()
 	if apiKey == "" {
 		fmt.Println("\nOpenRouter API key not configured.")
-		fmt.Println("Set it with: brain config set llm.api_key sk-or-v1-...")
-		fmt.Println("Or set the BRAIN_API_KEY environment variable.")
-		fmt.Println("The daemon will start once the key is configured.")
+		fmt.Println("What to do: set it with 'brain config set llm.api_key sk-or-v1-...'")
+		fmt.Println("The daemon is registered but won't process commits until you set a key.")
 	}
 
-	// 9. Ensure config file exists
 	if _, err := os.Stat(config.ConfigPath()); os.IsNotExist(err) {
 		cfg := config.DefaultConfig()
-		if apiKey := config.GetAPIKey(); apiKey != "" {
+		if apiKey != "" {
 			cfg.LLM.APIKey = apiKey
 		}
 		if err := config.Save(cfg); err != nil {
@@ -245,25 +219,31 @@ func cmdInit() {
 		}
 	}
 
-	// 10. Register and start daemon
+	fmt.Println("\nWarning: Diffs are sent to OpenRouter for analysis.")
+	fmt.Println("brain will scan for secrets before sending. If secrets are detected, the commit is skipped for safety.")
+
 	fmt.Println("\nRegistering daemon service...")
 	if err := registerDaemonService(); err != nil {
-		fmt.Fprintf(os.Stderr, "Warning: Could not register daemon: %v\n", err)
-		fmt.Println("You can start it manually with: brain daemon start")
+		fmt.Fprintf(os.Stderr, "Warning: Could not register daemon: %v\nWhat to do: start manually with 'brain daemon start'.\n", err)
 	} else {
 		fmt.Println("Daemon registered and started.")
 	}
 
+	brain.ResetCache()
+
 	fmt.Println("\nKnowledge hub initialized successfully!")
 	fmt.Println("First commit will auto-populate knowledge via the daemon.")
 	fmt.Println("Run 'brain status' to see hub statistics.")
+
+	for _, w := range warnings {
+		fmt.Printf("\nWarning: %s\n", w)
+	}
 }
 
 func installGitHook(cwd string) error {
 	hookContent := `#!/bin/bash
 # Post-commit hook for agent-brain
 # Installed by: brain init
-# Purpose: Capture commit changes and queue for daemon analysis
 
 BRAIN_DIR=".brain"
 QUEUE_DIR="$BRAIN_DIR/.queue"
@@ -277,9 +257,8 @@ DIFF_STAT=$(git diff --stat HEAD~1 2>/dev/null || echo "No previous commit")
 FILES=$(git diff --name-status HEAD~1 2>/dev/null || echo "No previous commit")
 REPO=$(pwd)
 
-# Simple JSON escaping
 escape_json() {
-    echo "$1" | sed 's/\\/\\\\/g; s/"/\\"/g; s/\t/\\t/g' | tr '\n' ' '
+    printf '%s' "$1" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))' 2>/dev/null || printf '"%s"' "$(echo "$1" | sed 's/\\/\\\\/g; s/"/\\"/g; s/\t/\\t/g' | tr '\n' ' ')"
 }
 
 DIFF_ESCAPED=$(escape_json "$DIFF_STAT")
@@ -289,8 +268,8 @@ cat > "$QUEUE_DIR/commit-${TIMESTAMP}.json" << EOF
 {
   "timestamp": "${TIMESTAMP}",
   "repo": "${REPO}",
-  "diff_stat": "${DIFF_ESCAPED}",
-  "files": "${FILES_ESCAPED}",
+  "diff_stat": ${DIFF_ESCAPED},
+  "files": ${FILES_ESCAPED},
   "attempts": 0,
   "status": "pending"
 }
@@ -303,11 +282,23 @@ EOF
 	}
 
 	hookPath := filepath.Join(hooksDir, "post-commit")
-	if err := os.WriteFile(hookPath, []byte(hookContent), 0755); err != nil {
-		return err
+
+	if _, err := os.Stat(hookPath); err == nil {
+		existing, err := os.ReadFile(hookPath)
+		if err != nil {
+			return fmt.Errorf("cannot read existing hook: %w", err)
+		}
+		if strings.Contains(string(existing), "agent-brain") {
+			return nil
+		}
+		backupPath := hookPath + ".bak"
+		if err := os.Rename(hookPath, backupPath); err != nil {
+			return fmt.Errorf("cannot back up existing hook: %w", err)
+		}
+		fmt.Printf("Existing post-commit hook backed up to %s\n", backupPath)
 	}
 
-	return nil
+	return os.WriteFile(hookPath, []byte(hookContent), 0700)
 }
 
 func registerDaemonService() error {
@@ -322,7 +313,7 @@ func registerDaemonService() error {
 	case "linux":
 		return registerSystemd(execPath)
 	default:
-		return fmt.Errorf("unsupported OS: %s", runtime.GOOS)
+		return fmt.Errorf("unsupported OS: %s. Run 'brain daemon run' manually.", runtime.GOOS)
 	}
 }
 
@@ -360,10 +351,7 @@ func registerLaunchd(execPath string) error {
 	if err := os.WriteFile(plistPath, []byte(plist), 0644); err != nil {
 		return err
 	}
-
-	// Load the service
-	cmd := exec.Command("launchctl", "load", plistPath)
-	return cmd.Run()
+	return exec.Command("launchctl", "load", plistPath).Run()
 }
 
 func registerSystemd(execPath string) error {
@@ -382,7 +370,6 @@ Type=simple
 ExecStart=%s daemon run
 Restart=always
 RestartSec=5
-Environment=BRAIN_API_KEY=
 
 [Install]
 WantedBy=default.target`, execPath)
@@ -392,45 +379,40 @@ WantedBy=default.target`, execPath)
 		return err
 	}
 
-	// Enable and start the service
-	cmd := exec.Command("systemctl", "--user", "daemon-reload")
-	cmd.Run()
-	cmd = exec.Command("systemctl", "--user", "enable", "brain-daemon.service")
-	cmd.Run()
-	cmd = exec.Command("systemctl", "--user", "start", "brain-daemon.service")
-	return cmd.Run()
+	exec.Command("systemctl", "--user", "daemon-reload").Run()
+	exec.Command("systemctl", "--user", "enable", "brain-daemon.service").Run()
+	return exec.Command("systemctl", "--user", "start", "brain-daemon.service").Run()
 }
 
 func cmdGet(jsonFlag bool) {
 	if len(os.Args) < 3 {
 		fmt.Println("Usage: brain get <topic>")
 		fmt.Println("Topics: memory, gotchas, patterns, decisions, architecture, all")
+		fmt.Println("What to do: specify a topic name to retrieve.")
 		os.Exit(1)
 	}
 
 	topic := os.Args[2]
 
 	if topic == "all" {
-		content, err := brain.GetAllTopics()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-			os.Exit(1)
-		}
 		if jsonFlag {
-			topics := map[string]string{
-				"memory":       "",
-				"gotchas":      "",
-				"patterns":     "",
-				"decisions":    "",
-				"architecture": "",
-			}
-			for t := range topics {
-				c, _ := brain.GetTopic(t)
+			topics := map[string]string{}
+			for _, t := range brain.AvailableTopics() {
+				c, err := brain.GetTopic(t)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Error reading %s: %v\n", t, err)
+					os.Exit(1)
+				}
 				topics[t] = c
 			}
 			data, _ := json.MarshalIndent(topics, "", "  ")
 			fmt.Println(string(data))
 		} else {
+			content, err := brain.GetAllTopics()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: run 'brain init' first.\n", err)
+				os.Exit(1)
+			}
 			fmt.Println(content)
 		}
 		return
@@ -453,6 +435,7 @@ func cmdGet(jsonFlag bool) {
 func cmdSearch(jsonFlag bool) {
 	if len(os.Args) < 3 {
 		fmt.Println("Usage: brain search <query>")
+		fmt.Println("What to do: provide a search term to look for across knowledge files.")
 		os.Exit(1)
 	}
 
@@ -460,12 +443,12 @@ func cmdSearch(jsonFlag bool) {
 
 	brainDir, err := brain.FindBrainDir()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: run 'brain init' in your project directory first.\n", err)
 		os.Exit(1)
 	}
 
 	files := []string{"MEMORY.md", "gotchas.md", "patterns.md", "decisions.md", "architecture.md"}
-	pattern := regexp.MustCompile(`(?i)` + regexp.QuoteMeta(query))
+	pattern := regexp.MustCompile("(?i)" + regexp.QuoteMeta(query))
 
 	type Match struct {
 		File    string `json:"file"`
@@ -482,15 +465,18 @@ func cmdSearch(jsonFlag bool) {
 			continue
 		}
 
-		lines := strings.Split(string(data), "\n")
-		for i, line := range lines {
+		scanner := bufio.NewScanner(bytes.NewReader(data))
+		lineNum := 0
+		for scanner.Scan() {
+			line := scanner.Text()
 			if pattern.MatchString(line) {
 				matches = append(matches, Match{
 					File:    f,
-					Line:    i + 1,
+					Line:    lineNum + 1,
 					Content: strings.TrimSpace(line),
 				})
 			}
+			lineNum++
 		}
 	}
 
@@ -512,15 +498,22 @@ func cmdSearch(jsonFlag bool) {
 
 func cmdAdd() {
 	if len(os.Args) < 4 {
-		fmt.Println(`Usage: brain add <topic> "<message>"`)
+		fmt.Println("Usage: brain add <topic> \"<message>\"")
 		fmt.Println("Topics: gotcha, pattern, decision, architecture, memory")
+		fmt.Println("What to do: provide a topic and a message to add.")
 		os.Exit(1)
 	}
 
 	topic := os.Args[2]
 	message := strings.Join(os.Args[3:], " ")
 
-	// Normalize topic names
+	if secrets.HasSecrets(message) {
+		findings := secrets.Scan(message)
+		fmt.Fprintf(os.Stderr, "Error: your message may contain a secret (detected: %s).\n", findings[0].Type)
+		fmt.Fprintln(os.Stderr, "What to do: redact the sensitive value and try again.")
+		os.Exit(1)
+	}
+
 	topicMap := map[string]string{
 		"gotcha":       "gotchas",
 		"pattern":      "patterns",
@@ -532,11 +525,12 @@ func cmdAdd() {
 	normalized, ok := topicMap[strings.ToLower(topic)]
 	if !ok {
 		fmt.Printf("Unknown topic '%s'. Available topics: gotcha, pattern, decision, architecture, memory\n", topic)
+		fmt.Println("What to do: use one of the listed topic names.")
 		os.Exit(1)
 	}
 
 	if err := brain.AddEntry(normalized, message); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: make sure you are in a project with .brain/ initialized.\n", err)
 		os.Exit(1)
 	}
 
@@ -546,22 +540,22 @@ func cmdAdd() {
 func cmdEval() {
 	cwd, err := os.Getwd()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error: cannot determine current directory.\n")
 		os.Exit(1)
 	}
 
 	if !brain.IsGitRepo(cwd) {
-		fmt.Println("Error: This doesn't appear to be a git repository.")
+		fmt.Fprintln(os.Stderr, "Error: this doesn't appear to be a git repository.")
+		fmt.Fprintln(os.Stderr, "What to do: run 'git init' first.")
 		os.Exit(1)
 	}
 
 	brainDir, err := brain.FindBrainDir()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: run 'brain init' first.\n", err)
 		os.Exit(1)
 	}
 
-	// Get git info
 	diffStat := runGit(cwd, "diff", "--stat", "HEAD~1")
 	nameStatus := runGit(cwd, "diff", "--name-status", "HEAD~1")
 	shortstat := runGit(cwd, "diff", "--shortstat", "HEAD~1")
@@ -569,13 +563,12 @@ func cmdEval() {
 
 	if strings.TrimSpace(diffStat) == "" {
 		fmt.Println("No file changes detected since last session.")
+		fmt.Println("What to do: make a commit first, then run 'brain eval'.")
 		return
 	}
 
-	// Parse changes
 	var created, modified, deleted []string
-	lines := strings.Split(nameStatus, "\n")
-	for _, line := range lines {
+	for _, line := range strings.Split(nameStatus, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
@@ -584,37 +577,21 @@ func cmdEval() {
 		if len(parts) != 2 {
 			continue
 		}
-		status := parts[0]
-		file := parts[1]
-		switch status {
+		switch parts[0] {
 		case "A":
-			created = append(created, file)
+			created = append(created, parts[1])
 		case "M":
-			modified = append(modified, file)
+			modified = append(modified, parts[1])
 		case "D":
-			deleted = append(deleted, file)
+			deleted = append(deleted, parts[1])
 		}
 	}
 
-	// Create session file
 	timestamp := time.Now().Format("2006-01-02T15-04-05")
 	sessionsDir := filepath.Join(brainDir, "sessions")
 	sessionPath := filepath.Join(sessionsDir, timestamp+".md")
 
-	content := fmt.Sprintf(`# Session — %s
-
-## Git Summary
-- Files created: %s
-- Files modified: %s
-- Files deleted: %s
-- Total changes: %s
-
-## Recent Commits
-%s
-
----
-<!-- Agent: append your evaluation below this line -->
-`,
+	content := fmt.Sprintf("# Session — %s\n\n## Git Summary\n- Files created: %s\n- Files modified: %s\n- Files deleted: %s\n- Total changes: %s\n\n## Recent Commits\n%s\n\n---\n<!-- Agent: append your evaluation below this line -->\n",
 		time.Now().Format("2006-01-02 15:04:05"),
 		formatList(created),
 		formatList(modified),
@@ -623,8 +600,8 @@ func cmdEval() {
 		strings.TrimSpace(log),
 	)
 
-	if err := os.WriteFile(sessionPath, []byte(content), 0644); err != nil {
-		fmt.Fprintf(os.Stderr, "Error creating session file: %v\n", err)
+	if err := os.WriteFile(sessionPath, []byte(content), 0600); err != nil {
+		fmt.Fprintf(os.Stderr, "Error creating session file: %v\nWhat to do: check permissions on .brain/sessions/.\n", err)
 		os.Exit(1)
 	}
 
@@ -650,7 +627,7 @@ func formatList(items []string) string {
 func cmdPrune(dryRun bool) {
 	brainDir, err := brain.FindBrainDir()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: run 'brain init' first.\n", err)
 		os.Exit(1)
 	}
 
@@ -659,15 +636,15 @@ func cmdPrune(dryRun bool) {
 	if err != nil {
 		if os.IsNotExist(err) {
 			fmt.Println("No .brainprune file found. Nothing to prune.")
+			fmt.Println("What to do: create a .brainprune file with patterns to match for removal.")
 			return
 		}
-		fmt.Fprintf(os.Stderr, "Error reading .brainprune: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error reading .brainprune: %v\nWhat to do: check file permissions.\n", err)
 		os.Exit(1)
 	}
 
-	patterns := strings.Split(string(data), "\n")
 	var activePatterns []string
-	for _, p := range patterns {
+	for _, p := range strings.Split(string(data), "\n") {
 		p = strings.TrimSpace(p)
 		if p != "" && !strings.HasPrefix(p, "#") {
 			activePatterns = append(activePatterns, p)
@@ -681,10 +658,7 @@ func cmdPrune(dryRun bool) {
 
 	topicFiles := []string{"gotchas.md", "patterns.md", "decisions.md", "architecture.md"}
 	archivedDir := filepath.Join(brainDir, "archived")
-	if err := os.MkdirAll(archivedDir, 0755); err != nil {
-		fmt.Fprintf(os.Stderr, "Error creating archived directory: %v\n", err)
-		os.Exit(1)
-	}
+	os.MkdirAll(archivedDir, 0755)
 
 	var pruned []string
 
@@ -695,10 +669,10 @@ func cmdPrune(dryRun bool) {
 			continue
 		}
 
-		lines := strings.Split(string(data), "\n")
+		scanner := bufio.NewScanner(bytes.NewReader(data))
 		var kept, removed []string
-
-		for _, line := range lines {
+		for scanner.Scan() {
+			line := scanner.Text()
 			matched := false
 			for _, pattern := range activePatterns {
 				if strings.Contains(strings.ToLower(line), strings.ToLower(pattern)) {
@@ -715,18 +689,10 @@ func cmdPrune(dryRun bool) {
 
 		if len(removed) > 0 {
 			pruned = append(pruned, fmt.Sprintf("%s: %d entries", tf, len(removed)))
-
 			if !dryRun {
-				// Write kept lines back
-				if err := os.WriteFile(path, []byte(strings.Join(kept, "\n")), 0644); err != nil {
-					fmt.Fprintf(os.Stderr, "Error writing %s: %v\n", tf, err)
-					continue
-				}
-
-				// Write removed lines to archived
+				os.WriteFile(path, []byte(strings.Join(kept, "\n")), 0600)
 				archivePath := filepath.Join(archivedDir, fmt.Sprintf("%s-%s.md", tf[:len(tf)-3], time.Now().Format("2006-01-02")))
-				archiveContent := fmt.Sprintf("# Archived from %s — %s\n\n%s\n", tf, time.Now().Format("2006-01-02"), strings.Join(removed, "\n"))
-				os.WriteFile(archivePath, []byte(archiveContent), 0644)
+				os.WriteFile(archivePath, []byte(fmt.Sprintf("# Archived from %s — %s\n\n%s\n", tf, time.Now().Format("2006-01-02"), strings.Join(removed, "\n"))), 0600)
 			}
 		}
 	}
@@ -746,27 +712,28 @@ func cmdPrune(dryRun bool) {
 		for _, p := range pruned {
 			fmt.Printf("  %s\n", p)
 		}
-		fmt.Printf("\nArchived entries saved to .brain/archived/\n")
+		fmt.Println("\nArchived entries saved to .brain/archived/")
 	}
 }
 
 func cmdStatus(jsonFlag bool) {
 	brainDir, err := brain.FindBrainDir()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: run 'brain init' first.\n", err)
 		os.Exit(1)
 	}
 
-	// Count files
 	topicFiles := []string{"MEMORY.md", "gotchas.md", "patterns.md", "decisions.md", "architecture.md"}
 	var topicCount int
+	var totalSize int64
 	for _, f := range topicFiles {
-		if _, err := os.Stat(filepath.Join(brainDir, f)); err == nil {
+		info, err := os.Stat(filepath.Join(brainDir, f))
+		if err == nil {
 			topicCount++
+			totalSize += info.Size()
 		}
 	}
 
-	// Count sessions
 	sessionsDir := filepath.Join(brainDir, "sessions")
 	sessionCount := 0
 	if entries, err := os.ReadDir(sessionsDir); err == nil {
@@ -777,23 +744,12 @@ func cmdStatus(jsonFlag bool) {
 		}
 	}
 
-	// MEMORY.md line count
 	lineCount, _ := brain.MemoryLineCount()
 	lineStatus := "OK"
 	if lineCount > 200 {
 		lineStatus = "OVER LIMIT"
 	}
 
-	// Total size
-	var totalSize int64
-	filepath.Walk(brainDir, func(path string, info os.FileInfo, err error) error {
-		if err == nil && !info.IsDir() {
-			totalSize += info.Size()
-		}
-		return nil
-	})
-
-	// Queue depth
 	queueDir := filepath.Join(brainDir, ".queue")
 	pendingCount := 0
 	doneCount := 0
@@ -808,28 +764,15 @@ func cmdStatus(jsonFlag bool) {
 		doneCount = len(entries)
 	}
 
-	// Last updated
-	var lastUpdated string
-	entries, _ := os.ReadDir(brainDir)
-	for _, e := range entries {
-		if !e.IsDir() {
-			info, _ := e.Info()
-			if info != nil {
-				lastUpdated = info.ModTime().Format("2006-01-02 15:04:05")
-			}
-		}
-	}
-
 	if jsonFlag {
 		status := map[string]interface{}{
-			"memory_lines":   lineCount,
-			"memory_status":  lineStatus,
-			"topic_files":    topicCount,
-			"session_files":  sessionCount,
-			"total_size_kb":  totalSize / 1024,
-			"last_updated":   lastUpdated,
-			"queue_pending":  pendingCount,
-			"queue_done":     doneCount,
+			"memory_lines":  lineCount,
+			"memory_status": lineStatus,
+			"topic_files":   topicCount,
+			"session_files": sessionCount,
+			"total_size_kb": totalSize / 1024,
+			"queue_pending": pendingCount,
+			"queue_done":    doneCount,
 		}
 		data, _ := json.MarshalIndent(status, "", "  ")
 		fmt.Println(string(data))
@@ -840,7 +783,6 @@ func cmdStatus(jsonFlag bool) {
 		fmt.Printf("Topic files:     %d files\n", topicCount)
 		fmt.Printf("Session files:   %d sessions\n", sessionCount)
 		fmt.Printf("Total size:      %d KB\n", totalSize/1024)
-		fmt.Printf("Last updated:    %s\n", lastUpdated)
 		fmt.Printf("Queue depth:     %d pending, %d done\n", pendingCount, doneCount)
 	}
 }
@@ -859,11 +801,9 @@ func cmdDaemon() {
 	case "status":
 		cmdDaemonStatus()
 	case "run":
-		// Internal: run daemon in foreground (used by service managers)
 		runDaemon()
 	default:
-		fmt.Printf("Unknown daemon command: %s\n", os.Args[2])
-		fmt.Println("Usage: brain daemon <start|stop|status|run>")
+		fmt.Printf("Unknown daemon command: %s\nWhat to do: use start, stop, status, or run.\n", os.Args[2])
 		os.Exit(1)
 	}
 }
@@ -880,32 +820,30 @@ func cmdDaemonStart() {
 		plistPath := filepath.Join(home, "Library", "LaunchAgents", "com.dominhduc.brain-daemon.plist")
 		if _, err := os.Stat(plistPath); os.IsNotExist(err) {
 			if err := registerLaunchd(execPath); err != nil {
-				fmt.Fprintf(os.Stderr, "Error registering daemon: %v\n", err)
+				fmt.Fprintf(os.Stderr, "Error registering daemon: %v\nWhat to do: check launchd permissions.\n", err)
 				os.Exit(1)
 			}
 		}
-		cmd := exec.Command("launchctl", "load", plistPath)
-		if err := cmd.Run(); err != nil {
-			fmt.Fprintf(os.Stderr, "Error starting daemon: %v\n", err)
+		if err := exec.Command("launchctl", "load", plistPath).Run(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error starting daemon: %v\nWhat to do: check launchd logs at /tmp/brain-daemon.err\n", err)
 			os.Exit(1)
 		}
 	case "linux":
 		cmd := exec.Command("systemctl", "--user", "start", "brain-daemon.service")
 		if err := cmd.Run(); err != nil {
-			// Try registering first
 			if err := registerSystemd(execPath); err != nil {
 				fmt.Fprintf(os.Stderr, "Error registering daemon: %v\n", err)
 				os.Exit(1)
 			}
 			cmd = exec.Command("systemctl", "--user", "start", "brain-daemon.service")
 			if err := cmd.Run(); err != nil {
-				fmt.Fprintf(os.Stderr, "Error starting daemon: %v\n", err)
+				fmt.Fprintf(os.Stderr, "Error starting daemon: %v\nWhat to do: check systemd logs: journalctl --user -u brain-daemon\n", err)
 				os.Exit(1)
 			}
 		}
 	default:
 		fmt.Println("Daemon auto-start not supported on this OS.")
-		fmt.Println("Run 'brain daemon run' to start in foreground.")
+		fmt.Println("What to do: run 'brain daemon run' to start in foreground.")
 		return
 	}
 
@@ -917,11 +855,9 @@ func cmdDaemonStop() {
 	case "darwin":
 		home, _ := os.UserHomeDir()
 		plistPath := filepath.Join(home, "Library", "LaunchAgents", "com.dominhduc.brain-daemon.plist")
-		cmd := exec.Command("launchctl", "unload", plistPath)
-		cmd.Run()
+		exec.Command("launchctl", "unload", plistPath).Run()
 	case "linux":
-		cmd := exec.Command("systemctl", "--user", "stop", "brain-daemon.service")
-		cmd.Run()
+		exec.Command("systemctl", "--user", "stop", "brain-daemon.service").Run()
 	default:
 		fmt.Println("Daemon stop not supported on this OS.")
 		return
@@ -934,37 +870,41 @@ func cmdDaemonStatus() {
 	running := false
 	switch runtime.GOOS {
 	case "darwin":
-		cmd := exec.Command("launchctl", "list", "com.dominhduc.brain-daemon")
-		if cmd.Run() == nil {
+		if exec.Command("launchctl", "list", "com.dominhduc.brain-daemon").Run() == nil {
 			running = true
 		}
 	case "linux":
-		cmd := exec.Command("systemctl", "--user", "is-active", "brain-daemon.service")
-		if cmd.Run() == nil {
+		if exec.Command("systemctl", "--user", "is-active", "brain-daemon.service").Run() == nil {
 			running = true
 		}
 	}
 
 	brainDir, err := brain.FindBrainDir()
+	if err != nil {
+		fmt.Println("Daemon Status")
+		fmt.Println("=============")
+		fmt.Println("Status:          not running")
+		fmt.Println("What to do: run 'brain init' in a project directory first.")
+		return
+	}
+
 	queueDir := filepath.Join(brainDir, ".queue")
 	pendingCount := 0
 	doneCount := 0
 	failedCount := 0
 
-	if err == nil {
-		if entries, err := os.ReadDir(queueDir); err == nil {
-			for _, e := range entries {
-				if !e.IsDir() && strings.HasSuffix(e.Name(), ".json") {
-					pendingCount++
-				}
+	if entries, e := os.ReadDir(queueDir); e == nil {
+		for _, e := range entries {
+			if !e.IsDir() && strings.HasSuffix(e.Name(), ".json") {
+				pendingCount++
 			}
 		}
-		if entries, err := os.ReadDir(filepath.Join(queueDir, "done")); err == nil {
-			doneCount = len(entries)
-		}
-		if entries, err := os.ReadDir(filepath.Join(queueDir, "failed")); err == nil {
-			failedCount = len(entries)
-		}
+	}
+	if entries, e := os.ReadDir(filepath.Join(queueDir, "done")); e == nil {
+		doneCount = len(entries)
+	}
+	if entries, e := os.ReadDir(filepath.Join(queueDir, "failed")); e == nil {
+		failedCount = len(entries)
 	}
 
 	fmt.Println("Daemon Status")
@@ -973,40 +913,53 @@ func cmdDaemonStatus() {
 		fmt.Println("Status:          running")
 	} else {
 		fmt.Println("Status:          not running")
+		fmt.Println("What to do: run 'brain daemon start' to start it.")
 	}
 	fmt.Printf("Queue:           %d pending, %d done, %d failed\n", pendingCount, doneCount, failedCount)
 
-	if err == nil {
-		// Find last processed item
-		doneDir := filepath.Join(queueDir, "done")
-		if entries, err := os.ReadDir(doneDir); err == nil && len(entries) > 0 {
-			last := entries[len(entries)-1]
-			fmt.Printf("Last processed:  %s\n", last.Name())
-		}
+	doneDir := filepath.Join(queueDir, "done")
+	if entries, e := os.ReadDir(doneDir); e == nil && len(entries) > 0 {
+		fmt.Printf("Last processed:  %s\n", entries[len(entries)-1].Name())
 	}
 }
 
 func runDaemon() {
 	fmt.Println("brain-daemon starting...")
 
-	pollInterval := config.PollInterval()
 	cfg, err := config.Load()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Warning: Could not load config: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error loading config: %v\nWhat to do: check ~/.config/brain/config.yaml\n", err)
+		os.Exit(1)
 	}
+
+	pollInterval := parsePollInterval(cfg)
 
 	apiKey := config.GetAPIKey()
 	if apiKey == "" {
 		fmt.Fprintln(os.Stderr, "Error: OpenRouter API key not configured.")
-		fmt.Fprintln(os.Stderr, "Run: brain config set llm.api_key sk-or-v1-...")
+		fmt.Fprintln(os.Stderr, "What to do: run 'brain config set llm.api_key sk-or-v1-...'")
 		os.Exit(1)
 	}
 
-	fmt.Printf("Polling interval: %s\n", pollInterval)
-	fmt.Printf("Model: %s\n", cfg.LLM.Model)
+	fmt.Printf("Version:         %s\n", version)
+	fmt.Printf("Poll interval:   %s\n", pollInterval)
+	fmt.Printf("Model:           %s\n", cfg.LLM.Model)
 	fmt.Println("Watching for queue items...")
 
+	cycleCount := 0
+
 	for {
+		cycleCount++
+
+		if cycleCount%100 == 0 {
+			newCfg, err := config.Load()
+			if err == nil {
+				cfg = newCfg
+				pollInterval = parsePollInterval(cfg)
+			}
+			apiKey = config.GetAPIKey()
+		}
+
 		brainDir, err := brain.FindBrainDir()
 		if err != nil {
 			time.Sleep(pollInterval)
@@ -1020,7 +973,6 @@ func runDaemon() {
 			continue
 		}
 
-		// Find pending items (sorted by name = sorted by timestamp)
 		var pending []string
 		for _, e := range entries {
 			if !e.IsDir() && strings.HasPrefix(e.Name(), "commit-") && strings.HasSuffix(e.Name(), ".json") {
@@ -1033,77 +985,127 @@ func runDaemon() {
 			continue
 		}
 
-		// Process first pending item
-		itemPath := pending[0]
-		fmt.Printf("Processing: %s\n", filepath.Base(itemPath))
-
-		// Read queue item
-		data, err := os.ReadFile(itemPath)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error reading queue item: %v\n", err)
-			moveToFailed(itemPath, queueDir)
-			continue
+		maxPerCycle := 5
+		if len(pending) < maxPerCycle {
+			maxPerCycle = len(pending)
 		}
 
-		var item struct {
-			Timestamp string `json:"timestamp"`
-			Repo      string `json:"repo"`
-			DiffStat  string `json:"diff_stat"`
-			Files     string `json:"files"`
-			Attempts  int    `json:"attempts"`
-			Status    string `json:"status"`
-		}
-		if err := json.Unmarshal(data, &item); err != nil {
-			fmt.Fprintf(os.Stderr, "Error parsing queue item: %v\n", err)
-			moveToFailed(itemPath, queueDir)
-			continue
-		}
+		for i := 0; i < maxPerCycle; i++ {
+			itemPath := pending[i]
+			processingPath := itemPath + ".processing"
 
-		// Get full diff
-		cmd := exec.Command("git", "-C", item.Repo, "diff", "HEAD~1")
-		diffOutput, err := cmd.CombinedOutput()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error getting diff: %v\n", err)
-			item.Attempts++
-			if item.Attempts >= cfg.Daemon.MaxRetries {
-				moveToFailed(itemPath, queueDir)
-			} else {
-				// Update attempts
-				itemData, _ := json.Marshal(item)
-				os.WriteFile(itemPath, itemData, 0644)
+			if err := os.Rename(itemPath, processingPath); err != nil {
+				continue
 			}
-			continue
-		}
 
-		diff := string(diffOutput)
-		if len(diff) > cfg.Analysis.MaxDiffLines*100 {
-			diff = diff[:cfg.Analysis.MaxDiffLines*100] + "\n... [diff truncated]"
-		}
+			fmt.Printf("Processing: %s\n", filepath.Base(processingPath))
 
-		// Call LLM
-		findings, err := callOpenRouter(diff, cfg, apiKey)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error calling LLM: %v\n", err)
-			item.Attempts++
-			if item.Attempts >= cfg.Daemon.MaxRetries {
-				moveToFailed(itemPath, queueDir)
-			} else {
-				itemData, _ := json.Marshal(item)
-				os.WriteFile(itemPath, itemData, 0644)
+			data, err := os.ReadFile(processingPath)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error reading queue item: %v\n", err)
+				moveToFailed(processingPath, queueDir)
+				continue
 			}
-			continue
-		}
 
-		// Write findings
-		if err := writeFindings(findings, brainDir); err != nil {
-			fmt.Fprintf(os.Stderr, "Error writing findings: %v\n", err)
-		} else {
-			fmt.Println("Findings written successfully.")
-		}
+			var item struct {
+				Timestamp string `json:"timestamp"`
+				Repo      string `json:"repo"`
+				DiffStat  string `json:"diff_stat"`
+				Files     string `json:"files"`
+				Attempts  int    `json:"attempts"`
+			}
+			if err := json.Unmarshal(data, &item); err != nil {
+				fmt.Fprintf(os.Stderr, "Error parsing queue item: %v\n", err)
+				moveToFailed(processingPath, queueDir)
+				continue
+			}
 
-		// Mark done
-		moveToDone(itemPath, queueDir)
+			if item.Timestamp == "" || item.Repo == "" {
+				fmt.Fprintf(os.Stderr, "Invalid queue item: missing timestamp or repo.\n")
+				moveToFailed(processingPath, queueDir)
+				continue
+			}
+
+			if len(item.Timestamp) > 20 || len(item.Repo) > 4096 {
+				fmt.Fprintf(os.Stderr, "Invalid queue item: field too long.\n")
+				moveToFailed(processingPath, queueDir)
+				continue
+			}
+
+			projectRoot := filepath.Dir(brainDir)
+			absRepo, _ := filepath.Abs(item.Repo)
+			if absRepo != projectRoot {
+				fmt.Fprintf(os.Stderr, "Security: queue item repo %q does not match project root %q. Skipping.\n", absRepo, projectRoot)
+				moveToFailed(processingPath, queueDir)
+				continue
+			}
+
+			cmd := exec.Command("git", "-C", item.Repo, "diff", "HEAD~1")
+			diffOutput, err := cmd.CombinedOutput()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error getting diff: %v\n", err)
+				item.Attempts++
+				if item.Attempts >= cfg.Daemon.MaxRetries {
+					moveToFailed(processingPath, queueDir)
+				} else {
+					itemData, _ := json.Marshal(item)
+					os.WriteFile(processingPath, itemData, 0600)
+					os.Rename(processingPath, itemPath)
+				}
+				continue
+			}
+
+			diff := string(diffOutput)
+			if len(diff) > cfg.Analysis.MaxDiffLines*100 {
+				diff = diff[:cfg.Analysis.MaxDiffLines*100]
+			}
+
+			if findings := secrets.ScanDiff(diff); len(findings) > 0 {
+				fmt.Fprintf(os.Stderr, "Secret detected in diff (type: %s). Skipping for safety.\n", findings[0].Type)
+				fmt.Fprintf(os.Stderr, "What to do: review the commit for exposed secrets, then requeue manually.\n")
+				flaggedDir := filepath.Join(queueDir, "flagged")
+				os.MkdirAll(flaggedDir, 0755)
+				os.Rename(processingPath, filepath.Join(flaggedDir, filepath.Base(processingPath)))
+				continue
+			}
+
+			findings, err := callOpenRouter(diff, cfg, apiKey)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error calling LLM: %v\n", err)
+				item.Attempts++
+				backoff := time.Duration(item.Attempts*item.Attempts) * 5 * time.Second
+				fmt.Fprintf(os.Stderr, "Retry %d/%d in %s\n", item.Attempts, cfg.Daemon.MaxRetries, backoff)
+				if item.Attempts >= cfg.Daemon.MaxRetries {
+					moveToFailed(processingPath, queueDir)
+				} else {
+					itemData, _ := json.Marshal(item)
+					os.WriteFile(processingPath, itemData, 0600)
+					os.Rename(processingPath, itemPath)
+					time.Sleep(backoff)
+				}
+				continue
+			}
+
+			if err := writeFindings(findings, brainDir); err != nil {
+				fmt.Fprintf(os.Stderr, "Error writing findings: %v\n", err)
+			} else {
+				fmt.Println("Findings written successfully.")
+			}
+
+			moveToDone(processingPath, queueDir)
+		}
 	}
+}
+
+func parsePollInterval(cfg config.Config) time.Duration {
+	d, err := time.ParseDuration(cfg.Daemon.PollInterval)
+	if err != nil || d < time.Second {
+		return 5 * time.Second
+	}
+	if d > 5*time.Minute {
+		return 5 * time.Minute
+	}
+	return d
 }
 
 func moveToFailed(itemPath, queueDir string) {
@@ -1120,10 +1122,9 @@ func moveToDone(itemPath, queueDir string) {
 
 func cmdConfig() {
 	if len(os.Args) < 3 {
-		// Show current config
 		cfg, err := config.Load()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Error loading config: %v\nWhat to do: check ~/.config/brain/config.yaml\n", err)
 			os.Exit(1)
 		}
 
@@ -1131,10 +1132,9 @@ func cmdConfig() {
 		fmt.Println("=====================")
 		fmt.Printf("LLM Provider:    %s\n", cfg.LLM.Provider)
 		if cfg.LLM.APIKey != "" {
-			masked := cfg.LLM.APIKey[:8] + "..." + cfg.LLM.APIKey[len(cfg.LLM.APIKey)-4:]
-			fmt.Printf("API Key:         %s\n", masked)
+			fmt.Printf("API Key:         %s\n", maskKey(cfg.LLM.APIKey))
 		} else {
-			fmt.Printf("API Key:         not set\n")
+			fmt.Println("API Key:         not set")
 		}
 		fmt.Printf("Model:           %s\n", cfg.LLM.Model)
 		fmt.Printf("Max Diff Lines:  %d\n", cfg.Analysis.MaxDiffLines)
@@ -1161,14 +1161,24 @@ func cmdConfig() {
 			os.Exit(1)
 		}
 
-		fmt.Printf("Set %s = %s\n", key, value)
+		displayValue := value
+		if strings.Contains(key, "api_key") || strings.Contains(key, "apikey") {
+			displayValue = maskKey(value)
+		}
+		fmt.Printf("Set %s = %s\n", key, displayValue)
 		return
 	}
 
 	fmt.Println("Usage: brain config [set <key> <value>]")
 }
 
-// LLM integration types
+func maskKey(key string) string {
+	if len(key) <= 6 {
+		return "****"
+	}
+	return key[:4] + "****" + key[len(key)-2:]
+}
+
 type LLMFinding struct {
 	Gotchas      []string `json:"gotchas"`
 	Patterns     []string `json:"patterns"`
@@ -1212,7 +1222,6 @@ Full diff:
   "confidence": "HIGH|MEDIUM|LOW"
 }`, diff)
 
-	// Build request
 	reqBody := map[string]interface{}{
 		"model": cfg.LLM.Model,
 		"messages": []map[string]string{
@@ -1220,23 +1229,27 @@ Full diff:
 		},
 	}
 
-	reqData, _ := json.Marshal(reqBody)
-
-	req, err := exec.Command("curl", "-s",
-		"-X", "POST",
-		"https://openrouter.ai/api/v1/chat/completions",
-		"-H", "Authorization: Bearer "+apiKey,
-		"-H", "HTTP-Referer: https://github.com/dominhduc/agent-brain",
-		"-H", "X-Title: agent-brain",
-		"-H", "Content-Type: application/json",
-		"-d", string(reqData),
-	).CombinedOutput()
-
-	if err != nil {
-		return findings, fmt.Errorf("curl failed: %w", err)
+	headers := map[string]string{
+		"Authorization":  "Bearer " + apiKey,
+		"HTTP-Referer":   "https://github.com/dominhduc/agent-brain",
+		"X-Title":        "agent-brain",
 	}
 
-	// Parse response
+	respBody, err := httpclient.PostJSON(
+		"https://openrouter.ai/api/v1/chat/completions",
+		headers,
+		reqBody,
+	)
+	if err != nil {
+		if apiErr, ok := err.(httpclient.APIError); ok {
+			if httpclient.IsRetryable(apiErr.StatusCode) {
+				return findings, fmt.Errorf("API returned %d (retryable): %s", apiErr.StatusCode, apiErr.Body)
+			}
+			return findings, fmt.Errorf("API returned %d: %s\nWhat to do: check your API key and model configuration.", apiErr.StatusCode, apiErr.Body)
+		}
+		return findings, fmt.Errorf("request failed: %w\nWhat to do: check your internet connection.", err)
+	}
+
 	var resp struct {
 		Choices []struct {
 			Message struct {
@@ -1248,7 +1261,7 @@ Full diff:
 		} `json:"error"`
 	}
 
-	if err := json.Unmarshal(req, &resp); err != nil {
+	if err := json.Unmarshal(respBody, &resp); err != nil {
 		return findings, fmt.Errorf("failed to parse response: %w", err)
 	}
 
@@ -1262,7 +1275,6 @@ Full diff:
 
 	content := resp.Choices[0].Message.Content
 
-	// Extract JSON from content (in case model wraps in markdown code blocks)
 	jsonStart := strings.Index(content, "{")
 	jsonEnd := strings.LastIndex(content, "}")
 	if jsonStart >= 0 && jsonEnd > jsonStart {
@@ -1270,7 +1282,7 @@ Full diff:
 	}
 
 	if err := json.Unmarshal([]byte(content), &findings); err != nil {
-		return findings, fmt.Errorf("failed to parse findings JSON: %w\nContent: %s", err, content)
+		return findings, fmt.Errorf("failed to parse findings JSON: %w", err)
 	}
 
 	return findings, nil
@@ -1284,17 +1296,13 @@ func writeFindings(findings LLMFinding, brainDir string) error {
 			return nil
 		}
 		path := filepath.Join(brainDir, filename)
-		f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 		if err != nil {
 			return err
 		}
 		defer f.Close()
-
 		for _, entry := range entries {
-			entryText := fmt.Sprintf("\n### [%s] %s\n\n", timestamp, entry)
-			if _, err := f.WriteString(entryText); err != nil {
-				return err
-			}
+			fmt.Fprintf(f, "\n### [%s] %s\n\n", timestamp, entry)
 		}
 		return nil
 	}
@@ -1349,3 +1357,5 @@ const agentsTemplate = "# Project Instructions\n\n" +
 	"[Auto-populated by daemon analysis or first agent session]\n\n" +
 	"## Commands\n" +
 	"[Auto-populated by daemon analysis or first agent session]\n"
+
+
