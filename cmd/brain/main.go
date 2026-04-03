@@ -19,6 +19,7 @@ import (
 	"github.com/dominhduc/agent-brain/internal/daemon"
 	"github.com/dominhduc/agent-brain/internal/preflight"
 	"github.com/dominhduc/agent-brain/internal/secrets"
+	"github.com/dominhduc/agent-brain/internal/service"
 )
 
 const version = "v0.2"
@@ -232,7 +233,11 @@ func cmdInit() {
 	fmt.Println("brain will scan for secrets before sending. If secrets are detected, the commit is skipped for safety.")
 
 	fmt.Println("\nRegistering daemon service...")
-	if err := registerDaemonService(); err != nil {
+	execPath, err := os.Executable()
+	if err != nil {
+		execPath = "brain"
+	}
+	if err := service.Register(execPath); err != nil {
 		fmt.Fprintf(os.Stderr, "Warning: Could not register daemon: %v\nWhat to do: start manually with 'brain daemon start'.\n", err)
 	} else {
 		fmt.Println("Daemon registered and started.")
@@ -308,95 +313,6 @@ EOF
 	}
 
 	return os.WriteFile(hookPath, []byte(hookContent), 0700)
-}
-
-func registerDaemonService() error {
-	execPath, err := os.Executable()
-	if err != nil {
-		execPath = "brain"
-	}
-
-	switch runtime.GOOS {
-	case "darwin":
-		return registerLaunchd(execPath)
-	case "linux":
-		return registerSystemd(execPath)
-	default:
-		return fmt.Errorf("unsupported OS: %s. Run 'brain daemon run' manually.", runtime.GOOS)
-	}
-}
-
-func registerLaunchd(execPath string) error {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return fmt.Errorf("cannot determine home directory: %w", err)
-	}
-	plistDir := filepath.Join(home, "Library", "LaunchAgents")
-	if err := os.MkdirAll(plistDir, 0755); err != nil {
-		return err
-	}
-
-	plist := fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>Label</key>
-    <string>com.dominhduc.brain-daemon</string>
-    <key>ProgramArguments</key>
-    <array>
-        <string>%s</string>
-        <string>daemon</string>
-        <string>run</string>
-    </array>
-    <key>RunAtLoad</key>
-    <true/>
-    <key>KeepAlive</key>
-    <true/>
-    <key>StandardOutPath</key>
-    <string>/tmp/brain-daemon.log</string>
-    <key>StandardErrorPath</key>
-    <string>/tmp/brain-daemon.err</string>
-</dict>
-</plist>`, execPath)
-
-	plistPath := filepath.Join(plistDir, "com.dominhduc.brain-daemon.plist")
-	if err := os.WriteFile(plistPath, []byte(plist), 0644); err != nil {
-		return err
-	}
-	return exec.Command("launchctl", "load", plistPath).Run()
-}
-
-func registerSystemd(execPath string) error {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return fmt.Errorf("cannot determine home directory: %w", err)
-	}
-	serviceDir := filepath.Join(home, ".config", "systemd", "user")
-	if err := os.MkdirAll(serviceDir, 0755); err != nil {
-		return err
-	}
-
-	service := fmt.Sprintf(`[Unit]
-Description=agent-brain Daemon
-After=network.target
-
-[Service]
-Type=simple
-ExecStart=%s daemon run
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=default.target`, execPath)
-
-	servicePath := filepath.Join(serviceDir, "brain-daemon.service")
-	if err := os.WriteFile(servicePath, []byte(service), 0644); err != nil {
-		return err
-	}
-
-	exec.Command("systemctl", "--user", "daemon-reload").Run()
-	exec.Command("systemctl", "--user", "enable", "brain-daemon.service").Run()
-	return exec.Command("systemctl", "--user", "start", "brain-daemon.service").Run()
 }
 
 func cmdGet(jsonFlag bool) {
@@ -838,59 +754,22 @@ func cmdDaemonStart() {
 		execPath = "brain"
 	}
 
-	switch runtime.GOOS {
-	case "darwin":
-		home, err := os.UserHomeDir()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: cannot determine home directory: %v\nWhat to do: set the HOME environment variable.\n", err)
+	if err := service.Start(); err != nil {
+		if err := service.Register(execPath); err != nil {
+			fmt.Fprintf(os.Stderr, "Error registering daemon: %v\n", err)
 			os.Exit(1)
 		}
-		plistPath := filepath.Join(home, "Library", "LaunchAgents", "com.dominhduc.brain-daemon.plist")
-		if _, err := os.Stat(plistPath); os.IsNotExist(err) {
-			if err := registerLaunchd(execPath); err != nil {
-				fmt.Fprintf(os.Stderr, "Error registering daemon: %v\nWhat to do: check launchd permissions.\n", err)
-				os.Exit(1)
-			}
-		}
-		if err := exec.Command("launchctl", "load", plistPath).Run(); err != nil {
-			fmt.Fprintf(os.Stderr, "Error starting daemon: %v\nWhat to do: check launchd logs at /tmp/brain-daemon.err\n", err)
+		if err := service.Start(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error starting daemon: %v\n", err)
 			os.Exit(1)
 		}
-	case "linux":
-		cmd := exec.Command("systemctl", "--user", "start", "brain-daemon.service")
-		if err := cmd.Run(); err != nil {
-			if err := registerSystemd(execPath); err != nil {
-				fmt.Fprintf(os.Stderr, "Error registering daemon: %v\n", err)
-				os.Exit(1)
-			}
-			cmd = exec.Command("systemctl", "--user", "start", "brain-daemon.service")
-			if err := cmd.Run(); err != nil {
-				fmt.Fprintf(os.Stderr, "Error starting daemon: %v\nWhat to do: check systemd logs: journalctl --user -u brain-daemon\n", err)
-				os.Exit(1)
-			}
-		}
-	default:
-		fmt.Println("Daemon auto-start not supported on this OS.")
-		fmt.Println("What to do: run 'brain daemon run' to start in foreground.")
-		return
 	}
 
 	fmt.Println("Daemon started. Polling queue every 5s.")
 }
 
 func cmdDaemonStop() {
-	switch runtime.GOOS {
-	case "darwin":
-		home, err := os.UserHomeDir()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: cannot determine home directory: %v\nWhat to do: set the HOME environment variable.\n", err)
-			os.Exit(1)
-		}
-		plistPath := filepath.Join(home, "Library", "LaunchAgents", "com.dominhduc.brain-daemon.plist")
-		exec.Command("launchctl", "unload", plistPath).Run()
-	case "linux":
-		exec.Command("systemctl", "--user", "stop", "brain-daemon.service").Run()
-	default:
+	if err := service.Stop(); err != nil {
 		fmt.Println("Daemon stop not supported on this OS.")
 		return
 	}
@@ -899,17 +778,7 @@ func cmdDaemonStop() {
 }
 
 func cmdDaemonStatus() {
-	running := false
-	switch runtime.GOOS {
-	case "darwin":
-		if exec.Command("launchctl", "list", "com.dominhduc.brain-daemon").Run() == nil {
-			running = true
-		}
-	case "linux":
-		if exec.Command("systemctl", "--user", "is-active", "brain-daemon.service").Run() == nil {
-			running = true
-		}
-	}
+	running := service.IsRunning()
 
 	brainDir, err := brain.FindBrainDir()
 	if err != nil {
