@@ -17,9 +17,13 @@ import (
 	"github.com/dominhduc/agent-brain/internal/brain"
 	"github.com/dominhduc/agent-brain/internal/config"
 	"github.com/dominhduc/agent-brain/internal/daemon"
+	"github.com/dominhduc/agent-brain/internal/hook"
 	"github.com/dominhduc/agent-brain/internal/preflight"
+	"github.com/dominhduc/agent-brain/internal/profile"
+	"github.com/dominhduc/agent-brain/internal/review"
 	"github.com/dominhduc/agent-brain/internal/secrets"
 	"github.com/dominhduc/agent-brain/internal/service"
+	"github.com/dominhduc/agent-brain/internal/tui"
 	"github.com/dominhduc/agent-brain/internal/updater"
 )
 
@@ -60,6 +64,8 @@ func main() {
 		cmdConfig()
 	case "version", "--version", "-v":
 		cmdVersion()
+	case "review":
+		cmdReview()
 	case "update":
 		cmdUpdate()
 	case "--help", "-h", "help":
@@ -91,6 +97,7 @@ Usage:
   brain eval                          Create session evaluation file
   brain prune [--dry-run]             Archive stale knowledge entries
   brain status [--json]               Show knowledge hub statistics
+  brain review                        Review and approve pending knowledge entries
   brain daemon start|stop|status      Manage background daemon
   brain config [set <key> <value>]    View or set configuration
   brain version                       Show version and build info
@@ -185,7 +192,7 @@ func cmdInit() {
 	}
 
 	gitignorePath := filepath.Join(cwd, ".gitignore")
-	entries := []string{".brain/archived/", ".brain/.queue/"}
+	entries := []string{".brain/archived/", ".brain/.queue/", ".brain/pending/"}
 	existing := ""
 	if data, err := os.ReadFile(gitignorePath); err == nil {
 		existing = string(data)
@@ -214,6 +221,12 @@ func cmdInit() {
 
 	if err := installGitHook(cwd); err != nil {
 		fmt.Fprintf(os.Stderr, "Warning: Could not install git hook: %v\nWhat to do: the daemon will still work, but commits won't be auto-queued.\n", err)
+	}
+
+	if err := hook.InstallPrePushHook(cwd); err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: Could not install pre-push hook: %v\nWhat to do: the daemon will still work with the post-commit hook, but pre-push is recommended.\n", err)
+	} else {
+		fmt.Println("Pre-push hook installed (analyzes only stable pushed code).")
 	}
 
 	apiKey := config.GetAPIKey()
@@ -691,12 +704,12 @@ func cmdStatus(jsonFlag bool) {
 	}
 
 	queueDir := filepath.Join(brainDir, ".queue")
-	pendingCount := 0
+	queuePendingCount := 0
 	doneCount := 0
 	if entries, err := os.ReadDir(queueDir); err == nil {
 		for _, e := range entries {
 			if !e.IsDir() && strings.HasSuffix(e.Name(), ".json") {
-				pendingCount++
+				queuePendingCount++
 			}
 		}
 	}
@@ -704,15 +717,26 @@ func cmdStatus(jsonFlag bool) {
 		doneCount = len(entries)
 	}
 
+	pendingDir := filepath.Join(brainDir, "pending")
+	pendingCount := 0
+	if entries, err := os.ReadDir(pendingDir); err == nil {
+		for _, e := range entries {
+			if !e.IsDir() && strings.HasSuffix(e.Name(), ".json") {
+				pendingCount++
+			}
+		}
+	}
+
 	if jsonFlag {
 		status := map[string]interface{}{
-			"memory_lines":  lineCount,
-			"memory_status": lineStatus,
-			"topic_files":   topicCount,
-			"session_files": sessionCount,
-			"total_size_kb": totalSize / 1024,
-			"queue_pending": pendingCount,
-			"queue_done":    doneCount,
+			"memory_lines":    lineCount,
+			"memory_status":   lineStatus,
+			"topic_files":     topicCount,
+			"session_files":   sessionCount,
+			"total_size_kb":   totalSize / 1024,
+			"queue_pending":   queuePendingCount,
+			"queue_done":      doneCount,
+			"pending_entries": pendingCount,
 		}
 		data, _ := json.MarshalIndent(status, "", "  ")
 		fmt.Println(string(data))
@@ -727,7 +751,8 @@ func cmdStatus(jsonFlag bool) {
 		fmt.Printf("Topic files:     %d files\n", topicCount)
 		fmt.Printf("Session files:   %d sessions\n", sessionCount)
 		fmt.Printf("Total size:      %d KB\n", totalSize/1024)
-		fmt.Printf("Queue depth:     %d pending, %d done\n", pendingCount, doneCount)
+		fmt.Printf("Queue depth:     %d pending, %d done\n", queuePendingCount, doneCount)
+		fmt.Printf("Pending entries: %d (run 'brain review' to approve)\n", pendingCount)
 	}
 }
 
@@ -764,7 +789,7 @@ func cmdDaemonStart() {
 		os.Exit(1)
 	}
 
-	if err := service.Register(execPath, brainDir); err != nil {
+	if err := service.Register(execPath, filepath.Dir(brainDir)); err != nil {
 		fmt.Fprintf(os.Stderr, "Error registering daemon: %v\n", err)
 		os.Exit(1)
 	}
@@ -1019,6 +1044,78 @@ func runDaemon() {
 			}
 		}
 	}
+}
+
+func cmdReview() {
+	brainDir, err := brain.FindBrainDir()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: run 'brain init' first.\n", err)
+		os.Exit(1)
+	}
+
+	pendingDir := filepath.Join(brainDir, "pending")
+	entries, err := review.LoadPendingEntries(pendingDir)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading pending entries: %v\n", err)
+		os.Exit(1)
+	}
+
+	if len(entries) == 0 {
+		fmt.Println("No pending entries to review.")
+		fmt.Println("What to do: push some commits and let the daemon analyze them.")
+		return
+	}
+
+	cfg, err := config.Load()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
+		os.Exit(1)
+	}
+
+	prof, err := profile.FromName(cfg.Review.Profile)
+	if err != nil {
+		prof = profile.DefaultProfile()
+	}
+
+	fmt.Printf("Reviewing %d pending entries (profile: %s)\n", len(entries), prof.Name)
+	fmt.Println()
+
+	accepted, rejectedIDs, err := tui.RunReview(entries, prof.Name, os.Stdout)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error in review UI: %v\n", err)
+		os.Exit(1)
+	}
+
+	if accepted == nil && rejectedIDs == nil {
+		return
+	}
+
+	timestamp := time.Now().Format("2006-01-02 15:04:05")
+
+	for _, e := range accepted {
+		path, err := brain.TopicFilePath(e.Topic)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: could not find topic file for %s: %v\n", e.Topic, err)
+			continue
+		}
+		f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: could not open %s: %v\n", path, err)
+			continue
+		}
+		fmt.Fprintf(f, "\n### [%s] %s\n\n", timestamp, e.Content)
+		f.Close()
+	}
+
+	for _, id := range rejectedIDs {
+		review.RemovePendingEntry(pendingDir, id)
+	}
+
+	for _, e := range accepted {
+		review.RemovePendingEntry(pendingDir, e.ID)
+	}
+
+	fmt.Printf("\nApplied %d entries, rejected %d.\n", len(accepted), len(rejectedIDs))
 }
 
 func cmdVersion() {
