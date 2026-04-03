@@ -3,17 +3,14 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
-	"os/signal"
 	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/dominhduc/agent-brain/internal/brain"
@@ -977,6 +974,52 @@ func recoverStaleProcessing(brainDir string) {
 	}
 }
 
+func lockFilePath() (string, error) {
+	cacheDir, err := os.UserCacheDir()
+	if err != nil {
+		return "", err
+	}
+	lockDir := filepath.Join(cacheDir, "brain")
+	if err := os.MkdirAll(lockDir, 0700); err != nil {
+		return "", err
+	}
+	return filepath.Join(lockDir, "brain-daemon.pid"), nil
+}
+
+func acquireLock() (*os.File, error) {
+	path, err := lockFilePath()
+	if err != nil {
+		return nil, fmt.Errorf("cannot determine lock file path: %w", err)
+	}
+
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0600)
+	if err != nil {
+		return nil, fmt.Errorf("cannot open lock file: %w", err)
+	}
+
+	if err := tryLockFile(f); err != nil {
+		content, _ := os.ReadFile(path)
+		f.Close()
+		return nil, fmt.Errorf("another daemon is already running (PID: %s).\nWhat to do: run 'brain daemon stop' first, or remove the lock file at %s", strings.TrimSpace(string(content)), path)
+	}
+
+	f.Truncate(0)
+	f.Seek(0, 0)
+	fmt.Fprintf(f, "%d\n", os.Getpid())
+	f.Sync()
+
+	return f, nil
+}
+
+func releaseLock(f *os.File) {
+	if f == nil {
+		return
+	}
+	unlockFile(f)
+	f.Close()
+	os.Remove(f.Name())
+}
+
 func runDaemon() {
 	fmt.Println("brain-daemon starting...")
 
@@ -995,12 +1038,19 @@ func runDaemon() {
 		os.Exit(1)
 	}
 
+	lockFile, err := acquireLock()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+	defer releaseLock(lockFile)
+
 	fmt.Printf("Version:         %s\n", version)
 	fmt.Printf("Poll interval:   %s\n", pollInterval)
 	fmt.Printf("Model:           %s\n", cfg.LLM.Model)
 	fmt.Println("Watching for queue items...")
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	ctx, stop := setupSignalContext()
 	defer stop()
 
 	cycleCount := 0
