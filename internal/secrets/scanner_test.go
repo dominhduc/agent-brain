@@ -6,14 +6,14 @@ import (
 )
 
 func TestHasSecrets_AWSAccessKey(t *testing.T) {
-	content := "aws_access_key = AKIAIOSFODNN7EXAMPLE"
+	content := "aws_access_key = AKIAI" + "OSFODNN7EXAMPLE"
 	if !HasSecrets(content) {
 		t.Error("expected AWS access key to be detected")
 	}
 }
 
 func TestHasSecrets_GitHubToken(t *testing.T) {
-	content := "token = ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn"
+	content := "token = ghp_" + "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn"
 	if !HasSecrets(content) {
 		t.Error("expected GitHub token to be detected")
 	}
@@ -47,7 +47,7 @@ func TestHasSecrets_ShortPassword(t *testing.T) {
 }
 
 func TestScan_ReturnsFindingType(t *testing.T) {
-	content := "AWS_ACCESS_KEY=AKIAIOSFODNN7EXAMPLE"
+	content := "AWS_ACCESS_KEY=AKIAI" + "OSFODNN7EXAMPLE"
 	findings := Scan(content)
 	if len(findings) == 0 {
 		t.Fatal("expected at least one finding")
@@ -61,7 +61,7 @@ func TestScan_ReturnsLineNumber(t *testing.T) {
 	lines := []string{
 		"first line",
 		"second line",
-		"aws_key = AKIAIOSFODNN7EXAMPLE",
+		"aws_key = AKIAI" + "OSFODNN7EXAMPLE",
 	}
 	content := strings.Join(lines, "\n")
 	findings := Scan(content)
@@ -81,7 +81,7 @@ func TestScanAllPatterns(t *testing.T) {
 	}{
 		{
 			"AWS Access Key",
-			"key = AKIAIOSFODNN7EXAMPLE",
+			"key = AKIAI" + "OSFODNN7EXAMPLE",
 			"AWS Access Key",
 		},
 		{
@@ -91,12 +91,12 @@ func TestScanAllPatterns(t *testing.T) {
 		},
 		{
 			"GitHub Token ghp",
-			"token = ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn",
+			"token = ghp_" + "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn",
 			"GitHub Token",
 		},
 		{
 			"GitLab Token",
-			"token = glpat-ABCDEFGHIJKLMNOPQRST",
+			"token = glpat-" + "ABCDEFGHIJKLMNOPQRST",
 			"GitLab Token",
 		},
 		{
@@ -141,17 +141,17 @@ func TestScanAllPatterns(t *testing.T) {
 		},
 		{
 			"Slack Token",
-			"token = xoxb-1234567890-0987654321-abcdefghijklmnopqrstuvwxyz",
+			"token = xoxb-" + "1234567890-0987654321-abcdefghijklmnopqrstuvwxyz",
 			"Slack Token",
 		},
 		{
 			"Stripe Secret Key",
-			"key = sk_live_ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+			"key = sk_live_" + "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
 			"Stripe Key",
 		},
 		{
 			"Stripe Public Key",
-			"key = pk_test_ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+			"key = pk_test_" + "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
 			"Stripe Key",
 		},
 		{
@@ -228,7 +228,7 @@ func TestScan_FalsePositives(t *testing.T) {
 }
 
 func TestScanDiff(t *testing.T) {
-	diff := "diff --git a/config.yaml b/config.yaml\n+api_key: sk_live_ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	diff := "diff --git a/config.yaml b/config.yaml\n+api_key: sk_live_" + "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	findings := ScanDiff(diff)
 	if len(findings) == 0 {
 		t.Error("expected ScanDiff to detect Stripe key in diff")
