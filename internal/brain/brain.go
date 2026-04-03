@@ -111,6 +111,11 @@ func EnsureBrainDir(cwd string) error {
 		return err
 	}
 
+	pendingDir := filepath.Join(brainDir, "pending")
+	if err := os.MkdirAll(pendingDir, 0755); err != nil {
+		return err
+	}
+
 	return nil
 }
 

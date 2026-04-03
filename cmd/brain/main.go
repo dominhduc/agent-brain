@@ -1152,6 +1152,10 @@ func cmdConfig() {
 		fmt.Printf("Poll Interval:   %s\n", cfg.Daemon.PollInterval)
 		fmt.Printf("Max Retries:     %d\n", cfg.Daemon.MaxRetries)
 		fmt.Printf("Retry Backoff:   %s\n", cfg.Daemon.RetryBackoff)
+		fmt.Printf("Review Profile:  %s\n", cfg.Review.Profile)
+		if prof, err := profile.FromName(cfg.Review.Profile); err == nil {
+			fmt.Printf("  → %s\n", prof.Description())
+		}
 		fmt.Printf("\nConfig file:     %s\n", config.ConfigPath())
 		return
 	}
@@ -1266,6 +1270,9 @@ const agentsTemplate = "# Project Instructions\n\n" +
 	"1. Add the learning: `brain add gotcha \"...\"` or `brain add pattern \"...\"`\n" +
 	"2. Update MEMORY.md if the index needs refreshing\n" +
 	"3. Treat every correction as permanent — don't repeat mistakes\n\n" +
+	"### Knowledge Review\n" +
+	"Daemon-analyzed entries go to a pending queue. Run `brain review` to approve/reject them.\n" +
+	"Only approved entries become permanent knowledge in topic files.\n\n" +
 	"### At Session End\n" +
 	"Run `brain eval` to write a self-evaluation to the current session file.\n" +
 	"Include: what you did, what worked, what failed, confidence scores, knowledge persisted.\n\n" +
