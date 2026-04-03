@@ -243,3 +243,56 @@ func PollInterval() time.Duration {
 	}
 	return d
 }
+
+func GetValue(dotPath string) (string, error) {
+	cfg, err := Load()
+	if err != nil {
+		return "", err
+	}
+
+	parts := strings.Split(dotPath, ".")
+	if len(parts) != 2 {
+		return "", fmt.Errorf("invalid config key format: %s", dotPath)
+	}
+
+	switch parts[0] {
+	case "llm":
+		switch parts[1] {
+		case "provider":
+			return cfg.LLM.Provider, nil
+		case "api_key":
+			return cfg.LLM.APIKey, nil
+		case "model":
+			return cfg.LLM.Model, nil
+		default:
+			return "", fmt.Errorf("unknown llm config key: %s", parts[1])
+		}
+	case "analysis":
+		switch parts[1] {
+		case "max_diff_lines":
+			return strconv.Itoa(cfg.Analysis.MaxDiffLines), nil
+		default:
+			return "", fmt.Errorf("unknown analysis config key: %s", parts[1])
+		}
+	case "daemon":
+		switch parts[1] {
+		case "poll_interval":
+			return cfg.Daemon.PollInterval, nil
+		case "max_retries":
+			return strconv.Itoa(cfg.Daemon.MaxRetries), nil
+		case "retry_backoff":
+			return cfg.Daemon.RetryBackoff, nil
+		default:
+			return "", fmt.Errorf("unknown daemon config key: %s", parts[1])
+		}
+	case "review":
+		switch parts[1] {
+		case "profile":
+			return cfg.Review.Profile, nil
+		default:
+			return "", fmt.Errorf("unknown review config key: %s", parts[1])
+		}
+	default:
+		return "", fmt.Errorf("unknown config section: %s", parts[0])
+	}
+}

@@ -84,7 +84,7 @@ Usage:
   brain status [--json]               Show knowledge hub statistics
   brain review [--all]                 Review and approve pending knowledge entries
   brain daemon start|stop|status      Manage background daemon
-  brain config [set <key> <value>]    View or set configuration
+  brain config [get|set|list|reset|setup]  View or modify configuration
   brain version                       Show version and build info
   brain update                       Self-update to latest release
 

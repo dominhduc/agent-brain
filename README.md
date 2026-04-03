@@ -198,16 +198,22 @@ The TUI shows entries grouped by topic. Navigate with arrows, accept with `a`, r
 
  Only entries you approve become permanent. Rejected entries are discarded.
 
-### `brain config [set <key> <value>]`
+### `brain config [get|set|list|reset|setup]`
 
 View or modify configuration.
 
 ```bash
 brain config                        # Show current config
-brain config set llm.api_key <your-key>   # Set API key
-brain config set llm.model anthropic/claude-3.5-haiku  # Change model
-brain config set review.profile guard  # Set review strictness
+brain config get api-key            # Get a single value
+brain config set api-key <your-key> # Set API key
+brain config set model anthropic/claude-3.5-haiku  # Change model
+brain config set profile guard      # Set review strictness
+brain config list                   # List all available keys
+brain config reset model            # Reset one key to default
+brain config setup                  # Interactive setup wizard
 ```
+
+Available keys: `api-key`, `model`, `provider`, `profile`, `poll-interval`, `max-retries`, `retry-backoff`, `max-diff-lines`
 
 ### Autonomy Profiles
 
@@ -220,8 +226,8 @@ Control how much human review is needed:
 | `agent` | Yes | Yes | Trusted patterns |
 
 ```bash
-brain config set review.profile assist   # Less strict
-brain config set review.profile agent    # Fully automatic
+brain config set profile assist   # Less strict
+brain config set profile agent    # Fully automatic
 ```
 Knowledge Hub Status
 ====================
@@ -251,8 +257,8 @@ View or modify configuration.
 
 ```bash
 brain config                        # Show current config
-brain config set llm.api_key sk-or-v1-...   # Set API key
-brain config set llm.model anthropic/claude-3.5-haiku  # Change model
+brain config set api-key sk-or-v1-...   # Set API key
+brain config set model anthropic/claude-3.5-haiku  # Change model
 ```
 
 ---
@@ -265,7 +271,7 @@ The daemon needs an OpenRouter API key to analyze commits. Set it one of three w
 
 ```bash
 # Option 1: Via brain config (recommended)
-brain config set llm.api_key sk-or-v1-...
+brain config set api-key sk-or-v1-...
 
 # Option 2: Environment variable
 export BRAIN_API_KEY="sk-or-v1-..."
@@ -281,9 +287,9 @@ Get your key at [openrouter.ai](https://openrouter.ai).
 The default model is `anthropic/claude-3.5-haiku` — fast and cheap (~$0.01 per commit). You can change it:
 
 ```bash
-brain config set llm.model anthropic/claude-3.5-haiku
-brain config set llm.model openai/gpt-4o-mini
-brain config set llm.model google/gemini-2.5-flash
+brain config set model anthropic/claude-3.5-haiku
+brain config set model openai/gpt-4o-mini
+brain config set model google/gemini-2.5-flash
 ```
 
 Any OpenRouter model works. Choose based on your budget and accuracy needs.
@@ -357,7 +363,7 @@ Run `brain init` in your project directory first.
 
 Set your API key:
 ```bash
-brain config set llm.api_key sk-or-v1-...
+brain config set api-key sk-or-v1-...
 ```
 
 Get your key at [openrouter.ai](https://openrouter.ai).
@@ -492,7 +498,7 @@ your-project/
 
 ## TODO Before First Use
 
-- [ ] **Set your OpenRouter API key:** `brain config set llm.api_key sk-or-v1-...`
+- [ ] **Set your OpenRouter API key:** `brain config set api-key sk-or-v1-...`
 - [ ] **Choose your preferred model** in `~/.config/brain/config.yaml` (default: `anthropic/claude-3.5-haiku`)
 - [ ] **Review daemon configuration:** `brain daemon status`
 - [ ] **Run `brain init`** in your first project

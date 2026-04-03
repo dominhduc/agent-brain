@@ -343,3 +343,44 @@ func TestSetValue_ReviewProfile(t *testing.T) {
 		}
 	})
 }
+
+func TestGetValue(t *testing.T) {
+	setupTestConfig(t)
+
+	cfg := DefaultConfig()
+	cfg.LLM.APIKey = "test-key-123"
+	cfg.LLM.Model = "test-model"
+	cfg.Daemon.MaxRetries = 5
+	Save(cfg)
+
+	tests := []struct {
+		dotPath string
+		want    string
+	}{
+		{"llm.api_key", "test-key-123"},
+		{"llm.model", "test-model"},
+		{"daemon.max_retries", "5"},
+		{"llm.provider", "openrouter"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.dotPath, func(t *testing.T) {
+			got, err := GetValue(tt.dotPath)
+			if err != nil {
+				t.Fatalf("GetValue(%q) error: %v", tt.dotPath, err)
+			}
+			if got != tt.want {
+				t.Errorf("GetValue(%q) = %q, want %q", tt.dotPath, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetValue_InvalidDotPath(t *testing.T) {
+	setupTestConfig(t)
+
+	_, err := GetValue("invalid.path")
+	if err == nil {
+		t.Error("expected error for invalid dot path")
+	}
+}
