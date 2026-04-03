@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/dominhduc/agent-brain/internal/analyzer"
+	"github.com/dominhduc/agent-brain/internal/review"
 	"github.com/dominhduc/agent-brain/internal/secrets"
 )
 
@@ -106,8 +107,37 @@ func ProcessItemWithDeps(processingPath, queueDir, brainDir, projectRoot string,
 		return false, fmt.Errorf("LLM analysis: %w", err)
 	}
 
-	if err := analyzer.WriteFindings(finding, brainDir); err != nil {
-		return false, fmt.Errorf("writing findings: %w", err)
+	pendingDir := filepath.Join(brainDir, "pending")
+	entryCount := 0
+
+	writePending := func(topic, content string) {
+		if content == "" {
+			return
+		}
+		entryCount++
+		entry := review.PendingEntry{
+			ID:         fmt.Sprintf("%s-%s-%d", item.Timestamp, topic, entryCount),
+			Topic:      topic,
+			Content:    content,
+			CommitSHA:  "",
+			Timestamp:  time.Now(),
+			Confidence: finding.Confidence,
+			Source:     "daemon",
+		}
+		review.SavePendingEntry(pendingDir, entry)
+	}
+
+	for _, g := range finding.Gotchas {
+		writePending("gotchas", g)
+	}
+	for _, p := range finding.Patterns {
+		writePending("patterns", p)
+	}
+	for _, d := range finding.Decisions {
+		writePending("decisions", d)
+	}
+	for _, a := range finding.Architecture {
+		writePending("architecture", a)
 	}
 
 	moveToDone(processingPath, queueDir)

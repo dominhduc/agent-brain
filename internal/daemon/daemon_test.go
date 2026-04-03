@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/dominhduc/agent-brain/internal/analyzer"
+	"github.com/dominhduc/agent-brain/internal/review"
 )
 
 func TestProcessItem_ValidItem(t *testing.T) {
@@ -57,6 +58,27 @@ func TestProcessItem_ValidItem(t *testing.T) {
 
 	if _, err := os.Stat(processingPath); !os.IsNotExist(err) {
 		t.Error("expected processing file to be moved away")
+	}
+
+	pendingDir := filepath.Join(brainDir, "pending")
+	entries, err := review.LoadPendingEntries(pendingDir)
+	if err != nil {
+		t.Fatalf("loading pending entries: %v", err)
+	}
+	if len(entries) != 1 {
+		t.Fatalf("expected 1 pending entry, got %d", len(entries))
+	}
+	if entries[0].Topic != "gotchas" {
+		t.Errorf("expected topic gotchas, got %s", entries[0].Topic)
+	}
+	if entries[0].Content != "test gotcha" {
+		t.Errorf("expected content 'test gotcha', got %q", entries[0].Content)
+	}
+	if entries[0].Confidence != "HIGH" {
+		t.Errorf("expected confidence HIGH, got %s", entries[0].Confidence)
+	}
+	if entries[0].Source != "daemon" {
+		t.Errorf("expected source daemon, got %s", entries[0].Source)
 	}
 }
 
