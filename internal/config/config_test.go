@@ -278,6 +278,7 @@ func TestConfigDir_HomeUnset(t *testing.T) {
 func TestConfigPath(t *testing.T) {
 	tmpHome := t.TempDir()
 	t.Setenv("HOME", tmpHome)
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(tmpHome, ".config"))
 
 	expected := filepath.Join(tmpHome, ".config", "brain", "config.yaml")
 	if ConfigPath() != expected {
