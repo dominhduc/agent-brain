@@ -521,6 +521,11 @@ func cmdAdd() {
 	topic := os.Args[2]
 	message := strings.Join(os.Args[3:], " ")
 
+	if len(message) > 10240 {
+		fmt.Fprintf(os.Stderr, "Error: message too long (%d bytes, max 10240).\nWhat to do: shorten your message or split it into multiple entries.\n", len(message))
+		os.Exit(1)
+	}
+
 	if secrets.HasSecrets(message) {
 		findings := secrets.Scan(message)
 		fmt.Fprintf(os.Stderr, "Error: your message may contain a secret (detected: %s).\n", findings[0].Type)
