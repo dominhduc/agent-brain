@@ -27,7 +27,7 @@ import (
 	"github.com/dominhduc/agent-brain/internal/updater"
 )
 
-var version = "v0.3"
+var version = "v0.3.1"
 
 var (
 	commit string
