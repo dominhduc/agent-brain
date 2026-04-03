@@ -22,8 +22,8 @@ func EnableRawMode() (*termState, error) {
 	}
 	newTermios := oldTermios
 	newTermios.Lflag &^= syscall.ECHO | syscall.ICANON
-	newTermios.Cc[syscall.VMIN] = 1
-	newTermios.Cc[syscall.VTIME] = 0
+	newTermios.Cc[syscall.VMIN] = 0
+	newTermios.Cc[syscall.VTIME] = 2
 	_, _, errno = syscall.Syscall6(syscall.SYS_IOCTL, fd, uintptr(syscall.TCSETS), uintptr(unsafe.Pointer(&newTermios)), 0, 0, 0)
 	if errno != 0 {
 		return nil, fmt.Errorf("TCSETS failed: %v", errno)

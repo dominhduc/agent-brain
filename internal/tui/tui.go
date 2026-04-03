@@ -108,6 +108,10 @@ type ReviewState struct {
 	Selected    map[string]bool
 	DedupGroups []review.DedupGroup
 	Profile     string
+	Exit        bool
+	ExitAccepted []review.PendingEntry
+	ExitRejected []string
+	ExitErr     error
 }
 
 func NewReviewState(entries []review.PendingEntry, profile string) *ReviewState {
@@ -244,20 +248,24 @@ func RunReview(entries []review.PendingEntry, profile string, writer io.Writer) 
 		fmt.Fprint(writer, output)
 
 		n, readErr := os.Stdin.Read(buf[:1])
-		if readErr != nil || n == 0 {
+		if readErr != nil {
 			return nil, nil, fmt.Errorf("reading input: %w", readErr)
+		}
+		if n == 0 {
+			continue
 		}
 
 		ch := buf[0]
 
 		if ch == 27 {
 			_, err1 := os.Stdin.Read(buf[1:2])
-			if err1 != nil {
+			if err1 != nil || buf[1] == 0 {
+				handleKey(state, KeyEsc, writer)
 				continue
 			}
 			if buf[1] == '[' {
 				_, err2 := os.Stdin.Read(buf[2:3])
-				if err2 != nil {
+				if err2 != nil || buf[2] == 0 {
 					continue
 				}
 				key := ParseArrowKey(buf[:3])
@@ -272,31 +280,57 @@ func RunReview(entries []review.PendingEntry, profile string, writer io.Writer) 
 		}
 
 		key := ParseKey(ch, false)
+		handleKey(state, key, writer)
 
-		switch key {
-		case KeyQ, KeyEsc:
-			fmt.Fprint(writer, RenderExitMessage("\n  Review cancelled.\n"))
-			return nil, nil, nil
-		case KeyUp:
-			state.MoveUp()
-		case KeyDown:
-			state.MoveDown()
-		case KeyLeft:
-			state.PrevGroup()
-		case KeyRight:
-			state.NextGroup()
-		case KeySpace:
-			state.ToggleSelected()
-		case KeyA:
-			fmt.Fprint(writer, RenderExitMessage(fmt.Sprintf("\n  Accepted %d entries.\n", len(state.AcceptSelected()))))
-			return state.AcceptSelected(), state.RejectSelected(), nil
-		case KeyM:
-			return handleMerge(state, writer)
-		case KeyR:
-			entries := state.CurrentEntries()
-			if state.CurrentEntry < len(entries) {
-				delete(state.Selected, entries[state.CurrentEntry].ID)
+		if state.Exit {
+			return state.ExitAccepted, state.ExitRejected, state.ExitErr
+		}
+	}
+}
+
+func handleKey(state *ReviewState, key Key, writer io.Writer) {
+	switch key {
+	case KeyQ:
+		fmt.Fprint(writer, RenderExitMessage("\n  Review cancelled.\n"))
+		state.Exit = true
+		state.ExitAccepted = nil
+		state.ExitRejected = nil
+		state.ExitErr = nil
+	case KeyEsc:
+		fmt.Fprint(writer, RenderExitMessage("\n  Review cancelled.\n"))
+		state.Exit = true
+		state.ExitAccepted = nil
+		state.ExitRejected = nil
+		state.ExitErr = nil
+	case KeyUp:
+		state.MoveUp()
+	case KeyDown:
+		state.MoveDown()
+	case KeyLeft:
+		state.PrevGroup()
+	case KeyRight:
+		state.NextGroup()
+	case KeySpace:
+		state.ToggleSelected()
+	case KeyA:
+		fmt.Fprint(writer, RenderExitMessage(fmt.Sprintf("\n  Accepted %d entries.\n", len(state.AcceptSelected()))))
+		state.Exit = true
+		state.ExitAccepted = state.AcceptSelected()
+		state.ExitRejected = state.RejectSelected()
+		state.ExitErr = nil
+	case KeyM:
+		if len(state.DedupGroups) > 0 {
+			for _, group := range state.DedupGroups {
+				for _, e := range group.Entries[1:] {
+					delete(state.Selected, e.ID)
+				}
 			}
+			fmt.Fprintf(writer, "\r  Merged %d duplicate group(s). Press 'a' to accept, 'q' to quit.\n", len(state.DedupGroups))
+		}
+	case KeyR:
+		entries := state.CurrentEntries()
+		if state.CurrentEntry < len(entries) {
+			delete(state.Selected, entries[state.CurrentEntry].ID)
 		}
 	}
 }
@@ -312,19 +346,4 @@ func handleNavigation(state *ReviewState, key Key) {
 	case KeyRight:
 		state.NextGroup()
 	}
-}
-
-func handleMerge(state *ReviewState, writer io.Writer) ([]review.PendingEntry, []string, error) {
-	if len(state.DedupGroups) == 0 {
-		return nil, nil, fmt.Errorf("no duplicates to merge")
-	}
-
-	for _, group := range state.DedupGroups {
-		for _, e := range group.Entries[1:] {
-			state.Selected[e.ID] = false
-		}
-	}
-
-	fmt.Fprint(writer, RenderExitMessage(fmt.Sprintf("\n  Merged %d duplicate group(s).\n", len(state.DedupGroups))))
-	return state.AcceptSelected(), state.RejectSelected(), nil
 }
