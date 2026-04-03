@@ -16,6 +16,7 @@ import (
 	"github.com/dominhduc/agent-brain/internal/analyzer"
 	"github.com/dominhduc/agent-brain/internal/brain"
 	"github.com/dominhduc/agent-brain/internal/config"
+	"github.com/dominhduc/agent-brain/internal/daemon"
 	"github.com/dominhduc/agent-brain/internal/preflight"
 	"github.com/dominhduc/agent-brain/internal/secrets"
 )
@@ -954,31 +955,6 @@ func cmdDaemonStatus() {
 	}
 }
 
-func recoverStaleProcessing(brainDir string) {
-	if brainDir == "" {
-		return
-	}
-	queueDir := filepath.Join(brainDir, ".queue")
-	entries, err := os.ReadDir(queueDir)
-	if err != nil {
-		return
-	}
-	recovered := 0
-	for _, e := range entries {
-		if !e.IsDir() && strings.HasSuffix(e.Name(), ".processing") {
-			oldPath := filepath.Join(queueDir, e.Name())
-			newName := strings.TrimSuffix(e.Name(), ".processing")
-			newPath := filepath.Join(queueDir, newName)
-			if err := os.Rename(oldPath, newPath); err == nil {
-				recovered++
-			}
-		}
-	}
-	if recovered > 0 {
-		fmt.Printf("Recovered %d stale processing item(s)\n", recovered)
-	}
-}
-
 func lockFilePath() (string, error) {
 	cacheDir, err := os.UserCacheDir()
 	if err != nil {
@@ -1034,7 +1010,7 @@ func runDaemon() {
 		os.Exit(1)
 	}
 
-	pollInterval := parsePollInterval(cfg)
+	pollInterval := daemon.ParsePollInterval(cfg.Daemon.PollInterval)
 
 	apiKey := config.GetAPIKey()
 	if apiKey == "" {
@@ -1076,7 +1052,7 @@ func runDaemon() {
 			newCfg, err := config.Load()
 			if err == nil {
 				cfg = newCfg
-				pollInterval = parsePollInterval(cfg)
+				pollInterval = daemon.ParsePollInterval(cfg.Daemon.PollInterval)
 			}
 			apiKey = config.GetAPIKey()
 		}
@@ -1088,7 +1064,7 @@ func runDaemon() {
 		}
 
 		if !startupRecoveryDone {
-			recoverStaleProcessing(brainDir)
+			daemon.RecoverStaleProcessing(brainDir)
 			startupRecoveryDone = true
 		}
 
@@ -1120,7 +1096,7 @@ func runDaemon() {
 			select {
 			case <-ctx.Done():
 				fmt.Println("\nShutting down gracefully...")
-				recoverStaleProcessing("")
+				daemon.RecoverStaleProcessing("")
 				fmt.Println("Daemon stopped.")
 				return
 			default:
@@ -1135,129 +1111,36 @@ func runDaemon() {
 
 			fmt.Printf("Processing: %s\n", filepath.Base(processingPath))
 
-			data, err := os.ReadFile(processingPath)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error reading queue item: %v\nWhat to do: the item will be moved to failed/. Check .brain/.queue/failed/.\n", err)
-				moveToFailed(processingPath, queueDir)
-				continue
-			}
-
-			var item struct {
-				Timestamp string `json:"timestamp"`
-				Repo      string `json:"repo"`
-				DiffStat  string `json:"diff_stat"`
-				Files     string `json:"files"`
-				Attempts  int    `json:"attempts"`
-			}
-			if err := json.Unmarshal(data, &item); err != nil {
-				fmt.Fprintf(os.Stderr, "Error parsing queue item: %v\nWhat to do: the item will be moved to failed/. Check .brain/.queue/failed/.\n", err)
-				moveToFailed(processingPath, queueDir)
-				continue
-			}
-
-			if item.Timestamp == "" || item.Repo == "" {
-				fmt.Fprintf(os.Stderr, "Invalid queue item: missing timestamp or repo.\nWhat to do: the item will be moved to failed/. Delete it if it's corrupted.\n")
-				moveToFailed(processingPath, queueDir)
-				continue
-			}
-
-			if len(item.Timestamp) > 20 || len(item.Repo) > 4096 {
-				fmt.Fprintf(os.Stderr, "Invalid queue item: field too long.\nWhat to do: this may be a corrupted or malicious queue item. It will be moved to failed/.\n")
-				moveToFailed(processingPath, queueDir)
-				continue
-			}
-
-			projectRoot := filepath.Dir(brainDir)
-			absRepo, _ := filepath.Abs(item.Repo)
-			if absRepo != projectRoot {
-				fmt.Fprintf(os.Stderr, "Security: queue item repo %q does not match project root %q. Skipping.\n", absRepo, projectRoot)
-				moveToFailed(processingPath, queueDir)
-				continue
-			}
-
-			cmd := exec.Command("git", "-C", item.Repo, "diff", "HEAD~1")
-			diffOutput, err := cmd.CombinedOutput()
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error getting diff: %v\nWhat to do: the commit may be the first commit (no HEAD~1). The item will be retried.\n", err)
-				item.Attempts++
-				if item.Attempts >= cfg.Daemon.MaxRetries {
-					moveToFailed(processingPath, queueDir)
-				} else {
-					itemData, _ := json.Marshal(item)
-					os.WriteFile(processingPath, itemData, 0600)
-					os.Rename(processingPath, itemPath)
+			getDiff := func(repo string) (string, error) {
+				out, err := exec.Command("git", "-C", repo, "diff", "HEAD~1").CombinedOutput()
+				if err != nil {
+					return "", err
 				}
-				continue
+				return string(out), nil
 			}
 
-			diff := string(diffOutput)
-			if len(diff) > cfg.Analysis.MaxDiffLines*100 {
-				diff = diff[:cfg.Analysis.MaxDiffLines*100]
+			analyzeFn := func(req analyzer.AnalyzeRequest) (analyzer.Finding, error) {
+				return analyzer.Analyze(analyzer.AnalyzeRequest{
+					Diff:       req.Diff,
+					APIKey:     apiKey,
+					Model:      cfg.LLM.Model,
+					APIBaseURL: "",
+				})
 			}
 
-			if findings := secrets.ScanDiff(diff); len(findings) > 0 {
-				fmt.Fprintf(os.Stderr, "Secret detected in diff (type: %s). Skipping for safety.\n", findings[0].Type)
-				fmt.Fprintf(os.Stderr, "What to do: review the commit for exposed secrets, then requeue manually.\n")
-				flaggedDir := filepath.Join(queueDir, "flagged")
-				os.MkdirAll(flaggedDir, 0755)
-				os.Rename(processingPath, filepath.Join(flaggedDir, filepath.Base(processingPath)))
-				continue
-			}
-
-			findings, err := analyzer.Analyze(analyzer.AnalyzeRequest{
-				Diff:       diff,
-				APIKey:     apiKey,
-				Model:      cfg.LLM.Model,
-				APIBaseURL: "",
-			})
+			processed, err := daemon.ProcessItemWithDeps(
+				processingPath, queueDir, brainDir,
+				filepath.Dir(brainDir), cfg.Daemon.MaxRetries,
+				getDiff, analyzeFn,
+			)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error calling LLM: %v\n", err)
-				item.Attempts++
-				backoff := time.Duration(item.Attempts*item.Attempts) * 5 * time.Second
-				fmt.Fprintf(os.Stderr, "Retry %d/%d in %s\n", item.Attempts, cfg.Daemon.MaxRetries, backoff)
-				if item.Attempts >= cfg.Daemon.MaxRetries {
-					moveToFailed(processingPath, queueDir)
-				} else {
-					itemData, _ := json.Marshal(item)
-					os.WriteFile(processingPath, itemData, 0600)
-					os.Rename(processingPath, itemPath)
-					time.Sleep(backoff)
-				}
-				continue
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			}
-
-			if err := analyzer.WriteFindings(findings, brainDir); err != nil {
-				fmt.Fprintf(os.Stderr, "Error writing findings: %v\nWhat to do: check permissions on .brain/ topic files.\n", err)
-			} else {
+			if processed {
 				fmt.Println("Findings written successfully.")
 			}
-
-			moveToDone(processingPath, queueDir)
 		}
 	}
-}
-
-func parsePollInterval(cfg config.Config) time.Duration {
-	d, err := time.ParseDuration(cfg.Daemon.PollInterval)
-	if err != nil || d < time.Second {
-		return 5 * time.Second
-	}
-	if d > 5*time.Minute {
-		return 5 * time.Minute
-	}
-	return d
-}
-
-func moveToFailed(itemPath, queueDir string) {
-	doneDir := filepath.Join(queueDir, "failed")
-	os.MkdirAll(doneDir, 0755)
-	os.Rename(itemPath, filepath.Join(doneDir, filepath.Base(itemPath)))
-}
-
-func moveToDone(itemPath, queueDir string) {
-	doneDir := filepath.Join(queueDir, "done")
-	os.MkdirAll(doneDir, 0755)
-	os.Rename(itemPath, filepath.Join(doneDir, filepath.Base(itemPath)))
 }
 
 func cmdVersion() {
