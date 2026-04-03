@@ -293,6 +293,8 @@ Set your API key:
 brain config set llm.api_key sk-or-v1-...
 ```
 
+Get your key at [openrouter.ai](https://openrouter.ai).
+
 ### "Daemon is not running"
 
 Start it:
@@ -320,6 +322,46 @@ Move details to topic files and keep MEMORY.md as a concise index:
 ```bash
 brain prune --dry-run   # See what can be archived
 brain prune             # Archive stale entries
+```
+
+### "brain: command not found"
+
+`~/.local/bin` is not in your PATH. Fix it:
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+To make it permanent, add it to your shell profile:
+```bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+```
+
+### "dubious ownership" / git ownership error
+
+This happens when the directory owner doesn't match the current user. Fix:
+```bash
+git config --global --add safe.directory /path/to/your/project
+```
+
+### "GOPATH and GOROOT are the same directory"
+
+Harmless warning during build. Does not affect functionality.
+
+### "Secret detected in diff" (daemon skipping commits)
+
+The daemon found a potential secret in your commit diff and skipped it for safety. The item is moved to `.brain/.queue/flagged/`.
+
+Review the commit for exposed secrets. If it's a false positive, requeue the item:
+```bash
+mv .brain/.queue/flagged/commit-*.processing .brain/.queue/commit-TIMESTAMP.json
+```
+
+### ".brain is a symlink" error
+
+For security, `.brain/` cannot be a symlink. Remove it and reinitialize:
+```bash
+rm .brain
+brain init
 ```
 
 ### Daemon logs
