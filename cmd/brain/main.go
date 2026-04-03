@@ -23,7 +23,7 @@ import (
 	"github.com/dominhduc/agent-brain/internal/updater"
 )
 
-const version = "v0.2"
+var version = "v0.2"
 
 var (
 	commit string
@@ -1110,7 +1110,7 @@ func cmdUpdate() {
 
 	fmt.Printf("New version available: %s → %s\n", version, release.TagName)
 
-	downloadURL, err := updater.FindAssetForPlatform(release, runtime.GOOS, runtime.GOARCH)
+	asset, err := updater.FindAssetForPlatform(release, runtime.GOOS, runtime.GOARCH)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: download manually from https://github.com/dominhduc/agent-brain/releases/latest\n", err)
 		os.Exit(1)
@@ -1127,8 +1127,20 @@ func cmdUpdate() {
 		resolvedPath = execPath
 	}
 
-	fmt.Printf("Downloading from %s...\n", filepath.Base(downloadURL))
-	if err := updater.DownloadAndReplace(downloadURL, resolvedPath); err != nil {
+	fmt.Printf("Downloading %s...\n", asset.Name)
+
+	var archiveData []byte
+	if asset.ID > 0 && os.Getenv("GITHUB_TOKEN") != "" {
+		archiveData, err = updater.DownloadAsset("https://api.github.com", asset.ID)
+	} else {
+		archiveData, err = updater.DownloadFile(asset.BrowserDownloadURL)
+	}
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error updating: %v\nWhat to do: download manually from https://github.com/dominhduc/agent-brain/releases/latest\n", err)
+		os.Exit(1)
+	}
+
+	if err := updater.ReplaceBinary(archiveData, asset.Name, resolvedPath); err != nil {
 		fmt.Fprintf(os.Stderr, "Error updating: %v\nWhat to do: download manually from https://github.com/dominhduc/agent-brain/releases/latest\n", err)
 		os.Exit(1)
 	}

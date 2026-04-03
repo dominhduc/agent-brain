@@ -99,12 +99,12 @@ func TestFindAssetForPlatform(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.goos+"/"+tt.goarch, func(t *testing.T) {
-			url, err := FindAssetForPlatform(release, tt.goos, tt.goarch)
+			asset, err := FindAssetForPlatform(release, tt.goos, tt.goarch)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			if url != tt.want {
-				t.Errorf("FindAssetForPlatform(%s, %s) = %q, want %q", tt.goos, tt.goarch, url, tt.want)
+			if asset.BrowserDownloadURL != tt.want {
+				t.Errorf("FindAssetForPlatform(%s, %s) = %q, want %q", tt.goos, tt.goarch, asset.BrowserDownloadURL, tt.want)
 			}
 		})
 	}

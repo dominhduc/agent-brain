@@ -15,6 +15,7 @@ import (
 )
 
 type GitHubAsset struct {
+	ID                 int    `json:"id"`
 	Name               string `json:"name"`
 	BrowserDownloadURL string `json:"browser_download_url"`
 }
@@ -41,6 +42,9 @@ func FetchLatestRelease(opts FetchOptions) (GitHubRelease, error) {
 		return release, fmt.Errorf("creating request: %w", err)
 	}
 	req.Header.Set("Accept", "application/vnd.github+json")
+	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -64,7 +68,7 @@ func FetchLatestRelease(opts FetchOptions) (GitHubRelease, error) {
 	return release, nil
 }
 
-func FindAssetForPlatform(release GitHubRelease, goos, goarch string) (string, error) {
+func FindAssetForPlatform(release GitHubRelease, goos, goarch string) (GitHubAsset, error) {
 	osName := strings.Title(goos)
 	if goos == "darwin" {
 		osName = "Darwin"
@@ -85,11 +89,11 @@ func FindAssetForPlatform(release GitHubRelease, goos, goarch string) (string, e
 
 	for _, asset := range release.Assets {
 		if strings.Contains(asset.Name, expectedSuffix) {
-			return asset.BrowserDownloadURL, nil
+			return asset, nil
 		}
 	}
 
-	return "", fmt.Errorf("no asset found for %s/%s in release %s. Available: %v",
+	return GitHubAsset{}, fmt.Errorf("no asset found for %s/%s in release %s. Available: %v",
 		goos, goarch, release.TagName, assetNames(release.Assets))
 }
 
@@ -141,37 +145,79 @@ func versionParts(v string) []int {
 	return result
 }
 
-func DownloadAndReplace(downloadURL, binPath string) error {
-	resp, err := http.Get(downloadURL)
+func downloadFile(url string) ([]byte, error) {
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return fmt.Errorf("downloading update: %w", err)
+		return nil, fmt.Errorf("creating download request: %w", err)
+	}
+	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("downloading update: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("download returned status %d", resp.StatusCode)
+		return nil, fmt.Errorf("download returned status %d", resp.StatusCode)
 	}
 
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 100<<20))
 	if err != nil {
-		return fmt.Errorf("reading download: %w", err)
+		return nil, fmt.Errorf("reading download: %w", err)
+	}
+	return body, nil
+}
+
+func DownloadAsset(apiBaseURL string, assetID int) ([]byte, error) {
+	url := fmt.Sprintf("%s/repos/dominhduc/agent-brain/releases/assets/%d", apiBaseURL, assetID)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("creating asset request: %w", err)
+	}
+	req.Header.Set("Accept", "application/octet-stream")
+	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("downloading asset: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("asset download returned status %d", resp.StatusCode)
 	}
 
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 100<<20))
+	if err != nil {
+		return nil, fmt.Errorf("reading asset: %w", err)
+	}
+	return body, nil
+}
+
+func DownloadFile(url string) ([]byte, error) {
+	return downloadFile(url)
+}
+
+func ReplaceBinary(archiveData []byte, filename, binPath string) error {
 	var binaryData []byte
+	var err error
 
 	switch {
-	case strings.HasSuffix(downloadURL, ".zip"):
-		binaryData, err = extractFromZip(body)
+	case strings.HasSuffix(filename, ".zip"):
+		binaryData, err = extractFromZip(archiveData)
 		if err != nil {
 			return fmt.Errorf("extracting binary: %w", err)
 		}
-	case strings.HasSuffix(downloadURL, ".tar.gz") || strings.HasSuffix(downloadURL, ".tgz"):
-		binaryData, err = extractFromTarGz(body)
+	case strings.HasSuffix(filename, ".tar.gz") || strings.HasSuffix(filename, ".tgz"):
+		binaryData, err = extractFromTarGz(archiveData)
 		if err != nil {
 			return fmt.Errorf("extracting binary: %w", err)
 		}
 	default:
-		binaryData = body
+		binaryData = archiveData
 	}
 
 	if len(binaryData) == 0 {
@@ -197,6 +243,15 @@ func DownloadAndReplace(downloadURL, binPath string) error {
 	return nil
 }
 
+func DownloadAndReplace(downloadURL, binPath string) error {
+	body, err := downloadFile(downloadURL)
+	if err != nil {
+		return err
+	}
+
+	return ReplaceBinary(body, downloadURL, binPath)
+}
+
 func extractFromTarGz(data []byte) ([]byte, error) {
 	gzr, err := gzip.NewReader(bytes.NewReader(data))
 	if err != nil {
@@ -213,7 +268,7 @@ func extractFromTarGz(data []byte) ([]byte, error) {
 		if err != nil {
 			return nil, fmt.Errorf("reading tar: %w", err)
 		}
-		if hdr.Typeflag == tar.TypeReg && (filepath.Base(hdr.Name) == "brain" || filepath.Base(hdr.Name) == "brain.exe") {
+		if hdr.Typeflag == tar.TypeReg && isBrainBinary(filepath.Base(hdr.Name)) {
 			return io.ReadAll(tr)
 		}
 	}
@@ -229,7 +284,7 @@ func extractFromZip(data []byte) ([]byte, error) {
 
 	for _, f := range r.File {
 		base := filepath.Base(f.Name)
-		if base == "brain" || base == "brain.exe" {
+		if isBrainBinary(base) {
 			rc, err := f.Open()
 			if err != nil {
 				return nil, fmt.Errorf("opening file in zip: %w", err)
@@ -240,4 +295,8 @@ func extractFromZip(data []byte) ([]byte, error) {
 	}
 
 	return nil, fmt.Errorf("brain binary not found in zip archive")
+}
+
+func isBrainBinary(name string) bool {
+	return name == "brain" || name == "brain.exe" || strings.HasPrefix(name, "brain_")
 }
