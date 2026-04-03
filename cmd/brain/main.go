@@ -65,7 +65,8 @@ func main() {
 	case "version", "--version", "-v":
 		cmdVersion()
 	case "review":
-		cmdReview()
+		allFlag := hasFlag("--all")
+		cmdReview(allFlag)
 	case "update":
 		cmdUpdate()
 	case "--help", "-h", "help":
@@ -97,7 +98,7 @@ Usage:
   brain eval                          Create session evaluation file
   brain prune [--dry-run]             Archive stale knowledge entries
   brain status [--json]               Show knowledge hub statistics
-  brain review                        Review and approve pending knowledge entries
+  brain review [--all]                 Review and approve pending knowledge entries
   brain daemon start|stop|status      Manage background daemon
   brain config [set <key> <value>]    View or set configuration
   brain version                       Show version and build info
@@ -1046,7 +1047,7 @@ func runDaemon() {
 	}
 }
 
-func cmdReview() {
+func cmdReview(allFlag bool) {
 	brainDir, err := brain.FindBrainDir()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: run 'brain init' first.\n", err)
@@ -1058,6 +1059,28 @@ func cmdReview() {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading pending entries: %v\n", err)
 		os.Exit(1)
+	}
+
+	if allFlag {
+		topicFiles := map[string]string{
+			"gotchas":      filepath.Join(brainDir, "gotchas.md"),
+			"patterns":     filepath.Join(brainDir, "patterns.md"),
+			"decisions":    filepath.Join(brainDir, "decisions.md"),
+			"architecture": filepath.Join(brainDir, "architecture.md"),
+		}
+		totalImported := 0
+		for topic, path := range topicFiles {
+			count, err := review.TopicEntriesToPending(topic, path, pendingDir)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Warning: could not import from %s: %v\n", path, err)
+				continue
+			}
+			totalImported += count
+		}
+		if totalImported > 0 {
+			fmt.Printf("Imported %d existing entries into pending queue.\n", totalImported)
+		}
+		entries, _ = review.LoadPendingEntries(pendingDir)
 	}
 
 	if len(entries) == 0 {

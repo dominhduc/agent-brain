@@ -44,7 +44,7 @@ func TestSaveAndLoad(t *testing.T) {
 	setupTestConfig(t)
 
 	cfg := DefaultConfig()
-	cfg.LLM.APIKey = "sk-or-v1-testkey1234567890"
+	cfg.LLM.APIKey = "test-api-key"
 	cfg.LLM.Model = "test-model"
 
 	if err := Save(cfg); err != nil {
@@ -288,7 +288,7 @@ func TestConfigPath(t *testing.T) {
 func TestSetKey(t *testing.T) {
 	setupTestConfig(t)
 
-	if err := SetKey("sk-or-v1-newkey"); err != nil {
+	if err := SetKey("test-api-key-2"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -296,8 +296,8 @@ func TestSetKey(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.LLM.APIKey != "sk-or-v1-newkey" {
-		t.Errorf("expected 'sk-or-v1-newkey', got %q", cfg.LLM.APIKey)
+	if cfg.LLM.APIKey != "test-api-key-2" {
+		t.Errorf("expected 'test-api-key-2', got %q", cfg.LLM.APIKey)
 	}
 }
 

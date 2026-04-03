@@ -1,11 +1,13 @@
 package review
 
 import (
+	"bufio"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -134,4 +136,106 @@ func FindDuplicateGroups(entries []PendingEntry) []DedupGroup {
 		return len(groups[i].Entries) > len(groups[j].Entries)
 	})
 	return groups
+}
+
+var entryPattern = regexp.MustCompile(`^### \[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\] (.+)$`)
+
+func ExtractTopicEntries(topicFile string) ([]PendingEntry, error) {
+	data, err := os.ReadFile(topicFile)
+	if err != nil {
+		return nil, fmt.Errorf("reading topic file: %w", err)
+	}
+
+	var entries []PendingEntry
+	scanner := bufio.NewScanner(strings.NewReader(string(data)))
+	var currentContent strings.Builder
+	var currentTimestamp string
+
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		matches := entryPattern.FindStringSubmatch(line)
+		if len(matches) == 3 {
+			if currentContent.Len() > 0 && currentTimestamp != "" {
+				content := strings.TrimSpace(currentContent.String())
+				if content != "" {
+					entries = append(entries, PendingEntry{Content: content})
+				}
+			}
+			currentTimestamp = matches[1]
+			currentContent.Reset()
+			currentContent.WriteString(matches[2])
+		} else if currentTimestamp != "" && line != "" {
+			currentContent.WriteString(" ")
+			currentContent.WriteString(line)
+		}
+	}
+
+	if currentContent.Len() > 0 && currentTimestamp != "" {
+		content := strings.TrimSpace(currentContent.String())
+		if content != "" {
+			entries = append(entries, PendingEntry{Content: content})
+		}
+	}
+
+	return entries, scanner.Err()
+}
+
+func TopicEntriesToPending(topicName, topicFile, pendingDir string) (int, error) {
+	existing, err := LoadPendingEntries(pendingDir)
+	if err != nil {
+		return 0, err
+	}
+	existingFPs := make(map[string]bool)
+	for _, e := range existing {
+		existingFPs[e.Fingerprint()] = true
+	}
+
+	entries, err := ExtractTopicEntries(topicFile)
+	if err != nil {
+		return 0, err
+	}
+
+	added := 0
+	for _, e := range entries {
+		pe := PendingEntry{
+			ID:         fmt.Sprintf("import-%s-%d", topicName, added),
+			Topic:      topicName,
+			Content:    e.Content,
+			CommitSHA:  "",
+			Timestamp:  time.Now(),
+			Confidence: "MEDIUM",
+			Source:     "import",
+		}
+		fp := pe.Fingerprint()
+		if existingFPs[fp] {
+			continue
+		}
+		if err := SavePendingEntry(pendingDir, pe); err != nil {
+			return added, err
+		}
+		existingFPs[fp] = true
+		added++
+	}
+
+	return added, nil
+}
+
+func ClearTopicFile(topicFile string) error {
+	data, err := os.ReadFile(topicFile)
+	if err != nil {
+		return fmt.Errorf("reading topic file: %w", err)
+	}
+
+	scanner := bufio.NewScanner(strings.NewReader(string(data)))
+	var header []string
+	for scanner.Scan() {
+		line := scanner.Text()
+		header = append(header, line)
+		if strings.HasPrefix(line, "### [") {
+			break
+		}
+	}
+
+	return os.WriteFile(topicFile, []byte(strings.Join(header, "\n")+"\n"), 0600)
 }
