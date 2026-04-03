@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dominhduc/agent-brain/internal/analyzer"
 	"github.com/dominhduc/agent-brain/internal/brain"
 	"github.com/dominhduc/agent-brain/internal/config"
-	"github.com/dominhduc/agent-brain/internal/httpclient"
 	"github.com/dominhduc/agent-brain/internal/preflight"
 	"github.com/dominhduc/agent-brain/internal/secrets"
 )
@@ -1204,7 +1204,12 @@ func runDaemon() {
 				continue
 			}
 
-			findings, err := callOpenRouter(diff, cfg, apiKey)
+			findings, err := analyzer.Analyze(analyzer.AnalyzeRequest{
+				Diff:       diff,
+				APIKey:     apiKey,
+				Model:      cfg.LLM.Model,
+				APIBaseURL: "",
+			})
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error calling LLM: %v\n", err)
 				item.Attempts++
@@ -1221,7 +1226,7 @@ func runDaemon() {
 				continue
 			}
 
-			if err := writeFindings(findings, brainDir); err != nil {
+			if err := analyzer.WriteFindings(findings, brainDir); err != nil {
 				fmt.Fprintf(os.Stderr, "Error writing findings: %v\nWhat to do: check permissions on .brain/ topic files.\n", err)
 			} else {
 				fmt.Println("Findings written successfully.")
@@ -1326,149 +1331,7 @@ func maskKey(key string) string {
 	return key[:4] + "****" + key[len(key)-2:]
 }
 
-type LLMFinding struct {
-	Gotchas      []string `json:"gotchas"`
-	Patterns     []string `json:"patterns"`
-	Decisions    []string `json:"decisions"`
-	Architecture []string `json:"architecture"`
-	Confidence   string   `json:"confidence"`
-}
 
-func callOpenRouter(diff string, cfg config.Config, apiKey string) (LLMFinding, error) {
-	var findings LLMFinding
-
-	prompt := fmt.Sprintf(`You are analyzing a git commit to extract knowledge for a coding agent's memory system.
-
-The agent works on this codebase over time. Your job is to identify patterns, gotchas,
-decisions, and architectural insights from the code changes.
-
-## Rules
-- Only extract knowledge that is NOT obvious from reading the code
-- Focus on things that would save time or prevent mistakes in future sessions
-- Be specific: mention file paths, function names, exact patterns
-- If nothing noteworthy was found, return empty arrays
-- Do NOT hallucinate — only report what the diff actually shows
-- Output ONLY valid JSON, no markdown formatting, no explanation
-
-## Categories
-- **gotchas**: Things that could trip up the agent (error patterns, edge cases, quirks)
-- **patterns**: Conventions the code follows (naming, structure, tool choices)
-- **decisions**: Why certain choices were made (trade-offs, rejected alternatives visible in diff)
-- **architecture**: Module relationships, key abstractions, data flow
-
-## Input
-Full diff:
-%s
-
-## Output Format (JSON only)
-{
-  "gotchas": ["Finding 1", "Finding 2"],
-  "patterns": ["Finding 1"],
-  "decisions": ["Finding 1"],
-  "architecture": [],
-  "confidence": "HIGH|MEDIUM|LOW"
-}`, diff)
-
-	reqBody := map[string]interface{}{
-		"model": cfg.LLM.Model,
-		"messages": []map[string]string{
-			{"role": "user", "content": prompt},
-		},
-	}
-
-	headers := map[string]string{
-		"Authorization":  "Bearer " + apiKey,
-		"HTTP-Referer":   "https://github.com/dominhduc/agent-brain",
-		"X-Title":        "agent-brain",
-	}
-
-	respBody, err := httpclient.PostJSON(
-		"https://openrouter.ai/api/v1/chat/completions",
-		headers,
-		reqBody,
-	)
-	if err != nil {
-		if apiErr, ok := err.(httpclient.APIError); ok {
-			if httpclient.IsRetryable(apiErr.StatusCode) {
-				return findings, fmt.Errorf("API returned %d (retryable): %s", apiErr.StatusCode, apiErr.Body)
-			}
-			return findings, fmt.Errorf("API returned %d: %s\nWhat to do: check your API key and model configuration.", apiErr.StatusCode, apiErr.Body)
-		}
-		return findings, fmt.Errorf("request failed: %w\nWhat to do: check your internet connection.", err)
-	}
-
-	var resp struct {
-		Choices []struct {
-			Message struct {
-				Content string `json:"content"`
-			} `json:"message"`
-		} `json:"choices"`
-		Error struct {
-			Message string `json:"message"`
-		} `json:"error"`
-	}
-
-	if err := json.Unmarshal(respBody, &resp); err != nil {
-		return findings, fmt.Errorf("failed to parse response: %w", err)
-	}
-
-	if resp.Error.Message != "" {
-		return findings, fmt.Errorf("API error: %s", resp.Error.Message)
-	}
-
-	if len(resp.Choices) == 0 {
-		return findings, fmt.Errorf("no choices in response")
-	}
-
-	content := resp.Choices[0].Message.Content
-
-	jsonStart := strings.Index(content, "{")
-	jsonEnd := strings.LastIndex(content, "}")
-	if jsonStart >= 0 && jsonEnd > jsonStart {
-		content = content[jsonStart : jsonEnd+1]
-	}
-
-	if err := json.Unmarshal([]byte(content), &findings); err != nil {
-		return findings, fmt.Errorf("failed to parse findings JSON: %w", err)
-	}
-
-	return findings, nil
-}
-
-func writeFindings(findings LLMFinding, brainDir string) error {
-	timestamp := time.Now().Format("2006-01-02 15:04:05")
-
-	writeEntries := func(filename string, entries []string) error {
-		if len(entries) == 0 {
-			return nil
-		}
-		path := filepath.Join(brainDir, filename)
-		f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-		for _, entry := range entries {
-			fmt.Fprintf(f, "\n### [%s] %s\n\n", timestamp, entry)
-		}
-		return nil
-	}
-
-	if err := writeEntries("gotchas.md", findings.Gotchas); err != nil {
-		return err
-	}
-	if err := writeEntries("patterns.md", findings.Patterns); err != nil {
-		return err
-	}
-	if err := writeEntries("decisions.md", findings.Decisions); err != nil {
-		return err
-	}
-	if err := writeEntries("architecture.md", findings.Architecture); err != nil {
-		return err
-	}
-
-	return nil
-}
 
 const agentsTemplate = "# Project Instructions\n\n" +
 	"## Knowledge Base\n" +
