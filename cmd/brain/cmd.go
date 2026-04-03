@@ -82,11 +82,18 @@ Usage:
   brain eval                          Create session evaluation file
   brain prune [--dry-run]             Archive stale knowledge entries
   brain status [--json]               Show knowledge hub statistics
-  brain review [--all]                 Review and approve pending knowledge entries
+  brain review [--all]                Review and approve pending knowledge entries
   brain daemon start|stop|status      Manage background daemon
-  brain config [get|set|list|reset|setup]  View or modify configuration
+  brain config <subcommand>            View or modify configuration
   brain version                       Show version and build info
-  brain update                       Self-update to latest release
+  brain update                        Self-update to latest release
+
+Config subcommands:
+  brain config get <key>              Get config value (e.g., api-key, model)
+  brain config set <key> <value>      Set config value
+  brain config list                   List all config keys with descriptions
+  brain config reset <key>           Reset config key to default
+  brain config setup                 Run interactive setup wizard
 
 Topics: memory, gotchas, patterns, decisions, architecture, all
 
@@ -98,5 +105,7 @@ Examples:
   brain eval
   brain status
   brain daemon status
-  brain config set llm.api_key <your-openrouter-key>`)
+  brain config list
+  brain config set api-key sk-...
+  brain config setup`)
 }

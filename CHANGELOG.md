@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.4.0] - 2026-04-04
+
+### Added
+- Config key registry: friendly keys like `api-key` instead of `llm.api_key`
+- New config subcommands: `get`, `set`, `list`, `reset`, `setup`
+- Interactive setup wizard: `brain config setup`
+- Backward compatibility with dot-path notation
+
+### Changed
+- Split 1392-line main.go into 13 per-command files
+- Service tests: 0% → 35.7% coverage
+- Command tests: 4.8% → 13.4% coverage
+- GitHub Actions CI/CD workflows
+
+### Fixed
+- BSD terminal support
+- stdin timeout issue
+- Config reload interval
+
 ## [v0.3.1] - 2026-04-03
 
 ### Added
