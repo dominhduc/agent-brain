@@ -64,6 +64,7 @@ func registerSystemd(execPath string) error {
 	service := fmt.Sprintf(`[Unit]
 Description=agent-brain Daemon
 After=network.target
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple

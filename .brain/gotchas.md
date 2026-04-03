@@ -27,3 +27,6 @@
 
 ### [2026-04-03 08:42:21] SetValue in config must validate numeric fields with strconv.Atoi() and durations with time.ParseDuration() — previously silently discarded errors via fmt.Sscanf
 
+
+### [2026-04-03 09:05:53] Before making repo public: remove EXECUTION_PLAN.md, REPO_AGENTS.md, docs/plans/ from git tracking. Add to .gitignore.
+

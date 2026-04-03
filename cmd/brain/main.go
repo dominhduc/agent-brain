@@ -887,9 +887,9 @@ func runDaemon() {
 
 	apiKey := config.GetAPIKey()
 	if apiKey == "" {
-		fmt.Fprintln(os.Stderr, "Error: OpenRouter API key not configured.")
+		fmt.Fprintln(os.Stderr, "Warning: OpenRouter API key not configured yet.")
 		fmt.Fprintln(os.Stderr, "What to do: run 'brain config set llm.api_key sk-or-v1-...'")
-		os.Exit(1)
+		fmt.Fprintln(os.Stderr, "Daemon will start processing once the key is set.")
 	}
 
 	lockFile, err := acquireLock()
@@ -939,6 +939,11 @@ func runDaemon() {
 		if !startupRecoveryDone {
 			daemon.RecoverStaleProcessing(brainDir)
 			startupRecoveryDone = true
+		}
+
+		if apiKey == "" {
+			time.Sleep(pollInterval)
+			continue
 		}
 
 		queueDir := filepath.Join(brainDir, ".queue")

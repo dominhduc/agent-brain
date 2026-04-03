@@ -15,3 +15,6 @@
 
 ### [2026-04-03 08:42:34] Service registration uses runtime.GOOS switch — platform-specific implementations in service_posix.go and service_windows.go
 
+
+### [2026-04-03 09:06:05] Public repo readiness checklist: (1) Remove dev-only files plans from tracking,2) gitignore dev notes, (3) verify no real secrets/paths/email, (4) verify no hardcoded IP/internal URLs, (5) run secret scanner on all tracked files
+
