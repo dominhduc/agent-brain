@@ -14,6 +14,8 @@ import (
 	"github.com/dominhduc/agent-brain/internal/secrets"
 )
 
+const maxDiffSize = 2000 * 100
+
 type QueueItem struct {
 	Timestamp string `json:"timestamp"`
 	Repo      string `json:"repo"`
@@ -79,8 +81,8 @@ func ProcessItemWithDeps(processingPath, queueDir, brainDir, projectRoot string,
 		return false, fmt.Errorf("getting diff: %w", err)
 	}
 
-	if len(diff) > 2000*100 {
-		diff = diff[:2000*100]
+	if len(diff) > maxDiffSize {
+		diff = diff[:maxDiffSize]
 	}
 
 	if findings := secrets.ScanDiff(diff); len(findings) > 0 {

@@ -57,7 +57,7 @@ rm -rf /tmp/agent-brain
 
 ## Requirements
 
-- **Go 1.21+** (only needed for building from source)
+- **Go 1.24+** (only needed for building from source)
 - **Git** (must be installed and the project must be a git repo)
 - **OpenRouter API key** (for the daemon to analyze commits)
 
@@ -83,7 +83,7 @@ git config --global --add safe.directory /path/to/project
 
 ### Build fails with Go version error
 
-You need Go 1.21 or later. Check:
+You need Go 1.24 or later. Check:
 
 ```bash
 go version

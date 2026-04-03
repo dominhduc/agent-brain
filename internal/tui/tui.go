@@ -292,6 +292,11 @@ func RunReview(entries []review.PendingEntry, profile string, writer io.Writer) 
 			return state.AcceptSelected(), state.RejectSelected(), nil
 		case KeyM:
 			return handleMerge(state, writer)
+		case KeyR:
+			entries := state.CurrentEntries()
+			if state.CurrentEntry < len(entries) {
+				delete(state.Selected, entries[state.CurrentEntry].ID)
+			}
 		}
 	}
 }

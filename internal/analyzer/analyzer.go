@@ -3,10 +3,7 @@ package analyzer
 import (
 	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/dominhduc/agent-brain/internal/httpclient"
 )
@@ -122,37 +119,3 @@ Full diff:
 	return finding, nil
 }
 
-func WriteFindings(finding Finding, brainDir string) error {
-	timestamp := time.Now().Format("2006-01-02 15:04:05")
-
-	writeEntries := func(filename string, entries []string) error {
-		if len(entries) == 0 {
-			return nil
-		}
-		path := filepath.Join(brainDir, filename)
-		f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-		for _, entry := range entries {
-			fmt.Fprintf(f, "\n### [%s] %s\n\n", timestamp, entry)
-		}
-		return nil
-	}
-
-	if err := writeEntries("gotchas.md", finding.Gotchas); err != nil {
-		return err
-	}
-	if err := writeEntries("patterns.md", finding.Patterns); err != nil {
-		return err
-	}
-	if err := writeEntries("decisions.md", finding.Decisions); err != nil {
-		return err
-	}
-	if err := writeEntries("architecture.md", finding.Architecture); err != nil {
-		return err
-	}
-
-	return nil
-}

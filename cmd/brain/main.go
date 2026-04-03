@@ -27,11 +27,17 @@ import (
 	"github.com/dominhduc/agent-brain/internal/updater"
 )
 
-var version = "v0.2"
+var version = "v0.3"
 
 var (
 	commit string
 	date   string
+)
+
+const (
+	maxMessageLen = 10240
+	maxDiffChars  = 200000
+	maxPerCycle   = 5
 )
 
 func main() {
@@ -114,7 +120,7 @@ Examples:
   brain eval
   brain status
   brain daemon status
-  brain config set llm.api_key sk-or-v1-...`)
+  brain config set llm.api_key <your-openrouter-key>`)
 }
 
 func cmdInit() {
@@ -233,7 +239,7 @@ func cmdInit() {
 	apiKey := config.GetAPIKey()
 	if apiKey == "" {
 		fmt.Println("\nOpenRouter API key not configured.")
-		fmt.Println("What to do: set it with 'brain config set llm.api_key sk-or-v1-...'")
+		fmt.Println("What to do: set it with 'brain config set llm.api_key <your-openrouter-key>'")
 		fmt.Println("The daemon is registered but won't process commits until you set a key.")
 	}
 
@@ -285,8 +291,15 @@ if [ ! -d "$QUEUE_DIR" ]; then
 fi
 
 TIMESTAMP=$(date +%Y%m%dT%H%M%S)
-DIFF_STAT=$(git diff --stat HEAD~1 2>/dev/null || echo "No previous commit")
-FILES=$(git diff --name-status HEAD~1 2>/dev/null || echo "No previous commit")
+
+if git rev-parse HEAD~1 >/dev/null 2>&1; then
+    DIFF_STAT=$(git diff --stat HEAD~1)
+    FILES=$(git diff --name-status HEAD~1)
+else
+    EMPTY_TREE=$(git hash-object -t tree /dev/null)
+    DIFF_STAT=$(git diff --stat $EMPTY_TREE HEAD)
+    FILES=$(git diff --name-status $EMPTY_TREE HEAD)
+fi
 REPO=$(pwd)
 
 escape_json() {
@@ -456,8 +469,8 @@ func cmdAdd() {
 	topic := os.Args[2]
 	message := strings.Join(os.Args[3:], " ")
 
-	if len(message) > 10240 {
-		fmt.Fprintf(os.Stderr, "Error: message too long (%d bytes, max 10240).\nWhat to do: shorten your message or split it into multiple entries.\n", len(message))
+	if len(message) > maxMessageLen {
+		fmt.Fprintf(os.Stderr, "Error: message too long (%d bytes, max %d).\nWhat to do: shorten your message or split it into multiple entries.\n", len(message), maxMessageLen)
 		os.Exit(1)
 	}
 
@@ -510,9 +523,18 @@ func cmdEval() {
 		os.Exit(1)
 	}
 
-	diffStat := runGit(cwd, "diff", "--stat", "HEAD~1")
-	nameStatus := runGit(cwd, "diff", "--name-status", "HEAD~1")
-	shortstat := runGit(cwd, "diff", "--shortstat", "HEAD~1")
+	diffArgs := []string{"diff", "--stat", "HEAD~1"}
+	nameArgs := []string{"diff", "--name-status", "HEAD~1"}
+	shortArgs := []string{"diff", "--shortstat", "HEAD~1"}
+	if runGit(cwd, "rev-parse", "HEAD~1") == "" {
+		emptyTree := "4b825dc642cb6eb9a060e54bf899d69f8272690f"
+		diffArgs = []string{"diff", "--stat", emptyTree, "HEAD"}
+		nameArgs = []string{"diff", "--name-status", emptyTree, "HEAD"}
+		shortArgs = []string{"diff", "--shortstat", emptyTree, "HEAD"}
+	}
+	diffStat := runGit(cwd, diffArgs...)
+	nameStatus := runGit(cwd, nameArgs...)
+	shortstat := runGit(cwd, shortArgs...)
 	log := runGit(cwd, "log", "--oneline", "-3")
 
 	if strings.TrimSpace(diffStat) == "" {
@@ -567,7 +589,10 @@ func cmdEval() {
 func runGit(cwd string, args ...string) string {
 	cmd := exec.Command("git", args...)
 	cmd.Dir = cwd
-	output, _ := cmd.CombinedOutput()
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return ""
+	}
 	return string(output)
 }
 
@@ -618,12 +643,12 @@ func cmdPrune(dryRun bool) {
 
 	for _, tf := range topicFiles {
 		path := filepath.Join(brainDir, tf)
-		data, err := os.ReadFile(path)
-		if err != nil {
+		topicData, readErr := os.ReadFile(path)
+		if readErr != nil {
 			continue
 		}
 
-		scanner := bufio.NewScanner(bytes.NewReader(data))
+		scanner := bufio.NewScanner(bytes.NewReader(topicData))
 		var kept, removed []string
 		for scanner.Scan() {
 			line := scanner.Text()
@@ -644,9 +669,14 @@ func cmdPrune(dryRun bool) {
 		if len(removed) > 0 {
 			pruned = append(pruned, fmt.Sprintf("%s: %d entries", tf, len(removed)))
 			if !dryRun {
-				os.WriteFile(path, []byte(strings.Join(kept, "\n")), 0600)
+				if writeErr := os.WriteFile(path, []byte(strings.Join(kept, "\n")), 0600); writeErr != nil {
+					fmt.Fprintf(os.Stderr, "Warning: failed to write %s: %v\n", tf, writeErr)
+					continue
+				}
 				archivePath := filepath.Join(archivedDir, fmt.Sprintf("%s-%s.md", tf[:len(tf)-3], time.Now().Format("2006-01-02")))
-				os.WriteFile(archivePath, []byte(fmt.Sprintf("# Archived from %s — %s\n\n%s\n", tf, time.Now().Format("2006-01-02"), strings.Join(removed, "\n"))), 0600)
+				if archiveErr := os.WriteFile(archivePath, []byte(fmt.Sprintf("# Archived from %s — %s\n\n%s\n", tf, time.Now().Format("2006-01-02"), strings.Join(removed, "\n"))), 0600); archiveErr != nil {
+					fmt.Fprintf(os.Stderr, "Warning: failed to archive to %s: %v\n", archivePath, archiveErr)
+				}
 			}
 		}
 	}
@@ -914,7 +944,7 @@ func runDaemon() {
 	apiKey := config.GetAPIKey()
 	if apiKey == "" {
 		fmt.Fprintln(os.Stderr, "Warning: OpenRouter API key not configured yet.")
-		fmt.Fprintln(os.Stderr, "What to do: run 'brain config set llm.api_key sk-or-v1-...'")
+		fmt.Fprintln(os.Stderr, "What to do: run 'brain config set llm.api_key <your-openrouter-key>'")
 		fmt.Fprintln(os.Stderr, "Daemon will start processing once the key is set.")
 	}
 
@@ -991,12 +1021,12 @@ func runDaemon() {
 			continue
 		}
 
-		maxPerCycle := 5
-		if len(pending) < maxPerCycle {
-			maxPerCycle = len(pending)
+		limit := maxPerCycle
+		if len(pending) < limit {
+			limit = len(pending)
 		}
 
-		for i := 0; i < maxPerCycle; i++ {
+		for i := 0; i < limit; i++ {
 			select {
 			case <-ctx.Done():
 				fmt.Println("\nShutting down gracefully...")
@@ -1103,6 +1133,47 @@ func cmdReview(allFlag bool) {
 	fmt.Printf("Reviewing %d pending entries (profile: %s)\n", len(entries), prof.Name)
 	fmt.Println()
 
+	if prof.AutoAccept {
+		accepted := entries
+		var rejectedIDs []string
+		if prof.AutoDedup {
+			seen := make(map[string]bool)
+			var unique []review.PendingEntry
+			for _, e := range entries {
+				fp := e.Fingerprint()
+				if seen[fp] {
+					rejectedIDs = append(rejectedIDs, e.ID)
+					continue
+				}
+				seen[fp] = true
+				unique = append(unique, e)
+			}
+			accepted = unique
+		}
+
+		timestamp := time.Now().Format("2006-01-02 15:04:05")
+		for _, e := range accepted {
+			path, err := brain.TopicFilePath(e.Topic)
+			if err != nil {
+				continue
+			}
+			f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+			if err != nil {
+				continue
+			}
+			fmt.Fprintf(f, "\n### [%s] %s\n\n", timestamp, e.Content)
+			f.Close()
+		}
+		for _, e := range accepted {
+			review.RemovePendingEntry(pendingDir, e.ID)
+		}
+		for _, id := range rejectedIDs {
+			review.RemovePendingEntry(pendingDir, id)
+		}
+		fmt.Printf("Auto-accepted %d entries (profile: agent, auto-dedup: %v)\n", len(accepted), prof.AutoDedup)
+		return
+	}
+
 	accepted, rejectedIDs, err := tui.RunReview(entries, prof.Name, os.Stdout)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error in review UI: %v\n", err)
@@ -1186,7 +1257,7 @@ func cmdConfig() {
 	if os.Args[2] == "set" {
 		if len(os.Args) < 5 {
 			fmt.Println("Usage: brain config set <key> <value>")
-			fmt.Println("Example: brain config set llm.api_key sk-or-v1-...")
+			fmt.Println("Example: brain config set llm.api_key <your-openrouter-key>")
 			os.Exit(1)
 		}
 

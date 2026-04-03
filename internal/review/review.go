@@ -221,21 +221,4 @@ func TopicEntriesToPending(topicName, topicFile, pendingDir string) (int, error)
 	return added, nil
 }
 
-func ClearTopicFile(topicFile string) error {
-	data, err := os.ReadFile(topicFile)
-	if err != nil {
-		return fmt.Errorf("reading topic file: %w", err)
-	}
 
-	scanner := bufio.NewScanner(strings.NewReader(string(data)))
-	var header []string
-	for scanner.Scan() {
-		line := scanner.Text()
-		header = append(header, line)
-		if strings.HasPrefix(line, "### [") {
-			break
-		}
-	}
-
-	return os.WriteFile(topicFile, []byte(strings.Join(header, "\n")+"\n"), 0600)
-}

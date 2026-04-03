@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -69,15 +70,16 @@ func FetchLatestRelease(opts FetchOptions) (GitHubRelease, error) {
 }
 
 func FindAssetForPlatform(release GitHubRelease, goos, goarch string) (GitHubAsset, error) {
-	osName := strings.Title(goos)
-	if goos == "darwin" {
-		osName = "Darwin"
+	osNameMap := map[string]string{
+		"darwin":  "Darwin",
+		"linux":   "Linux",
+		"windows": "Windows",
 	}
-	if goos == "linux" {
-		osName = "Linux"
-	}
-	if goos == "windows" {
-		osName = "Windows"
+	osName := osNameMap[goos]
+	if osName == "" {
+		if len(goos) > 0 {
+			osName = strings.ToUpper(goos[:1]) + goos[1:]
+		}
 	}
 
 	archName := goarch
@@ -140,7 +142,11 @@ func versionParts(v string) []int {
 	parts := strings.Split(v, ".")
 	result := make([]int, len(parts))
 	for i, p := range parts {
-		fmt.Sscanf(p, "%d", &result[i])
+		n, err := strconv.Atoi(p)
+		if err != nil {
+			n = 0
+		}
+		result[i] = n
 	}
 	return result
 }
@@ -249,7 +255,11 @@ func DownloadAndReplace(downloadURL, binPath string) error {
 		return err
 	}
 
-	return ReplaceBinary(body, downloadURL, binPath)
+	filename := downloadURL
+	if idx := strings.LastIndex(downloadURL, "/"); idx >= 0 {
+		filename = downloadURL[idx+1:]
+	}
+	return ReplaceBinary(body, filename, binPath)
 }
 
 func extractFromTarGz(data []byte) ([]byte, error) {

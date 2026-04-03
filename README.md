@@ -32,9 +32,10 @@ After `brain init`, every commit is analyzed by the background daemon. Every age
 ## How It Works
 
 ```
-You code → Agent works → Git commit
+You code → Agent works → Git push
+ (stable code only)
                               │
-                    post-commit hook
+                     pre-push hook
                               │
                         Queue item
                               │
@@ -42,7 +43,11 @@ You code → Agent works → Git commit
                               │
                     OpenRouter LLM analysis
                               │
-                    .brain/ knowledge files
+                    .brain/pending/ (review queue)
+                              │
+                    brain review (human approves)
+                              │
+                    .brain/ knowledge files (permanent)
                               │
                     Next session: agent loads knowledge
                               │
@@ -53,8 +58,9 @@ You code → Agent works → Git commit
 
 | Layer | What it does | Automatic? |
 |-------|-------------|------------|
-| **Git Hook** | Captures every commit and queues it | Yes — fires on every commit |
-| **Daemon** | Analyzes queued commits via LLM, writes findings | Yes — runs in background |
+| **Git Hook** | Captures pushed commits and queues them | Yes — fires on every push |
+| **Daemon** | Analyzes queued commits via LLM, writes to pending | Yes — runs in background |
+| **Review Gate** | Human approves/rejects findings before they become permanent | Via `brain review` |
 | **Agent Instructions** | Tells the agent to load knowledge, add learnings, self-evaluate | Yes — loaded every session via AGENTS.md |
 
 ### What Gets Tracked
@@ -82,7 +88,8 @@ What it does:
 - Creates `.brain/` directory with skeleton files
 - Creates `AGENTS.md` (instructions for your coding agent)
 - Creates `CLAUDE.md`, `.cursorrules`, `.windsurfrules` (compatibility wrappers)
-- Installs a git post-commit hook
+- Installs a git post-commit hook and pre-push hook
+
 - Prompts for your OpenRouter API key (if not set)
 - Registers and starts the background daemon
 
@@ -157,6 +164,66 @@ Show knowledge hub statistics.
 
 ```
 Knowledge Hub Status
+===================
+MEMORY.md:       45 lines (OK, under 200)
+Topic files:     4 files
+Session files:   12 sessions
+Total size:      23 KB
+Queue depth:     0 pending, 47 done
+Pending entries: 2 (run 'brain review' to approve)
+```
+
+### `brain daemon start|stop|status`
+
+Manage the background analysis daemon.
+
+```bash
+brain daemon start    # Start background daemon
+brain daemon stop     # Stop daemon
+brain daemon status   # Check health, queue depth
+```
+
+The daemon watches for new commits, sends diffs to OpenRouter for analysis, and writes findings to a **pending queue** for human review via `brain review`.
+
+### `brain review [--all]`
+
+Review and approve knowledge entries found by the daemon.
+
+```bash
+brain review           # Interactive TUI to approve/reject entries
+brain review --all     # Import existing topic entries for pending queue for re-review
+```
+
+The TUI shows entries grouped by topic. Navigate with arrows, accept with `a`, reject with `r`, Press `q` to quit without saving.
+
+ Only entries you approve become permanent. Rejected entries are discarded.
+
+### `brain config [set <key> <value>]`
+
+View or modify configuration.
+
+```bash
+brain config                        # Show current config
+brain config set llm.api_key <your-key>   # Set API key
+brain config set llm.model anthropic/claude-3.5-haiku  # Change model
+brain config set review.profile guard  # Set review strictness
+```
+
+### Autonomy Profiles
+
+Control how much human review is needed:
+
+| Profile | Auto-Dedup | Auto-Accept | Best For |
+|---------|-----------|-------------|----------|
+| `guard` (default) | No | No | New projects, all entries |
+| `assist` | Yes | No | Stable projects |
+| `agent` | Yes | Yes | Trusted patterns |
+
+```bash
+brain config set review.profile assist   # Less strict
+brain config set review.profile agent    # Fully automatic
+```
+Knowledge Hub Status
 ====================
 MEMORY.md:       45 lines (OK, under 200)
 Topic files:     4 files
@@ -176,7 +243,7 @@ brain daemon stop     # Stop daemon
 brain daemon status   # Check health, queue depth
 ```
 
-The daemon watches for new commits, sends diffs to OpenRouter for analysis, and writes findings to knowledge files.
+The daemon watches for new commits, sends diffs to OpenRouter for analysis, Findings are written to a **pending queue** (`brain review`) for human review before becoming permanent knowledge.
 
 ### `brain config [set <key> <value>]`
 
@@ -415,6 +482,7 @@ your-project/
 │   ├── .queue/                  # Daemon queue (local only)
 │   │   ├── commit-*.json
 │   │   └── done/
+│   ├── pending/                # Entries awaiting review (local only)
 │   └── archived/                # Pruned entries (local only)
 │
 └── .brainprune                  # Patterns for knowledge pruning (optional)
@@ -440,7 +508,7 @@ make build
 ./bin/brain --help
 ```
 
-Requirements: Go 1.21+
+Requirements: Go 1.24+
 
 ---
 

@@ -8,7 +8,7 @@ func registerLaunchd(execPath string) error {
 	return fmt.Errorf("launchd is not available on Windows")
 }
 
-func registerSystemd(execPath string) error {
+func registerSystemd(execPath, workDir string) error {
 	return fmt.Errorf("systemd is not available on Windows")
 }
 
