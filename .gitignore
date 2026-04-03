@@ -9,3 +9,5 @@ dist/
 .brain/.queue/
 .brain/sessions/
 EXECUTION_PLAN.md
+REPO_AGENTS.md
+docs/plans/
