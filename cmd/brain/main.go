@@ -20,6 +20,7 @@ import (
 	"github.com/dominhduc/agent-brain/internal/preflight"
 	"github.com/dominhduc/agent-brain/internal/secrets"
 	"github.com/dominhduc/agent-brain/internal/service"
+	"github.com/dominhduc/agent-brain/internal/updater"
 )
 
 const version = "v0.2"
@@ -59,6 +60,8 @@ func main() {
 		cmdConfig()
 	case "version", "--version", "-v":
 		cmdVersion()
+	case "update":
+		cmdUpdate()
 	case "--help", "-h", "help":
 		printUsage()
 	default:
@@ -91,6 +94,7 @@ Usage:
   brain daemon start|stop|status      Manage background daemon
   brain config [set <key> <value>]    View or set configuration
   brain version                       Show version and build info
+  brain update                       Self-update to latest release
 
 Topics: memory, gotchas, patterns, decisions, architecture, all
 
@@ -1084,6 +1088,56 @@ func maskKey(key string) string {
 }
 
 
+
+func cmdUpdate() {
+	fmt.Printf("Current version: %s\n", version)
+
+	fmt.Println("Checking for updates...")
+	release, err := updater.FetchLatestRelease(updater.FetchOptions{
+		APIBaseURL: "https://api.github.com",
+		Owner:      "dominhduc",
+		Repo:       "agent-brain",
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error checking for updates: %v\nWhat to do: check your internet connection or try again later.\n", err)
+		os.Exit(1)
+	}
+
+	if !updater.IsNewerVersion(version, release.TagName) {
+		fmt.Printf("Already up to date (%s).\n", version)
+		return
+	}
+
+	fmt.Printf("New version available: %s → %s\n", version, release.TagName)
+
+	downloadURL, err := updater.FindAssetForPlatform(release, runtime.GOOS, runtime.GOARCH)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: download manually from https://github.com/dominhduc/agent-brain/releases/latest\n", err)
+		os.Exit(1)
+	}
+
+	execPath, err := os.Executable()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: cannot determine binary path: %v\nWhat to do: download manually from https://github.com/dominhduc/agent-brain/releases/latest\n", err)
+		os.Exit(1)
+	}
+
+	resolvedPath, err := filepath.EvalSymlinks(execPath)
+	if err != nil {
+		resolvedPath = execPath
+	}
+
+	fmt.Printf("Downloading from %s...\n", filepath.Base(downloadURL))
+	if err := updater.DownloadAndReplace(downloadURL, resolvedPath); err != nil {
+		fmt.Fprintf(os.Stderr, "Error updating: %v\nWhat to do: download manually from https://github.com/dominhduc/agent-brain/releases/latest\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("Updated to %s successfully!\n", release.TagName)
+
+	service.Stop()
+	fmt.Println("Restart the daemon with: brain daemon start")
+}
 
 const agentsTemplate = "# Project Instructions\n\n" +
 	"## Knowledge Base\n" +
