@@ -151,7 +151,7 @@ func cmdInit() {
 
 	sessionsDir := filepath.Join(brainDir, "sessions")
 	if err := os.WriteFile(filepath.Join(sessionsDir, ".gitkeep"), []byte{}, 0600); err != nil {
-		fmt.Fprintf(os.Stderr, "Error creating .gitkeep: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error creating .gitkeep: %v\nWhat to do: check permissions on .brain/sessions/.\n", err)
 		os.Exit(1)
 	}
 
@@ -172,7 +172,7 @@ func cmdInit() {
 		path := filepath.Join(cwd, name)
 		if _, err := os.Stat(path); os.IsNotExist(err) {
 			if err := os.WriteFile(path, []byte(content), 0644); err != nil {
-				fmt.Fprintf(os.Stderr, "Error creating %s: %v\n", name, err)
+				fmt.Fprintf(os.Stderr, "Error creating %s: %v\nWhat to do: check file permissions.\n", name, err)
 				os.Exit(1)
 			}
 		}
@@ -223,7 +223,7 @@ func cmdInit() {
 			cfg.LLM.APIKey = apiKey
 		}
 		if err := config.Save(cfg); err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: Could not create config file: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Warning: Could not create config file: %v\nWhat to do: check permissions on ~/.config/brain/.\n", err)
 		}
 	}
 
@@ -1137,7 +1137,7 @@ func runDaemon() {
 
 			data, err := os.ReadFile(processingPath)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error reading queue item: %v\n", err)
+				fmt.Fprintf(os.Stderr, "Error reading queue item: %v\nWhat to do: the item will be moved to failed/. Check .brain/.queue/failed/.\n", err)
 				moveToFailed(processingPath, queueDir)
 				continue
 			}
@@ -1150,19 +1150,19 @@ func runDaemon() {
 				Attempts  int    `json:"attempts"`
 			}
 			if err := json.Unmarshal(data, &item); err != nil {
-				fmt.Fprintf(os.Stderr, "Error parsing queue item: %v\n", err)
+				fmt.Fprintf(os.Stderr, "Error parsing queue item: %v\nWhat to do: the item will be moved to failed/. Check .brain/.queue/failed/.\n", err)
 				moveToFailed(processingPath, queueDir)
 				continue
 			}
 
 			if item.Timestamp == "" || item.Repo == "" {
-				fmt.Fprintf(os.Stderr, "Invalid queue item: missing timestamp or repo.\n")
+				fmt.Fprintf(os.Stderr, "Invalid queue item: missing timestamp or repo.\nWhat to do: the item will be moved to failed/. Delete it if it's corrupted.\n")
 				moveToFailed(processingPath, queueDir)
 				continue
 			}
 
 			if len(item.Timestamp) > 20 || len(item.Repo) > 4096 {
-				fmt.Fprintf(os.Stderr, "Invalid queue item: field too long.\n")
+				fmt.Fprintf(os.Stderr, "Invalid queue item: field too long.\nWhat to do: this may be a corrupted or malicious queue item. It will be moved to failed/.\n")
 				moveToFailed(processingPath, queueDir)
 				continue
 			}
@@ -1178,7 +1178,7 @@ func runDaemon() {
 			cmd := exec.Command("git", "-C", item.Repo, "diff", "HEAD~1")
 			diffOutput, err := cmd.CombinedOutput()
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error getting diff: %v\n", err)
+				fmt.Fprintf(os.Stderr, "Error getting diff: %v\nWhat to do: the commit may be the first commit (no HEAD~1). The item will be retried.\n", err)
 				item.Attempts++
 				if item.Attempts >= cfg.Daemon.MaxRetries {
 					moveToFailed(processingPath, queueDir)
@@ -1222,7 +1222,7 @@ func runDaemon() {
 			}
 
 			if err := writeFindings(findings, brainDir); err != nil {
-				fmt.Fprintf(os.Stderr, "Error writing findings: %v\n", err)
+				fmt.Fprintf(os.Stderr, "Error writing findings: %v\nWhat to do: check permissions on .brain/ topic files.\n", err)
 			} else {
 				fmt.Println("Findings written successfully.")
 			}
