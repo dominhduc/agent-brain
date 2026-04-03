@@ -300,3 +300,45 @@ func TestSetKey(t *testing.T) {
 		t.Errorf("expected 'sk-or-v1-newkey', got %q", cfg.LLM.APIKey)
 	}
 }
+
+func TestDefaultConfig_ReviewProfile(t *testing.T) {
+	cfg := DefaultConfig()
+
+	if cfg.Review.Profile != "guard" {
+		t.Errorf("expected default review profile 'guard', got %q", cfg.Review.Profile)
+	}
+}
+
+func TestSetValue_ReviewProfile(t *testing.T) {
+	setupTestConfig(t)
+
+	validProfiles := []string{"guard", "assist", "agent"}
+	for _, p := range validProfiles {
+		t.Run("valid_"+p, func(t *testing.T) {
+			if err := SetValue("review.profile", p); err != nil {
+				t.Fatalf("SetValue(%q, %q) failed: %v", "review.profile", p, err)
+			}
+			cfg, err := Load()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if cfg.Review.Profile != p {
+				t.Errorf("expected profile %q, got %q", p, cfg.Review.Profile)
+			}
+		})
+	}
+
+	t.Run("invalid_profile", func(t *testing.T) {
+		err := SetValue("review.profile", "invalid")
+		if err == nil {
+			t.Error("expected error for invalid profile")
+		}
+	})
+
+	t.Run("unknown_review_key", func(t *testing.T) {
+		err := SetValue("review.nonexistent", "value")
+		if err == nil {
+			t.Error("expected error for unknown review key")
+		}
+	})
+}

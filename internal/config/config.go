@@ -15,6 +15,11 @@ type Config struct {
 	LLM       LLMConfig       `yaml:"llm"`
 	Analysis  AnalysisConfig  `yaml:"analysis"`
 	Daemon    DaemonConfig    `yaml:"daemon"`
+	Review    ReviewConfig    `yaml:"review"`
+}
+
+type ReviewConfig struct {
+	Profile string `yaml:"profile"`
 }
 
 type LLMConfig struct {
@@ -68,6 +73,9 @@ func DefaultConfig() Config {
 			PollInterval: "5s",
 			MaxRetries:   3,
 			RetryBackoff: "exponential",
+		},
+		Review: ReviewConfig{
+			Profile: "guard",
 		},
 	}
 }
@@ -205,6 +213,17 @@ func SetValue(dotPath, value string) error {
 			cfg.Daemon.RetryBackoff = value
 		default:
 			return fmt.Errorf("unknown daemon config key: %s", parts[1])
+		}
+	case "review":
+		switch parts[1] {
+		case "profile":
+			valid := map[string]bool{"guard": true, "assist": true, "agent": true}
+			if !valid[value] {
+				return fmt.Errorf("invalid profile %q. Valid profiles: guard, assist, agent", value)
+			}
+			cfg.Review.Profile = value
+		default:
+			return fmt.Errorf("unknown review config key: %s", parts[1])
 		}
 	default:
 		return fmt.Errorf("unknown config section: %s", parts[0])
