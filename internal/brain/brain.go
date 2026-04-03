@@ -9,6 +9,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/dominhduc/agent-brain/internal/review"
 )
 
 var (
@@ -191,6 +193,18 @@ func AddEntry(topic string, message string) error {
 	}
 
 	return nil
+}
+
+func PendingDir(cwd string) string {
+	return filepath.Join(cwd, ".brain", "pending")
+}
+
+func AddPendingEntry(cwd string, entry review.PendingEntry) error {
+	pendingDir := PendingDir(cwd)
+	if err := os.MkdirAll(pendingDir, 0755); err != nil {
+		return fmt.Errorf("creating pending directory: %w", err)
+	}
+	return review.SavePendingEntry(pendingDir, entry)
 }
 
 func MemoryLineCount() (int, error) {

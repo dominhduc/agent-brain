@@ -5,6 +5,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/dominhduc/agent-brain/internal/review"
 )
 
 func setupTestBrainDir(t *testing.T) string {
@@ -265,6 +268,48 @@ func TestResetCache(t *testing.T) {
 	_, err = FindBrainDir()
 	if err != nil {
 		t.Fatalf("FindBrainDir after ResetCache failed: %v", err)
+	}
+}
+
+func TestPendingDir(t *testing.T) {
+	tmpDir := t.TempDir()
+	got := PendingDir(tmpDir)
+	want := filepath.Join(tmpDir, ".brain", "pending")
+	if got != want {
+		t.Errorf("PendingDir() = %q, want %q", got, want)
+	}
+}
+
+func TestAddPendingEntry(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	entry := review.PendingEntry{
+		ID:        "test-entry",
+		Topic:     "gotchas",
+		Content:   "Test pending entry",
+		Timestamp: time.Now().UTC().Truncate(time.Second),
+	}
+
+	if err := AddPendingEntry(tmpDir, entry); err != nil {
+		t.Fatalf("AddPendingEntry failed: %v", err)
+	}
+
+	pendingDir := PendingDir(tmpDir)
+	loaded, err := review.LoadPendingEntries(pendingDir)
+	if err != nil {
+		t.Fatalf("LoadPendingEntries failed: %v", err)
+	}
+	if len(loaded) != 1 {
+		t.Fatalf("expected 1 entry, got %d", len(loaded))
+	}
+	if loaded[0].ID != "test-entry" {
+		t.Errorf("ID = %q, want %q", loaded[0].ID, "test-entry")
+	}
+	if loaded[0].Topic != "gotchas" {
+		t.Errorf("Topic = %q, want %q", loaded[0].Topic, "gotchas")
+	}
+	if loaded[0].Content != "Test pending entry" {
+		t.Errorf("Content = %q, want %q", loaded[0].Content, "Test pending entry")
 	}
 }
 
