@@ -241,7 +241,7 @@ func cmdInit() {
 	if err != nil {
 		execPath = "brain"
 	}
-	if err := service.Register(execPath); err != nil {
+	if err := service.Register(execPath, cwd); err != nil {
 		fmt.Fprintf(os.Stderr, "Warning: Could not register daemon: %v\nWhat to do: start manually with 'brain daemon start'.\n", err)
 	} else {
 		fmt.Println("Daemon registered and started.")
@@ -758,18 +758,18 @@ func cmdDaemonStart() {
 		execPath = "brain"
 	}
 
-	if err := service.Start(); err != nil {
-		if err := service.Register(execPath); err != nil {
-			fmt.Fprintf(os.Stderr, "Error registering daemon: %v\n", err)
-			os.Exit(1)
-		}
-		if err := service.Start(); err != nil {
-			fmt.Fprintf(os.Stderr, "Error starting daemon: %v\n", err)
-			os.Exit(1)
-		}
+	brainDir, err := brain.FindBrainDir()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
 	}
 
-	fmt.Println("Daemon started. Polling queue every 5s.")
+	if err := service.Register(execPath, brainDir); err != nil {
+		fmt.Fprintf(os.Stderr, "Error registering daemon: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("Daemon registered. Polling queue every 5s.")
 }
 
 func cmdDaemonStop() {

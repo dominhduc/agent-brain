@@ -50,7 +50,7 @@ func registerLaunchd(execPath string) error {
 	return exec.Command("launchctl", "load", plistPath).Run()
 }
 
-func registerSystemd(execPath string) error {
+func registerSystemd(execPath, workDir string) error {
 	home, err := homeDir()
 	if err != nil {
 		return err
@@ -69,11 +69,12 @@ StartLimitIntervalSec=0
 [Service]
 Type=simple
 ExecStart=%s daemon run
+WorkingDirectory=%s
 Restart=always
 RestartSec=5
 
 [Install]
-WantedBy=default.target`, execPath)
+WantedBy=default.target`, execPath, workDir)
 
 	servicePath := filepath.Join(serviceDir, "brain-daemon.service")
 	if err := os.WriteFile(servicePath, []byte(service), 0644); err != nil {

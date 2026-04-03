@@ -7,12 +7,12 @@ import (
 	"runtime"
 )
 
-func Register(execPath string) error {
+func Register(execPath, workDir string) error {
 	switch runtime.GOOS {
 	case "darwin":
 		return registerLaunchd(execPath)
 	case "linux":
-		return registerSystemd(execPath)
+		return registerSystemd(execPath, workDir)
 	default:
 		return fmt.Errorf("unsupported OS for service registration: %s.\nWhat to do: run 'brain daemon run' manually.", runtime.GOOS)
 	}
