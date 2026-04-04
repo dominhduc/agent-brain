@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 	"time"
+
+	"github.com/dominhduc/agent-brain/internal/provider"
 )
 
 type ConfigKey struct {
@@ -23,7 +25,7 @@ var allKeys = []ConfigKey{
 		Type:        "enum",
 		Default:     "openrouter",
 		Description: "LLM provider",
-		Options:     []string{"openrouter", "openai", "anthropic", "gemini", "ollama", "custom"},
+		Options:     []string{"openrouter", "openai", "anthropic", "gemini", "ollama"},
 	},
 	{
 		Friendly:    "api-key",
@@ -38,7 +40,7 @@ var allKeys = []ConfigKey{
 		DotPath:     "llm.base_url",
 		Type:        "string",
 		Default:     "",
-		Description: "Custom provider base URL (only for provider=custom)",
+		Description: "Custom provider base URL (for custom or ollama providers)",
 	},
 	{
 		Friendly:    "model",
@@ -135,6 +137,12 @@ func (k *ConfigKey) Validate(value string) error {
 			return fmt.Errorf("max-diff-lines must be at least 100, got %d", n)
 		}
 	case "enum":
+		if k.Friendly == "provider" {
+			if provider.IsBuiltin(value) || IsCustomProvider(value) {
+				return nil
+			}
+			return fmt.Errorf("invalid value %q for %s. Built-in options: %v, or use a custom provider name configured via 'brain config setup'", value, k.Friendly, k.Options)
+		}
 		valid := false
 		for _, opt := range k.Options {
 			if value == opt {

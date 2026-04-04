@@ -33,3 +33,6 @@
 
 ### [2026-04-04 07:00:15] CLI help inconsistency: Don't just update one help text - check brain help, brain config, brain config list all show consistent commands and order. Use registry.go as source of truth.
 
+
+### [2026-04-04 15:45:59] Config setup wizard flow: When provider = custom, Step 3 should first ask for base-url, THEN Step 3b ask for model. Other providers skip base-url and go directly to model selection.
+

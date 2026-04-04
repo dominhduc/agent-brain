@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/dominhduc/agent-brain/internal/config"
+	providerPkg "github.com/dominhduc/agent-brain/internal/provider"
 	"github.com/dominhduc/agent-brain/internal/profile"
 )
 
@@ -55,14 +56,22 @@ func cmdConfigShow() {
 	fmt.Println("Current Configuration")
 	fmt.Println("=====================")
 	fmt.Printf("Provider:    %s\n", cfg.LLM.Provider)
-	fmt.Printf("Model:       %s\n", cfg.LLM.Model)
-	if cfg.LLM.APIKey != "" {
-		fmt.Printf("API Key:     %s\n", maskKey(cfg.LLM.APIKey))
+	if cp, ok := config.GetCustomProvider(cfg.LLM.Provider); ok {
+		fmt.Println("  (custom provider)")
+		fmt.Printf("  Base URL: %s\n", cp.BaseURL)
+		fmt.Printf("  Model:    %s\n", cp.Model)
+		if cp.APIKey != "" {
+			fmt.Printf("  API Key:  %s\n", maskKey(cp.APIKey))
+		} else {
+			fmt.Println("  API Key:  not set")
+		}
 	} else {
-		fmt.Println("API Key:     not set")
-	}
-	if cfg.LLM.Provider == "custom" && cfg.LLM.BaseURL != "" {
-		fmt.Printf("Base URL:    %s\n", cfg.LLM.BaseURL)
+		fmt.Printf("Model:       %s\n", cfg.LLM.Model)
+		if cfg.LLM.APIKey != "" {
+			fmt.Printf("API Key:     %s\n", maskKey(cfg.LLM.APIKey))
+		} else {
+			fmt.Println("API Key:     not set")
+		}
 	}
 	fmt.Printf("Profile:     %s\n", cfg.Review.Profile)
 	if prof, err := profile.FromName(cfg.Review.Profile); err == nil {
@@ -73,6 +82,21 @@ func cmdConfigShow() {
 	fmt.Printf("Retry Backoff:  %s\n", cfg.Daemon.RetryBackoff)
 	fmt.Printf("Max Diff Lines: %d\n", cfg.Analysis.MaxDiffLines)
 	fmt.Printf("Categories:     %s\n", strings.Join(cfg.Analysis.Categories, ", "))
+	if len(cfg.CustomProviders) > 0 {
+		fmt.Println()
+		fmt.Println("Custom Providers")
+		fmt.Println("-----------------")
+		for name, cp := range cfg.CustomProviders {
+			fmt.Printf("  %s:\n", name)
+			fmt.Printf("    Base URL: %s\n", cp.BaseURL)
+			fmt.Printf("    Model:    %s\n", cp.Model)
+			if cp.APIKey != "" {
+				fmt.Printf("    API Key:  %s\n", maskKey(cp.APIKey))
+			} else {
+				fmt.Println("    API Key:  not set")
+			}
+		}
+	}
 	fmt.Printf("\nConfig file: %s\n", config.ConfigPath())
 }
 
@@ -156,8 +180,10 @@ func cmdConfigList() {
 	fmt.Println("Configuration Keys")
 	fmt.Println("==================")
 	for _, k := range config.AllKeys() {
-		if k.Friendly == "base-url" && cfg.LLM.Provider != "custom" {
-			continue
+		if k.Friendly == "base-url" {
+			if !config.IsCustomProvider(cfg.LLM.Provider) && cfg.LLM.Provider != "ollama" {
+				continue
+			}
 		}
 		value := k.GetValue(&cfg)
 		current := value
@@ -221,7 +247,7 @@ func cmdConfigSetup() {
 	fmt.Println("===============================")
 	fmt.Println()
 
-	fmt.Println("Step 1/4: Provider")
+	fmt.Println("Step 1/5: Provider")
 	fmt.Println("  1. openrouter  - Aggregates 100+ models, single API key [default]")
 	fmt.Println("  2. openai     - Direct OpenAI API")
 	fmt.Println("  3. anthropic  - Claude models")
@@ -247,10 +273,57 @@ func cmdConfigSetup() {
 		provider = "custom"
 	}
 
+	var baseURL string
+	var customProviderName string
+
+	if provider == "custom" {
+		fmt.Println("Step 2/5: Custom Provider Name")
+		fmt.Println("  Give this provider a name (e.g., groq, together, my-server)")
+		fmt.Println("  You'll use this name to switch between providers later.")
+		fmt.Print("Enter provider name (required): ")
+		name, _ := reader.ReadString('\n')
+		name = strings.TrimSpace(name)
+		fmt.Println()
+		if name == "" {
+			fmt.Println("Error: provider name is required for custom provider.")
+			fmt.Println("Setup cancelled. Run 'brain config setup' to try again.")
+			os.Exit(1)
+		}
+		if config.IsCustomProvider(name) || providerPkg.IsBuiltin(name) {
+			fmt.Printf("Error: provider name %q is already in use.\n", name)
+			fmt.Println("Setup cancelled. Run 'brain config setup' to try again.")
+			os.Exit(1)
+		}
+		customProviderName = name
+
+		fmt.Println("Step 3/5: Base URL")
+		fmt.Println("  Enter the base URL for your OpenAI-compatible API")
+		fmt.Println("  Example: http://localhost:8080, https://api.groq.com/openai/v1")
+		fmt.Print("Enter base URL (required): ")
+		baseURL, _ = reader.ReadString('\n')
+		baseURL = strings.TrimSpace(baseURL)
+		fmt.Println()
+		if baseURL == "" {
+			fmt.Println("Error: base URL is required for custom provider.")
+			fmt.Println("Setup cancelled. Run 'brain config setup' to try again.")
+			os.Exit(1)
+		}
+	} else {
+		fmt.Println("Step 2/5: Endpoint")
+		fmt.Printf("  Using built-in endpoint for %s\n", provider)
+		fmt.Println()
+	}
+
 	needsAPIKey := provider != "ollama"
 	var apiKey string
+	stepNum := "4"
+	if provider == "custom" {
+		stepNum = "4"
+	} else {
+		stepNum = "3"
+	}
 	if needsAPIKey {
-		fmt.Println("Step 2/4: API Key")
+		fmt.Printf("Step %s/5: API Key\n", stepNum)
 		fmt.Print("Enter your API key (or press Enter to skip): ")
 		apiKey, _ = reader.ReadString('\n')
 		apiKey = strings.TrimSpace(apiKey)
@@ -263,7 +336,7 @@ func cmdConfigSetup() {
 		"anthropic":  {"claude-3-5-haiku-20241022", "claude-3-opus-20240229", "claude-3-sonnet-20240229"},
 		"gemini":     {"gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"},
 		"ollama":     {"llama3.2", "qwen2.5", "phi3"},
-		"custom":     {"gpt-4o-mini", "gpt-4o", "llama3.2"},
+		"custom":     {},
 	}
 
 	formatWarnings := map[string]string{
@@ -272,52 +345,22 @@ func cmdConfigSetup() {
 		"anthropic":  "should start with claude-",
 		"gemini":     "should contain 'gemini'",
 		"ollama":     "no specific format required",
-		"custom":     "no specific format required",
 	}
 
-	var model string
-	var baseURL string
-
+	modelStepNum := "5"
 	if provider == "custom" {
-		fmt.Println("Step 3/4: Custom Base URL")
-		fmt.Println("  Enter the base URL for your custom OpenAI-compatible API")
-		fmt.Println("  Example: http://localhost:8080, https://api.myservice.com/v1")
-		fmt.Print("Enter base URL (required for custom provider): ")
-		baseURL, _ = reader.ReadString('\n')
-		baseURL = strings.TrimSpace(baseURL)
-		fmt.Println()
-		if baseURL == "" {
-			fmt.Println("Error: base URL is required for custom provider.")
-			fmt.Println("Setup cancelled. Run 'brain config setup' to try again.")
-			os.Exit(1)
-		}
-
-		fmt.Println("Step 3b/4: Model")
-		models := modelMap[provider]
-		fmt.Printf("  Suggested for %s: %s\n", provider, strings.Join(models, ", "))
-		fmt.Println("  Or enter any model name directly")
-		fmt.Println()
-		fmt.Print("Enter model name (or 1-" + fmt.Sprint(len(models)) + " to select, Enter for default): ")
-		modelChoice, _ := reader.ReadString('\n')
-		modelChoice = strings.TrimSpace(modelChoice)
-		fmt.Println()
-
-		model = models[0]
-		if modelChoice != "" {
-			idx := 0
-			fmt.Sscanf(modelChoice, "%d", &idx)
-			if idx >= 1 && idx <= len(models) {
-				model = models[idx-1]
-			} else {
-				model = modelChoice
-			}
-		}
-		if model == "" {
-			model = models[0]
-		}
+		modelStepNum = "5"
+	} else if needsAPIKey {
+		modelStepNum = "4"
 	} else {
+		modelStepNum = "3"
+	}
+
+	fmt.Printf("Step %s/5: Model\n", modelStepNum)
+
+	model := ""
+	if provider != "custom" {
 		models := modelMap[provider]
-		fmt.Println("Step 3/4: Model")
 		fmt.Printf("  Suggested for %s: %s\n", provider, strings.Join(models, ", "))
 		fmt.Println("  Or enter any model name directly")
 		fmt.Println()
@@ -344,7 +387,7 @@ func cmdConfigSetup() {
 		if warning != "" && provider != "ollama" {
 			valid := validateModelFormat(provider, model)
 			if !valid {
-				fmt.Printf("  ⚠ Warning: Model %q doesn't match typical format for %s\n", model, provider)
+				fmt.Printf("  Warning: Model %q doesn't match typical format for %s\n", model, provider)
 				fmt.Printf("    (%s)\n", warning)
 				fmt.Print("  Continue anyway? (y/n): ")
 				confirm, _ := reader.ReadString('\n')
@@ -356,9 +399,20 @@ func cmdConfigSetup() {
 				}
 			}
 		}
+	} else {
+		fmt.Print("Enter model name (required for custom provider): ")
+		modelChoice, _ := reader.ReadString('\n')
+		modelChoice = strings.TrimSpace(modelChoice)
+		fmt.Println()
+		if modelChoice == "" {
+			fmt.Println("Error: model name is required for custom provider.")
+			fmt.Println("Setup cancelled. Run 'brain config setup' to try again.")
+			os.Exit(1)
+		}
+		model = modelChoice
 	}
 
-	fmt.Println("Step 4/4: Review Profile")
+	fmt.Println("Step 5/5: Review Profile")
 	fmt.Println("  1. guard   - Review every entry (recommended for new projects) [default]")
 	fmt.Println("  2. assist  - Auto-deduplicate, but review each unique entry")
 	fmt.Println("  3. agent   - Fully automatic, no review needed")
@@ -376,12 +430,24 @@ func cmdConfigSetup() {
 	}
 
 	cfg := config.DefaultConfig()
-	cfg.LLM.Provider = provider
-	cfg.LLM.BaseURL = baseURL
-	if apiKey != "" {
-		cfg.LLM.APIKey = apiKey
+	if provider == "custom" {
+		cfg.LLM.Provider = customProviderName
+		if err := config.SaveCustomProvider(customProviderName, config.CustomProviderConfig{
+			BaseURL: baseURL,
+			APIKey:  apiKey,
+			Model:   model,
+		}); err != nil {
+			fmt.Fprintf(os.Stderr, "Error saving custom provider: %v\n", err)
+			os.Exit(1)
+		}
+	} else {
+		cfg.LLM.Provider = provider
+		cfg.LLM.BaseURL = baseURL
+		if apiKey != "" {
+			cfg.LLM.APIKey = apiKey
+		}
+		cfg.LLM.Model = model
 	}
-	cfg.LLM.Model = model
 	cfg.Review.Profile = prof
 
 	if err := config.Save(cfg); err != nil {
@@ -394,8 +460,14 @@ func cmdConfigSetup() {
 	if cfg.LLM.BaseURL != "" {
 		fmt.Printf("  Base URL: %s\n", cfg.LLM.BaseURL)
 	}
-	fmt.Printf("  API Key:  %s\n", maskKeyOrNotSet(cfg.LLM.APIKey))
-	fmt.Printf("  Model:    %s\n", cfg.LLM.Model)
+	if provider == "custom" {
+		fmt.Printf("  Base URL: %s\n", baseURL)
+		fmt.Printf("  API Key:  %s\n", maskKeyOrNotSet(apiKey))
+		fmt.Printf("  Model:    %s\n", model)
+	} else {
+		fmt.Printf("  API Key:  %s\n", maskKeyOrNotSet(cfg.LLM.APIKey))
+		fmt.Printf("  Model:    %s\n", cfg.LLM.Model)
+	}
 	fmt.Printf("  Profile:  %s\n", cfg.Review.Profile)
 	fmt.Println()
 	fmt.Println("Run 'brain config list' to see all settings.")

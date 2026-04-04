@@ -7,7 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [v0.7.1] - 2026-04-04
+## [v0.8.0] - 2026-04-04
+
+### Changed
+- Config setup wizard flow reordered: Provider → Base URL → API Key → Model → Profile
+- Named custom providers: choose option 6, give it a name (e.g. "groq"), and it becomes a first-class provider
+- Custom provider config stored in `custom_providers` section of config.yaml
+- `brain config set provider <name>` now accepts custom provider names
+
+### Removed
+- "custom" is no longer a valid provider value (use named custom providers instead)
 
 ### Fixed
 - Config setup wizard: prompt for base-url when custom provider selected

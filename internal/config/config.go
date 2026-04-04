@@ -8,14 +8,22 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dominhduc/agent-brain/internal/provider"
 	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
-	LLM       LLMConfig       `yaml:"llm"`
-	Analysis  AnalysisConfig  `yaml:"analysis"`
-	Daemon    DaemonConfig    `yaml:"daemon"`
-	Review    ReviewConfig    `yaml:"review"`
+	LLM           LLMConfig                 `yaml:"llm"`
+	Analysis      AnalysisConfig            `yaml:"analysis"`
+	Daemon        DaemonConfig              `yaml:"daemon"`
+	Review        ReviewConfig              `yaml:"review"`
+	CustomProviders map[string]CustomProviderConfig `yaml:"custom_providers,omitempty"`
+}
+
+type CustomProviderConfig struct {
+	BaseURL string `yaml:"base_url"`
+	APIKey  string `yaml:"api_key"`
+	Model   string `yaml:"model"`
 }
 
 type ReviewConfig struct {
@@ -231,6 +239,38 @@ func SetValue(dotPath, value string) error {
 		return fmt.Errorf("unknown config section: %s", parts[0])
 	}
 
+	return Save(cfg)
+}
+
+func GetCustomProvider(name string) (*CustomProviderConfig, bool) {
+	cfg, err := Load()
+	if err != nil {
+		return nil, false
+	}
+	cp, ok := cfg.CustomProviders[name]
+	if !ok {
+		return nil, false
+	}
+	return &cp, true
+}
+
+func IsCustomProvider(name string) bool {
+	if provider.IsValid(name) {
+		return false
+	}
+	_, ok := GetCustomProvider(name)
+	return ok
+}
+
+func SaveCustomProvider(name string, cp CustomProviderConfig) error {
+	cfg, err := Load()
+	if err != nil {
+		return err
+	}
+	if cfg.CustomProviders == nil {
+		cfg.CustomProviders = make(map[string]CustomProviderConfig)
+	}
+	cfg.CustomProviders[name] = cp
 	return Save(cfg)
 }
 

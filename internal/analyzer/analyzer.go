@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/dominhduc/agent-brain/internal/config"
 	"github.com/dominhduc/agent-brain/internal/httpclient"
 	"github.com/dominhduc/agent-brain/internal/provider"
 )
@@ -30,7 +31,22 @@ func Analyze(req AnalyzeRequest) (Finding, error) {
 
 	p, err := provider.New(req.Provider)
 	if err != nil {
-		return finding, fmt.Errorf("invalid provider: %w", err)
+		if cp, ok := config.GetCustomProvider(req.Provider); ok {
+			p = provider.NewCustom()
+			if req.BaseURL == "" {
+				req.BaseURL = cp.BaseURL
+			}
+			if req.APIKey == "" {
+				req.APIKey = cp.APIKey
+			}
+			if req.Model == "" {
+				req.Model = cp.Model
+			}
+		} else if req.BaseURL != "" {
+			p = provider.NewCustom()
+		} else {
+			return finding, fmt.Errorf("invalid provider: %w", err)
+		}
 	}
 
 	systemPrompt := `You are analyzing a git commit to extract knowledge for a coding agent's memory system.

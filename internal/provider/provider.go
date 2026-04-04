@@ -20,7 +20,6 @@ var providers = map[string]func() Provider{
 	"anthropic":  func() Provider { return &Anthropic{} },
 	"gemini":     func() Provider { return &Gemini{} },
 	"ollama":     func() Provider { return &Ollama{} },
-	"custom":    func() Provider { return &Custom{} },
 }
 
 func New(name string) (Provider, error) {
@@ -31,7 +30,16 @@ func New(name string) (Provider, error) {
 	return f(), nil
 }
 
+func NewCustom() Provider {
+	return &Custom{}
+}
+
 func IsValid(name string) bool {
+	_, ok := providers[name]
+	return ok
+}
+
+func IsBuiltin(name string) bool {
 	_, ok := providers[name]
 	return ok
 }

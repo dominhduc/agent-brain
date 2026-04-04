@@ -15,7 +15,6 @@ func TestProviderNew(t *testing.T) {
 		{"anthropic", "anthropic", false},
 		{"gemini", "gemini", false},
 		{"ollama", "ollama", false},
-		{"custom", "custom", false},
 		{"unknown", "", true},
 	}
 
@@ -35,6 +34,28 @@ func TestProviderNew(t *testing.T) {
 				t.Errorf("got %s, want %s", p.Name(), tt.wantName)
 			}
 		})
+	}
+}
+
+func TestNewCustom(t *testing.T) {
+	p := NewCustom()
+	if p.Name() != "custom" {
+		t.Errorf("got %s, want custom", p.Name())
+	}
+}
+
+func TestIsBuiltin(t *testing.T) {
+	if !IsBuiltin("openrouter") {
+		t.Error("expected openrouter to be builtin")
+	}
+	if !IsBuiltin("ollama") {
+		t.Error("expected ollama to be builtin")
+	}
+	if IsBuiltin("custom") {
+		t.Error("expected custom to NOT be builtin")
+	}
+	if IsBuiltin("groq") {
+		t.Error("expected groq to NOT be builtin")
 	}
 }
 
