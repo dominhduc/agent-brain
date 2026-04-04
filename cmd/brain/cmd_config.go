@@ -241,6 +241,9 @@ func cmdConfigSetup() {
 		fmt.Print("Enter custom model name: ")
 		customModel, _ := reader.ReadString('\n')
 		model = strings.TrimSpace(customModel)
+		if model == "" {
+			model = "anthropic/claude-3.5-haiku"
+		}
 	}
 
 	fmt.Println("Step 3/3: Review Profile")

@@ -27,3 +27,6 @@
 
 ### [2026-04-04 07:00:13] CLI help consistency: When adding config keys, update ALL of: 1) registry.go allKeys slice order 2) printUsage() config section 3) cmdConfigShow() output order 4) cmdConfigList() uses registry order automatically - keep them in sync
 
+
+### [2026-04-04 07:02:07] After any code push that changes CLI behavior or help text: ALWAYS tag a new version (minor for UX fixes, patch for bug fixes) and push tag. Then verify with 'gh release list' and run 'brain update' to test. Never skip this step.
+
