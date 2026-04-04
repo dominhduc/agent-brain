@@ -30,3 +30,6 @@
 
 ### [2026-04-03 09:05:53] Before making repo public: remove EXECUTION_PLAN.md, REPO_AGENTS.md, docs/plans/ from git tracking. Add to .gitignore.
 
+
+### [2026-04-04 07:00:15] CLI help inconsistency: Don't just update one help text - check brain help, brain config, brain config list all show consistent commands and order. Use registry.go as source of truth.
+

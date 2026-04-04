@@ -21,3 +21,9 @@
 
 ### [2026-04-04 06:43:44] After releasing new CLI features: 1) Bump version in CHANGELOG.md 2) Update printUsage() in cmd.go 3) Don't forget either - both need updating together
 
+
+### [2026-04-04 06:50:20] After code push with new version: 1) Create GitHub release with git tag push 2) Wait for goreleaser workflow to complete 3) Verify release appears in gh release list 4) Then run brain update to test
+
+
+### [2026-04-04 07:00:13] CLI help consistency: When adding config keys, update ALL of: 1) registry.go allKeys slice order 2) printUsage() config section 3) cmdConfigShow() output order 4) cmdConfigList() uses registry order automatically - keep them in sync
+

@@ -33,18 +33,15 @@ func cmdConfig() {
 			cmdConfigSet()
 			return
 		}
-		fmt.Println("Usage: brain config [get|set|list|reset|setup] [args...]")
+		fmt.Println("Usage: brain config <subcommand> [args...]")
 		fmt.Println()
 		fmt.Println("Subcommands:")
-		fmt.Println("  brain config                      Show current configuration")
-		fmt.Println("  brain config get <key>            Get a config value")
-		fmt.Println("  brain config set <key> <value>    Set a config value")
-		fmt.Println("  brain config list                 List all available config keys")
-		fmt.Println("  brain config reset [key]          Reset one key or all to defaults")
-		fmt.Println("  brain config setup                Interactive setup wizard")
-		fmt.Println()
-		fmt.Println("Keys: api-key, model, provider, profile, poll-interval, max-retries, retry-backoff, max-diff-lines")
-		fmt.Println("Old dot notation (llm.api_key) also works for backward compatibility.")
+		fmt.Println("  brain config           Show current configuration")
+		fmt.Println("  brain config list      List all settings")
+		fmt.Println("  brain config get <key> Get a value")
+		fmt.Println("  brain config set <key> <value> Set a value")
+		fmt.Println("  brain config reset <key> Reset to default")
+		fmt.Println("  brain config setup     Interactive setup wizard")
 	}
 }
 
@@ -57,30 +54,29 @@ func cmdConfigShow() {
 
 	fmt.Println("Current Configuration")
 	fmt.Println("=====================")
-	fmt.Printf("LLM Provider:    %s\n", cfg.LLM.Provider)
+	fmt.Printf("Provider:    %s\n", cfg.LLM.Provider)
+	fmt.Printf("Model:       %s\n", cfg.LLM.Model)
 	if cfg.LLM.APIKey != "" {
-		fmt.Printf("API Key:         %s\n", maskKey(cfg.LLM.APIKey))
+		fmt.Printf("API Key:     %s\n", maskKey(cfg.LLM.APIKey))
 	} else {
-		fmt.Println("API Key:         not set")
+		fmt.Println("API Key:     not set")
 	}
-	fmt.Printf("Model:           %s\n", cfg.LLM.Model)
-	fmt.Printf("Max Diff Lines:  %d\n", cfg.Analysis.MaxDiffLines)
-	fmt.Printf("Categories:      %s\n", strings.Join(cfg.Analysis.Categories, ", "))
-	fmt.Printf("Poll Interval:   %s\n", cfg.Daemon.PollInterval)
-	fmt.Printf("Max Retries:     %d\n", cfg.Daemon.MaxRetries)
-	fmt.Printf("Retry Backoff:   %s\n", cfg.Daemon.RetryBackoff)
-	fmt.Printf("Review Profile:  %s\n", cfg.Review.Profile)
+	fmt.Printf("Profile:     %s\n", cfg.Review.Profile)
 	if prof, err := profile.FromName(cfg.Review.Profile); err == nil {
 		fmt.Printf("  → %s\n", prof.Description())
 	}
-	fmt.Printf("\nConfig file:     %s\n", config.ConfigPath())
+	fmt.Printf("Poll Interval:  %s\n", cfg.Daemon.PollInterval)
+	fmt.Printf("Max Retries:    %d\n", cfg.Daemon.MaxRetries)
+	fmt.Printf("Retry Backoff:  %s\n", cfg.Daemon.RetryBackoff)
+	fmt.Printf("Max Diff Lines: %d\n", cfg.Analysis.MaxDiffLines)
+	fmt.Printf("Categories:     %s\n", strings.Join(cfg.Analysis.Categories, ", "))
+	fmt.Printf("\nConfig file: %s\n", config.ConfigPath())
 }
 
 func cmdConfigGet() {
 	if len(os.Args) < 4 {
 		fmt.Println("Usage: brain config get <key>")
 		fmt.Println("Keys: api-key, model, provider, profile, poll-interval, max-retries, retry-backoff, max-diff-lines")
-		fmt.Println("Old dot notation (llm.api_key) also works.")
 		os.Exit(1)
 	}
 
@@ -111,13 +107,7 @@ func cmdConfigGet() {
 func cmdConfigSet() {
 	if len(os.Args) < 5 {
 		fmt.Println("Usage: brain config set <key> <value>")
-		fmt.Println()
-		fmt.Println("Friendly keys:")
-		for _, k := range config.AllKeys() {
-			fmt.Printf("  %-16s %s (default: %s)\n", k.Friendly, k.Description, k.Default)
-		}
-		fmt.Println()
-		fmt.Println("Old dot notation (llm.api_key) also works for backward compatibility.")
+		fmt.Println("Keys: api-key, model, provider, profile, poll-interval, max-retries, retry-backoff, max-diff-lines")
 		os.Exit(1)
 	}
 
@@ -171,7 +161,7 @@ func cmdConfigList() {
 		if k.Friendly == "api-key" && value != "" {
 			current = maskKey(value)
 		}
-		fmt.Printf("  %-16s %-40s current: %s\n", k.Friendly, k.Description, current)
+		fmt.Printf("  %-16s %-32s current: %s\n", k.Friendly, k.Description, current)
 	}
 }
 

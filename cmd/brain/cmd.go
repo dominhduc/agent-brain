@@ -75,36 +75,33 @@ func printUsage() {
 	fmt.Println(`brain - AI Agent Knowledge Hub CLI
 
 Usage:
-  brain init                          Initialize knowledge hub in current project
-  brain get <topic> [--json]          Get topic content (memory, gotchas, patterns, decisions, architecture, all)
-  brain search <query> [--json]       Search across all knowledge files
-  brain add <topic> "<message>"       Add knowledge entry to a topic
-  brain eval                          Create session evaluation file
-  brain prune [--dry-run]             Archive stale knowledge entries
-  brain status [--json]               Show knowledge hub statistics
-  brain review [--all]                Review and approve pending knowledge entries
-  brain daemon start|stop|status      Manage background daemon
-  brain config <subcommand>            View or modify configuration
-  brain version                       Show version and build info
-  brain update                        Self-update to latest release
+  brain init                          Initialize knowledge hub in project
+  brain get <topic>                   Get knowledge (memory|gotchas|patterns|decisions|architecture|all)
+  brain search <query>                Search across all knowledge
+  brain add <topic> "<message>"      Add entry to topic
+
+  brain eval                          Create session evaluation
+  brain status                        Show hub statistics
+  brain review                        Review pending entries
+  brain prune                         Archive stale entries
+
+  brain config <subcommand>           Configure brain
+  brain daemon <start|stop|status>   Manage background daemon
+  brain version                       Show version info
+  brain update                        Update to latest version
 
 Config subcommands:
-  brain config get <key>              Get config value (e.g., api-key, model)
-  brain config set <key> <value>      Set config value
-  brain config list                   List all config keys with descriptions
-  brain config reset <key>           Reset config key to default
-  brain config setup                 Run interactive setup wizard
-
-Topics: memory, gotchas, patterns, decisions, architecture, all
+  brain config list                   List all settings
+  brain config get <key>              Get a value (e.g., api-key, model)
+  brain config set <key> <value>      Set a value
+  brain config reset <key>            Reset to default
+  brain config setup                 Interactive setup wizard
 
 Examples:
   brain init
   brain get gotchas
   brain search "auth"
-  brain add gotcha "Project uses argon2, NOT bcrypt"
-  brain eval
-  brain status
-  brain daemon status
+  brain add gotcha "Project uses argon2 NOT bcrypt"
   brain config list
   brain config set api-key sk-...
   brain config setup`)

@@ -66,7 +66,7 @@ var allKeys = []ConfigKey{
 		DotPath:     "daemon.retry_backoff",
 		Type:        "string",
 		Default:     "exponential",
-		Description: "Daemon retry backoff strategy",
+		Description: "Daemon retry backoff",
 	},
 	{
 		Friendly:    "max-diff-lines",
