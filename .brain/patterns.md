@@ -33,3 +33,6 @@
 
 ### [2026-04-04 11:28:09] CLI setup wizard model validation: For provider selection, allow both number input (1,2,3) OR direct model name input. Validate model format for each provider and warn if it doesn't match typical patterns, but let user override with confirmation.
 
+
+### [2026-04-04 15:27:33] Global vs local installation: brain binary is fully self-contained (CGO_ENABLED=0 static binary), uses os.Getwd() to find project context, walks up from cwd to find .brain/. Can be installed anywhere in PATH, global install works perfectly.
+

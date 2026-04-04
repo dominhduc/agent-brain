@@ -263,7 +263,7 @@ func cmdConfigSetup() {
 		"anthropic":  {"claude-3-5-haiku-20241022", "claude-3-opus-20240229", "claude-3-sonnet-20240229"},
 		"gemini":     {"gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"},
 		"ollama":     {"llama3.2", "qwen2.5", "phi3"},
-		"custom":    {"gpt-4o-mini", "gpt-4o", "llama3.2"},
+		"custom":     {"gpt-4o-mini", "gpt-4o", "llama3.2"},
 	}
 
 	formatWarnings := map[string]string{
@@ -275,43 +275,85 @@ func cmdConfigSetup() {
 		"custom":     "no specific format required",
 	}
 
-	models := modelMap[provider]
-	fmt.Println("Step 3/4: Model")
-	fmt.Printf("  Suggested for %s: %s\n", provider, strings.Join(models, ", "))
-	fmt.Println("  Or enter any model name directly")
-	fmt.Println()
-	fmt.Print("Enter model name (or 1-" + fmt.Sprint(len(models)) + " to select, Enter for default): ")
-	modelChoice, _ := reader.ReadString('\n')
-	modelChoice = strings.TrimSpace(modelChoice)
-	fmt.Println()
+	var model string
+	var baseURL string
 
-	model := models[0]
-	if modelChoice != "" {
-		idx := 0
-		fmt.Sscanf(modelChoice, "%d", &idx)
-		if idx >= 1 && idx <= len(models) {
-			model = models[idx-1]
-		} else {
-			model = modelChoice
+	if provider == "custom" {
+		fmt.Println("Step 3/4: Custom Base URL")
+		fmt.Println("  Enter the base URL for your custom OpenAI-compatible API")
+		fmt.Println("  Example: http://localhost:8080, https://api.myservice.com/v1")
+		fmt.Print("Enter base URL (required for custom provider): ")
+		baseURL, _ = reader.ReadString('\n')
+		baseURL = strings.TrimSpace(baseURL)
+		fmt.Println()
+		if baseURL == "" {
+			fmt.Println("Error: base URL is required for custom provider.")
+			fmt.Println("Setup cancelled. Run 'brain config setup' to try again.")
+			os.Exit(1)
 		}
-	}
-	if model == "" {
-		model = models[0]
-	}
 
-	warning := formatWarnings[provider]
-	if warning != "" && provider != "ollama" && provider != "custom" {
-		valid := validateModelFormat(provider, model)
-		if !valid {
-			fmt.Printf("  ⚠ Warning: Model %q doesn't match typical format for %s\n", model, provider)
-			fmt.Printf("    (%s)\n", warning)
-			fmt.Print("  Continue anyway? (y/n): ")
-			confirm, _ := reader.ReadString('\n')
-			confirm = strings.TrimSpace(strings.ToLower(confirm))
-			fmt.Println()
-			if confirm != "y" && confirm != "yes" {
-				fmt.Println("Setup cancelled. Run 'brain config setup' to try again.")
-				os.Exit(0)
+		fmt.Println("Step 3b/4: Model")
+		models := modelMap[provider]
+		fmt.Printf("  Suggested for %s: %s\n", provider, strings.Join(models, ", "))
+		fmt.Println("  Or enter any model name directly")
+		fmt.Println()
+		fmt.Print("Enter model name (or 1-" + fmt.Sprint(len(models)) + " to select, Enter for default): ")
+		modelChoice, _ := reader.ReadString('\n')
+		modelChoice = strings.TrimSpace(modelChoice)
+		fmt.Println()
+
+		model = models[0]
+		if modelChoice != "" {
+			idx := 0
+			fmt.Sscanf(modelChoice, "%d", &idx)
+			if idx >= 1 && idx <= len(models) {
+				model = models[idx-1]
+			} else {
+				model = modelChoice
+			}
+		}
+		if model == "" {
+			model = models[0]
+		}
+	} else {
+		models := modelMap[provider]
+		fmt.Println("Step 3/4: Model")
+		fmt.Printf("  Suggested for %s: %s\n", provider, strings.Join(models, ", "))
+		fmt.Println("  Or enter any model name directly")
+		fmt.Println()
+		fmt.Print("Enter model name (or 1-" + fmt.Sprint(len(models)) + " to select, Enter for default): ")
+		modelChoice, _ := reader.ReadString('\n')
+		modelChoice = strings.TrimSpace(modelChoice)
+		fmt.Println()
+
+		model = models[0]
+		if modelChoice != "" {
+			idx := 0
+			fmt.Sscanf(modelChoice, "%d", &idx)
+			if idx >= 1 && idx <= len(models) {
+				model = models[idx-1]
+			} else {
+				model = modelChoice
+			}
+		}
+		if model == "" {
+			model = models[0]
+		}
+
+		warning := formatWarnings[provider]
+		if warning != "" && provider != "ollama" {
+			valid := validateModelFormat(provider, model)
+			if !valid {
+				fmt.Printf("  ⚠ Warning: Model %q doesn't match typical format for %s\n", model, provider)
+				fmt.Printf("    (%s)\n", warning)
+				fmt.Print("  Continue anyway? (y/n): ")
+				confirm, _ := reader.ReadString('\n')
+				confirm = strings.TrimSpace(strings.ToLower(confirm))
+				fmt.Println()
+				if confirm != "y" && confirm != "yes" {
+					fmt.Println("Setup cancelled. Run 'brain config setup' to try again.")
+					os.Exit(0)
+				}
 			}
 		}
 	}
@@ -335,6 +377,7 @@ func cmdConfigSetup() {
 
 	cfg := config.DefaultConfig()
 	cfg.LLM.Provider = provider
+	cfg.LLM.BaseURL = baseURL
 	if apiKey != "" {
 		cfg.LLM.APIKey = apiKey
 	}
@@ -348,6 +391,9 @@ func cmdConfigSetup() {
 
 	fmt.Println("Configuration saved!")
 	fmt.Printf("  Provider: %s\n", cfg.LLM.Provider)
+	if cfg.LLM.BaseURL != "" {
+		fmt.Printf("  Base URL: %s\n", cfg.LLM.BaseURL)
+	}
 	fmt.Printf("  API Key:  %s\n", maskKeyOrNotSet(cfg.LLM.APIKey))
 	fmt.Printf("  Model:    %s\n", cfg.LLM.Model)
 	fmt.Printf("  Profile:  %s\n", cfg.Review.Profile)
