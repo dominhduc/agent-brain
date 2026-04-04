@@ -29,9 +29,16 @@ func (e APIError) Error() string {
 }
 
 func PostJSON(url string, headers map[string]string, body interface{}) ([]byte, error) {
-	data, err := json.Marshal(body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request body: %w", err)
+	var data []byte
+	switch v := body.(type) {
+	case []byte:
+		data = v
+	default:
+		var err error
+		data, err = json.Marshal(body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal request body: %w", err)
+		}
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewReader(data))
