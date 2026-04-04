@@ -51,3 +51,6 @@
 
 ### [2026-04-04 17:39:30] Config setup wizard must load existing config (config.Load()), not start from DefaultConfig(). DefaultConfig() has empty API key — starting from it and saving wipes any existing key. Always load first, update selectively.
 
+
+### [2026-04-04 19:08:24] Failed queue items must store error reason. moveToFailed() must accept a reason string, update the item's ErrorReason field, and strip .processing suffix before moving to failed/.
+

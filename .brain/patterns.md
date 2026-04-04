@@ -42,3 +42,6 @@
 
 ### [2026-04-04 17:21:11] Per-project daemon isolation: systemd service files (brain-daemon.<hash>.service) are per-project with WorkingDirectory set. PID lock file must also be per-project (brain-daemon-<hash>.pid) to allow parallel daemons. Data is inherently per-project (each project's .brain/.queue/ directory).
 
+
+### [2026-04-04 19:08:24] Daemon failure inspection: 'brain daemon failed' lists each failed item with error reason, attempts count, and changed files. ErrorReason field is stored in the queue item JSON when moved to failed/.
+

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.10.0] - 2026-04-04
+
+### Added
+- `brain daemon restart` — stop and start daemon in one command
+- `brain daemon retry` — move all failed items back to the queue for reprocessing
+
 ## [v0.9.0] - 2026-04-04
 
 ### Added

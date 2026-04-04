@@ -20,7 +20,7 @@ import (
 
 func cmdDaemon() {
 	if len(os.Args) < 3 {
-		fmt.Println("Usage: brain daemon <start|stop|status|failed|run>")
+		fmt.Println("Usage: brain daemon <start|stop|restart|status|failed|retry|run>")
 		os.Exit(1)
 	}
 
@@ -29,14 +29,18 @@ func cmdDaemon() {
 		cmdDaemonStart()
 	case "stop":
 		cmdDaemonStop()
+	case "restart":
+		cmdDaemonRestart()
 	case "status":
 		cmdDaemonStatus()
 	case "run":
 		runDaemon()
 	case "failed":
 		cmdDaemonFailed()
+	case "retry":
+		cmdDaemonRetry()
 	default:
-		fmt.Printf("Unknown daemon command: %s\nWhat to do: use start, stop, status, or run.\n", os.Args[2])
+		fmt.Printf("Unknown daemon command: %s\nWhat to do: use start, stop, restart, status, failed, or retry.\n", os.Args[2])
 		os.Exit(1)
 	}
 }
@@ -76,6 +80,12 @@ func cmdDaemonStop() {
 	}
 
 	fmt.Println("Daemon stopped.")
+}
+
+func cmdDaemonRestart() {
+	cmdDaemonStop()
+	fmt.Println()
+	cmdDaemonStart()
 }
 
 func cmdDaemonStatus() {
@@ -170,6 +180,59 @@ func cmdDaemonFailed() {
 		fmt.Printf("    Error: %s\n", reason)
 		fmt.Printf("    Attempts: %d\n", item.Attempts)
 		fmt.Printf("    Files: %s\n", item.Files)
+	}
+}
+
+func cmdDaemonRetry() {
+	brainDir, err := brain.FindBrainDir()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: run 'brain init' first.\n", err)
+		os.Exit(1)
+	}
+
+	failedDir := filepath.Join(brainDir, ".queue", "failed")
+	entries, err := os.ReadDir(failedDir)
+	if err != nil || len(entries) == 0 {
+		fmt.Println("No failed items to retry.")
+		return
+	}
+
+	queueDir := filepath.Join(brainDir, ".queue")
+	retried := 0
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		srcPath := filepath.Join(failedDir, e.Name())
+		name := strings.TrimSuffix(e.Name(), ".processing")
+
+		data, err := os.ReadFile(srcPath)
+		if err != nil {
+			continue
+		}
+		var item daemon.QueueItem
+		if err := json.Unmarshal(data, &item); err != nil {
+			continue
+		}
+
+		item.Attempts = 0
+		item.ErrorReason = ""
+		itemData, _ := json.Marshal(item)
+
+		destPath := filepath.Join(queueDir, name)
+		if err := os.WriteFile(destPath, itemData, 0600); err != nil {
+			fmt.Fprintf(os.Stderr, "  Failed to requeue %s: %v\n", name, err)
+			continue
+		}
+		os.Remove(srcPath)
+		retried++
+		fmt.Printf("  Requeued: %s\n", name)
+	}
+
+	if retried == 0 {
+		fmt.Println("No failed items could be retried.")
+	} else {
+		fmt.Printf("\nRequeued %d item(s). Daemon will process them on next poll.\n", retried)
 	}
 }
 
