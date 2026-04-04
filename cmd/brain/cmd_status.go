@@ -5,94 +5,202 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/dominhduc/agent-brain/internal/brain"
+	"github.com/dominhduc/agent-brain/internal/config"
+	"github.com/dominhduc/agent-brain/internal/service"
 )
 
 func cmdStatus(jsonFlag bool) {
 	brainDir, err := brain.FindBrainDir()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: run 'brain init' first.\n", err)
-		os.Exit(1)
-	}
 
-	topicFiles := []string{"MEMORY.md", "gotchas.md", "patterns.md", "decisions.md", "architecture.md"}
-	var topicCount int
+	// Hub stats
+	var hubFound bool
+	var topicCount, sessionCount, lineCount int
 	var totalSize int64
-	for _, f := range topicFiles {
-		info, err := os.Stat(filepath.Join(brainDir, f))
-		if err == nil {
-			topicCount++
-			totalSize += info.Size()
+	var lineStatus string
+
+	if err == nil {
+		hubFound = true
+		topicFiles := []string{"MEMORY.md", "gotchas.md", "patterns.md", "decisions.md", "architecture.md"}
+		for _, f := range topicFiles {
+			info, err := os.Stat(filepath.Join(brainDir, f))
+			if err == nil {
+				topicCount++
+				totalSize += info.Size()
+			}
+		}
+		sessionsDir := filepath.Join(brainDir, "sessions")
+		if entries, e := os.ReadDir(sessionsDir); e == nil {
+			for _, e := range entries {
+				if !e.IsDir() && !strings.HasPrefix(e.Name(), ".") {
+					sessionCount++
+				}
+			}
+		}
+		lineCount, _ = brain.MemoryLineCount()
+		lineStatus = "OK"
+		if lineCount > 200 {
+			lineStatus = "OVER LIMIT"
 		}
 	}
 
-	sessionsDir := filepath.Join(brainDir, "sessions")
-	sessionCount := 0
-	if entries, err := os.ReadDir(sessionsDir); err == nil {
-		for _, e := range entries {
-			if !e.IsDir() && !strings.HasPrefix(e.Name(), ".") {
-				sessionCount++
+	// Config
+	cfg, cfgErr := config.Load()
+	provider := "unknown"
+	model := ""
+	apiKeySet := false
+	profile := ""
+	if cfgErr == nil {
+		provider = cfg.LLM.Provider
+		model = cfg.LLM.Model
+		apiKeySet = cfg.LLM.APIKey != ""
+		profile = cfg.Review.Profile
+		if cp, ok := config.GetCustomProvider(cfg.LLM.Provider); ok {
+			model = cp.Model
+			apiKeySet = cp.APIKey != ""
+		}
+	}
+
+	// Daemon
+	var daemonRunning bool
+	var queuePending, queueDone, queueFailed int
+	if brainDir != "" {
+		workDir := filepath.Dir(brainDir)
+		daemonRunning = service.IsRunning(workDir)
+		queueDir := filepath.Join(brainDir, ".queue")
+		if entries, e := os.ReadDir(queueDir); e == nil {
+			for _, e := range entries {
+				if !e.IsDir() && strings.HasPrefix(e.Name(), "commit-") && strings.HasSuffix(e.Name(), ".json") {
+					queuePending++
+				}
+			}
+		}
+		if entries, e := os.ReadDir(filepath.Join(queueDir, "done")); e == nil {
+			queueDone = len(entries)
+		}
+		if entries, e := os.ReadDir(filepath.Join(queueDir, "failed")); e == nil {
+			queueFailed = len(entries)
+		}
+	}
+
+	// Pending entries (for review)
+	var pendingEntries int
+	if brainDir != "" {
+		pendingDir := filepath.Join(brainDir, "pending")
+		if entries, e := os.ReadDir(pendingDir); e == nil {
+			for _, e := range entries {
+				if !e.IsDir() && strings.HasSuffix(e.Name(), ".json") {
+					pendingEntries++
+				}
 			}
 		}
 	}
 
-	lineCount, _ := brain.MemoryLineCount()
-	lineStatus := "OK"
-	if lineCount > 200 {
-		lineStatus = "OVER LIMIT"
+	// Warnings
+	var warnings []string
+	if !hubFound {
+		warnings = append(warnings, "No .brain/ directory — run 'brain init'")
 	}
-
-	queueDir := filepath.Join(brainDir, ".queue")
-	queuePendingCount := 0
-	doneCount := 0
-	if entries, err := os.ReadDir(queueDir); err == nil {
-		for _, e := range entries {
-			if !e.IsDir() && strings.HasPrefix(e.Name(), "commit-") && strings.HasSuffix(e.Name(), ".json") {
-				queuePendingCount++
-			}
-		}
+	if cfgErr != nil {
+		warnings = append(warnings, fmt.Sprintf("Config error: %v", cfgErr))
 	}
-	if entries, err := os.ReadDir(filepath.Join(queueDir, "done")); err == nil {
-		doneCount = len(entries)
+	if !apiKeySet && cfgErr == nil {
+		warnings = append(warnings, "API key not set — run 'brain config set api-key <key>'")
 	}
-
-	pendingDir := filepath.Join(brainDir, "pending")
-	pendingCount := 0
-	if entries, err := os.ReadDir(pendingDir); err == nil {
-		for _, e := range entries {
-			if !e.IsDir() && strings.HasSuffix(e.Name(), ".json") {
-				pendingCount++
-			}
-		}
+	if lineStatus == "OVER LIMIT" {
+		warnings = append(warnings, "MEMORY.md over limit — run 'brain prune'")
+	}
+	if queueFailed > 0 {
+		warnings = append(warnings, fmt.Sprintf("%d failed items — run 'brain daemon failed' to inspect", queueFailed))
 	}
 
 	if jsonFlag {
 		status := map[string]interface{}{
-			"memory_lines":    lineCount,
-			"memory_status":   lineStatus,
+			"version":         version,
+			"os":              fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
+			"hub_found":       hubFound,
 			"topic_files":     topicCount,
 			"session_files":   sessionCount,
 			"total_size_kb":   totalSize / 1024,
-			"queue_pending":   queuePendingCount,
-			"queue_done":      doneCount,
-			"pending_entries": pendingCount,
+			"memory_lines":    lineCount,
+			"memory_status":   lineStatus,
+			"provider":        provider,
+			"model":           model,
+			"api_key_set":     apiKeySet,
+			"profile":         profile,
+			"daemon_running":  daemonRunning,
+			"queue_pending":   queuePending,
+			"queue_done":      queueDone,
+			"queue_failed":    queueFailed,
+			"pending_entries": pendingEntries,
+			"warnings":        warnings,
 		}
 		data, _ := json.MarshalIndent(status, "", "  ")
 		fmt.Println(string(data))
-	} else {
-		fmt.Println("Knowledge Hub Status")
-		fmt.Println("====================")
-		limitHint := "OK"
-		if lineCount > 200 {
-			limitHint = "OVER LIMIT — run 'brain prune' or move entries to topic files"
-		}
-		fmt.Printf("MEMORY.md:       %d lines (%s)\n", lineCount, limitHint)
-		fmt.Printf("Topic files:     %d files\n", topicCount)
-		fmt.Printf("Session files:   %d sessions\n", sessionCount)
-		fmt.Printf("Total size:      %d KB\n", totalSize/1024)
-		fmt.Printf("Queue depth:     %d pending, %d done\n", queuePendingCount, doneCount)
-		fmt.Printf("Pending entries: %d (run 'brain review' to approve)\n", pendingCount)
+		return
 	}
+
+	// Text output
+	fmt.Printf("brain %s  %s/%s\n", version, runtime.GOOS, runtime.GOARCH)
+	fmt.Println()
+
+	fmt.Println("Hub")
+	if hubFound {
+		fmt.Printf("  .brain/      found\n")
+		fmt.Printf("  Topics       %d files (%d KB)\n", topicCount, totalSize/1024)
+		fmt.Printf("  Sessions     %d\n", sessionCount)
+		fmt.Printf("  MEMORY.md    %d lines (%s)\n", lineCount, lineStatus)
+	} else {
+		fmt.Println("  .brain/      not found")
+	}
+
+	fmt.Println()
+	fmt.Println("Config")
+	if cfgErr == nil {
+		if cp, ok := config.GetCustomProvider(cfg.LLM.Provider); ok {
+			fmt.Printf("  Provider     %s (custom)\n", provider)
+			fmt.Printf("  Model        %s\n", cp.Model)
+			fmt.Printf("  API Key      %s\n", keyStatus(apiKeySet))
+		} else {
+			fmt.Printf("  Provider     %s\n", provider)
+			fmt.Printf("  Model        %s\n", model)
+			fmt.Printf("  API Key      %s\n", keyStatus(apiKeySet))
+		}
+		fmt.Printf("  Profile      %s\n", profile)
+	} else {
+		fmt.Println("  Error loading config")
+	}
+
+	fmt.Println()
+	fmt.Println("Daemon")
+	if daemonRunning {
+		fmt.Println("  Status       running")
+	} else {
+		fmt.Println("  Status       not running")
+	}
+	fmt.Printf("  Queue        %d pending, %d done, %d failed\n", queuePending, queueDone, queueFailed)
+	if pendingEntries > 0 {
+		fmt.Printf("  Review       %d pending entries\n", pendingEntries)
+	}
+
+	if len(warnings) > 0 {
+		fmt.Println()
+		fmt.Println("Health")
+		for _, w := range warnings {
+			fmt.Printf("  ✗ %s\n", w)
+		}
+		if hubFound && apiKeySet && lineStatus != "OVER LIMIT" && queueFailed == 0 {
+			fmt.Println("  ✓ All clear")
+		}
+	}
+}
+
+func keyStatus(set bool) string {
+	if set {
+		return "configured"
+	}
+	return "not set"
 }

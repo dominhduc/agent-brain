@@ -45,3 +45,6 @@
 
 ### [2026-04-04 19:08:24] Daemon failure inspection: 'brain daemon failed' lists each failed item with error reason, attempts count, and changed files. ErrorReason field is stored in the queue item JSON when moved to failed/.
 
+
+### [2026-04-04 19:48:51] Daemon management commands: start, stop, restart, status, failed, retry. restart = stop + start (useful after config changes). retry = move all failed/ items back to .queue/, reset attempts to 0 and clear error_reason. Failed items retain their original queue JSON data.
+

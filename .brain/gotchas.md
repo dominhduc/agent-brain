@@ -54,3 +54,6 @@
 
 ### [2026-04-04 19:08:24] Failed queue items must store error reason. moveToFailed() must accept a reason string, update the item's ErrorReason field, and strip .processing suffix before moving to failed/.
 
+
+### [2026-04-04 19:48:56] Config changes require daemon restart to take effect. The daemon reloads config every 10 cycles (line 288: if cycleCount%10 == 0), but model/provider changes only affect the next analyze call. Use 'brain daemon restart' after changing provider, model, or api-key.
+
