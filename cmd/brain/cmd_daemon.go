@@ -48,7 +48,8 @@ func cmdDaemonStart() {
 		os.Exit(1)
 	}
 
-	if err := service.Register(execPath, filepath.Dir(brainDir)); err != nil {
+	workDir := filepath.Dir(brainDir)
+	if err := service.Register(execPath, workDir); err != nil {
 		fmt.Fprintf(os.Stderr, "Error registering daemon: %v\n", err)
 		os.Exit(1)
 	}
@@ -57,7 +58,14 @@ func cmdDaemonStart() {
 }
 
 func cmdDaemonStop() {
-	if err := service.Stop(); err != nil {
+	brainDir, err := brain.FindBrainDir()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+
+	workDir := filepath.Dir(brainDir)
+	if err := service.Stop(workDir); err != nil {
 		fmt.Println("Daemon stop not supported on this OS.")
 		return
 	}
@@ -66,8 +74,6 @@ func cmdDaemonStop() {
 }
 
 func cmdDaemonStatus() {
-	running := service.IsRunning()
-
 	brainDir, err := brain.FindBrainDir()
 	if err != nil {
 		fmt.Println("Daemon Status")
@@ -76,6 +82,9 @@ func cmdDaemonStatus() {
 		fmt.Println("What to do: run 'brain init' in a project directory first.")
 		return
 	}
+
+	workDir := filepath.Dir(brainDir)
+	running := service.IsRunning(workDir)
 
 	queueDir := filepath.Join(brainDir, ".queue")
 	pendingCount := 0

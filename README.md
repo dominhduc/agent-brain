@@ -8,20 +8,41 @@ Works with **OpenCode**, **Claude Code**, **Cursor**, **Windsurf**, and any agen
 
 ---
 
+## Installation
+
+### Quick install (recommended)
+```bash
+# If brain is already installed
+brain update
+
+# Or download the latest release binary
+curl -sL https://github.com/dominhduc/agent-brain/releases/latest/download/brain_$(uname -s)_$(uname -m).tar.gz | tar xz -C ~/.local/bin
+```
+
+### Build from source
+```bash
+git clone https://github.com/dominhduc/agent-brain.git
+cd agent-brain
+make build && make install
+```
+
+### Verify installation
+```bash
+brain doctor
+```
+
+---
+
 ## Quick Start
 
 Three commands. That's all you need.
 
 ```bash
-# 1. Install (download binary)
-# Download from GitHub Releases, or build from source:
-make build
-
-# 2. Initialize in your project
+# 1. Initialize in your project
 cd your-project
 brain init
 
-# 3. Start working — the agent handles the rest
+# 2. Start working — the agent handles the rest
 # Your coding agent will automatically load and update knowledge
 ```
 
@@ -70,6 +91,24 @@ You code → Agent works → Git push
 - **Decisions** — Why certain choices were made, with rationale
 - **Architecture** — Module relationships and key abstractions
 - **Sessions** — Per-session journals with self-evaluations
+
+### How brain finds your project
+
+The `brain` binary is fully self-contained and can be installed anywhere in your PATH. It finds your project's `.brain/` directory by walking up from your current working directory.
+
+```
+~/projects/my-app/
+├── .brain/           ← brain finds this
+├── src/
+│   └── components/
+│       └── App.tsx   ← you can run `brain get gotchas` from here
+└── README.md
+```
+
+This means:
+- Install `brain` globally once, use it in all projects
+- Run commands from any subdirectory — brain walks up to find `.brain/`
+- Each project has its own isolated knowledge hub
 
 ---
 

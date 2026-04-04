@@ -68,6 +68,6 @@ func cmdUpdate() {
 
 	fmt.Printf("Updated to %s successfully!\n", release.TagName)
 
-	service.Stop()
+	service.StopCurrentProject()
 	fmt.Println("Restart the daemon with: brain daemon start")
 }

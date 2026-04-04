@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.7.0] - 2026-04-04
+
+### Added
+- `brain doctor` - Health check command
+- Multi-project daemon support (unique service name per project via hash)
+- README section: "How brain finds your project"
+
+### Changed
+- Clear installation instructions in README (curl download, make install, self-update)
+- Daemon service name now unique per project: `brain-daemon.<hash>`
+
 ## [v0.6.1] - 2026-04-04
 
 ### Added

@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-var version = "v0.4.0"
+var version = "v0.7.0"
 
 var (
 	commit string
@@ -53,6 +53,8 @@ func main() {
 		cmdReview(allFlag)
 	case "update":
 		cmdUpdate()
+	case "doctor":
+		cmdDoctor()
 	case "--help", "-h", "help":
 		printUsage()
 	default:
@@ -87,6 +89,7 @@ Usage:
 
   brain config <subcommand>           Configure brain
   brain daemon <start|stop|status>   Manage background daemon
+  brain doctor                        Run health check
   brain version                       Show version info
   brain update                        Update to latest version
 
@@ -104,5 +107,6 @@ Examples:
   brain add gotcha "Project uses argon2 NOT bcrypt"
   brain config list
   brain config set api-key sk-...
-  brain config setup`)
+  brain config setup
+  brain doctor`)
 }

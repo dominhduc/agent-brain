@@ -3,14 +3,19 @@ package service
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"runtime"
 )
+
+type ServiceInfo struct {
+	Name    string
+	Status  string
+	Project string
+}
 
 func Register(execPath, workDir string) error {
 	switch runtime.GOOS {
 	case "darwin":
-		return registerLaunchd(execPath)
+		return registerLaunchd(execPath, workDir)
 	case "linux":
 		return registerSystemd(execPath, workDir)
 	default:
@@ -18,36 +23,72 @@ func Register(execPath, workDir string) error {
 	}
 }
 
-func Start() error {
+func Start(workDir string) error {
 	switch runtime.GOOS {
 	case "darwin":
-		return startLaunchd()
+		return startLaunchd(workDir)
 	case "linux":
-		return startSystemd()
+		return startSystemd(workDir)
 	default:
 		return fmt.Errorf("unsupported OS: %s", runtime.GOOS)
 	}
 }
 
-func Stop() error {
+func Stop(workDir string) error {
 	switch runtime.GOOS {
 	case "darwin":
-		return stopLaunchd()
+		return stopLaunchd(workDir)
 	case "linux":
-		return stopSystemd()
+		return stopSystemd(workDir)
 	default:
 		return fmt.Errorf("unsupported OS: %s", runtime.GOOS)
 	}
 }
 
-func IsRunning() bool {
+func IsRunning(workDir string) bool {
 	switch runtime.GOOS {
 	case "darwin":
-		return exec.Command("launchctl", "list", "com.dominhduc.brain-daemon").Run() == nil
+		return isRunningLaunchd(workDir)
 	case "linux":
-		return exec.Command("systemctl", "--user", "is-active", "brain-daemon.service").Run() == nil
+		return isRunningSystemd(workDir)
 	default:
 		return false
+	}
+}
+
+func ListServices() ([]ServiceInfo, error) {
+	if runtime.GOOS == "windows" {
+		return nil, fmt.Errorf("not supported on Windows")
+	}
+	return listServices()
+}
+
+func StopCurrentProject() {
+	brainDir, err := findCurrentProjectBrainDir()
+	if err != nil {
+		return
+	}
+	workDir := brainDir
+	if workDir != "" {
+		Stop(workDir)
+	}
+}
+
+func findCurrentProjectBrainDir() (string, error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	dir := cwd
+	for {
+		brainPath := dir + "/.brain"
+		if _, err := os.Stat(brainPath); err == nil {
+			return dir, nil
+		}
+		if dir == "/" {
+			return "", fmt.Errorf("no .brain directory found")
+		}
+		dir = dir + "/.."
 	}
 }
 
