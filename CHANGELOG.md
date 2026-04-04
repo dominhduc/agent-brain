@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.8.2] - 2026-04-04
+
+### Fixed
+- Config setup now preserves existing API key when user skips the key prompt
+- Previously `brain config setup` started from DefaultConfig(), wiping the API key
+
 ## [v0.8.1] - 2026-04-04
 
 ### Fixed

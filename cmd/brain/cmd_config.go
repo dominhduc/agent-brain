@@ -429,7 +429,10 @@ func cmdConfigSetup() {
 		prof = "agent"
 	}
 
-	cfg := config.DefaultConfig()
+	cfg, err := config.Load()
+	if err != nil {
+		cfg = config.DefaultConfig()
+	}
 	if provider == "custom" {
 		cfg.LLM.Provider = customProviderName
 		if err := config.SaveCustomProvider(customProviderName, config.CustomProviderConfig{

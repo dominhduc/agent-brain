@@ -39,3 +39,6 @@
 
 ### [2026-04-04 16:19:17] Named custom providers: option 6 in setup wizard now asks for a name (e.g. 'groq'), base-url, api-key, model. Stored in custom_providers map in config.yaml. Provider field stores the name, not 'custom'. Analyzer resolves unknown provider names from custom_providers config.
 
+
+### [2026-04-04 17:21:11] Per-project daemon isolation: systemd service files (brain-daemon.<hash>.service) are per-project with WorkingDirectory set. PID lock file must also be per-project (brain-daemon-<hash>.pid) to allow parallel daemons. Data is inherently per-project (each project's .brain/.queue/ directory).
+

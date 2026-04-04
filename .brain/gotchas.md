@@ -39,3 +39,12 @@
 
 ### [2026-04-04 16:19:17] Config setup wizard order matters: Provider → Base URL → API Key → Model → Profile. Never ask for API key before knowing WHERE it goes (the endpoint/base URL).
 
+
+### [2026-04-04 17:21:06] Per-project daemon lock file must include project hash in filename (brain-daemon-<hash>.pid). A global lock file (brain-daemon.pid) prevents multiple project daemons from running simultaneously. The lock path should try brain.FindBrainDir() first, then fall back to os.Getwd().
+
+
+### [2026-04-04 17:21:06] Queue counting in daemon status and status commands must filter to commit-*.json (matching the daemon loop's processing filter). Without the prefix filter, non-commit JSON files in .queue/ are counted as pending but never processed.
+
+
+### [2026-04-04 17:21:06] findCurrentProjectBrainDir must use filepath.Join() and filepath.Dir() for cross-platform safety. String concat (dir + '/.brain' and dir + '/..') breaks on Windows and can loop forever without a proper termination check.
+
