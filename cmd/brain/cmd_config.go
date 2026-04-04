@@ -347,12 +347,10 @@ func cmdConfigSetup() {
 		"ollama":     "no specific format required",
 	}
 
-	modelStepNum := "5"
+	modelStepNum := "2"
 	if provider == "custom" {
 		modelStepNum = "5"
 	} else if needsAPIKey {
-		modelStepNum = "4"
-	} else {
 		modelStepNum = "3"
 	}
 

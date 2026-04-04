@@ -54,3 +54,9 @@
 
 ### [2026-04-04 21:08:55] brain prune workflow: create .brainprune at project root with one pattern per line. Lines in topic files matching patterns get archived to .brain/archived/. Run 'brain prune --dry-run' first to preview. Use for outdated entries: old versions, resolved issues, deprecated patterns.
 
+
+### [2026-04-04 22:05:35] brain doctor checks: version, git, .brain/, config (with API key), daemon (running state), preflight. All health checks should be in one command for quick diagnosis.
+
+
+### [2026-04-04 22:05:35] Config key names: use 'api-key' (friendly) in user-facing messages, not 'llm.api_key' (dot-path). The ResolveKey function accepts both, but user messages should be consistent.
+

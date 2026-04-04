@@ -60,7 +60,14 @@ decisions, and architectural insights from the code changes.
 - Be specific: mention file paths, function names, exact patterns
 - If nothing noteworthy was found, return empty arrays
 - Do NOT hallucinate — only report what the diff actually shows
-- Output ONLY valid JSON, no markdown formatting, no explanation
+- Output ONLY valid JSON as a plain object - no markdown, no code fences, no explanation
+- Start your response with { and end with } directly
+
+## Response format
+Return a JSON object with these exact keys:
+{"gotchas": [], "patterns": [], "decisions": [], "architecture": [], "confidence": "HIGH"}
+- confidence must be exactly HIGH, MEDIUM, or LOW
+- All arrays must be present, even if empty
 
 ## Categories
 - **gotchas**: Things that could trip up the agent (error patterns, edge cases, quirks)
@@ -68,7 +75,12 @@ decisions, and architectural insights from the code changes.
 - **decisions**: Why certain choices were made (trade-offs, rejected alternatives visible in diff)
 - **architecture**: Module relationships, key abstractions, data flow`
 
-	userPrompt := fmt.Sprintf("## Input\nFull diff:\n%s\n\n## Output Format (JSON only)\n{\n  \"gotchas\": [\"Finding 1\", \"Finding 2\"],\n  \"patterns\": [\"Finding 1\"],\n  \"decisions\": [\"Finding 1\"],\n  \"architecture\": [],\n  \"confidence\": \"HIGH|MEDIUM|LOW\"\n}", req.Diff)
+	userPrompt := fmt.Sprintf(`Analyze this git diff and extract knowledge.
+
+Git diff:
+%s
+
+Respond with ONLY a JSON object starting with { and ending with }. No markdown.`, req.Diff)
 
 	url := p.BuildURL(req.Model, req.BaseURL)
 	if url == "" {
@@ -98,11 +110,17 @@ decisions, and architectural insights from the code changes.
 	jsonStart := strings.Index(content, "{")
 	jsonEnd := strings.LastIndex(content, "}")
 	if jsonStart >= 0 && jsonEnd > jsonStart {
-		content = content[jsonStart : jsonEnd+1]
+		content = content[jsonStart:jsonEnd+1]
+	} else {
+		return finding, fmt.Errorf("no JSON object found in response")
 	}
 
 	if err := json.Unmarshal([]byte(content), &finding); err != nil {
-		return finding, fmt.Errorf("failed to parse findings JSON: %w", err)
+		return finding, fmt.Errorf("JSON parsing failed: %w", err)
+	}
+
+	if finding.Confidence == "" {
+		finding.Confidence = "MEDIUM"
 	}
 
 	return finding, nil

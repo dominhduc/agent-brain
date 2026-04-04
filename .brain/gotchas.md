@@ -57,3 +57,6 @@
 
 ### [2026-04-04 19:48:56] Config changes require daemon restart to take effect. The daemon reloads config every 10 cycles (line 288: if cycleCount%10 == 0), but model/provider changes only affect the next analyze call. Use 'brain daemon restart' after changing provider, model, or api-key.
 
+
+### [2026-04-04 22:05:35] Daemon getDiff must handle first commit (HEAD~1 doesn't exist). Use empty-tree fallback: git hash-object -t tree /dev/null to get empty tree hash, then diff empty_tree..HEAD. Without this, first commit in any repo fails processing.
+

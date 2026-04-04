@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.13.0] - 2026-04-04
+
+### Fixed
+- Config setup wizard step numbering fixed for ollama (no more duplicate Step 3/5)
+- LLM JSON parsing: simplified prompts, clearer format instructions, added fallback for missing confidence
+- Response parsing now returns error if no JSON found, not just if parsing fails
+
+### Changed
+- Streamlined system/user prompts for better LLM compliance
+
 ## [v0.12.0] - 2026-04-04
 
 ### Fixed
