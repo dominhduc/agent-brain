@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.14.0] - 2026-04-04
+
+### Changed
+- Simplified LLM prompts further to avoid JSON parsing failures
+- Ultra-minimal system prompt and user prompt for better compliance
+
 ## [v0.13.1] - 2026-04-04
 
 ### Fixed

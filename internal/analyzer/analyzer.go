@@ -49,38 +49,29 @@ func Analyze(req AnalyzeRequest) (Finding, error) {
 		}
 	}
 
-	systemPrompt := `You are analyzing a git commit to extract knowledge for a coding agent's memory system.
+	systemPrompt := `You are a coding assistant analyzing git commits.
 
-The agent works on this codebase over time. Your job is to identify patterns, gotchas,
-decisions, and architectural insights from the code changes.
+Your task: extract knowledge from the diff that would help future coding sessions.
 
-## Rules
-- Only extract knowledge that is NOT obvious from reading the code
-- Focus on things that would save time or prevent mistakes in future sessions
-- Be specific: mention file paths, function names, exact patterns
-- If nothing noteworthy was found, return empty arrays
-- Do NOT hallucinate — only report what the diff actually shows
-- Output ONLY valid JSON as a plain object - no markdown, no code fences, no explanation
-- Start your response with { and end with } directly
+Output: ONLY valid JSON. No markdown, no code fences, no explanations.
+Start your response with { and end with }.
 
-## Response format
-Return a JSON object with these exact keys:
+JSON format:
 {"gotchas": [], "patterns": [], "decisions": [], "architecture": [], "confidence": "HIGH"}
-- confidence must be exactly HIGH, MEDIUM, or LOW
-- All arrays must be present, even if empty
 
-## Categories
-- **gotchas**: Things that could trip up the agent (error patterns, edge cases, quirks)
-- **patterns**: Conventions the code follows (naming, structure, tool choices)
-- **decisions**: Why certain choices were made (trade-offs, rejected alternatives visible in diff)
-- **architecture**: Module relationships, key abstractions, data flow`
+Rules:
+- Only extract non-obvious knowledge
+- If nothing found, return empty arrays
+- Be specific: include file paths, function names
+- confidence must be HIGH, MEDIUM, or LOW
 
-	userPrompt := fmt.Sprintf(`Analyze this git diff and extract knowledge.
+Categories:
+- gotchas: error patterns, edge cases, quirks
+- patterns: naming conventions, structure patterns
+- decisions: why choices were made
+- architecture: module relationships, data flow`
 
-Git diff:
-%s
-
-Respond with ONLY a JSON object starting with { and ending with }. No markdown.`, req.Diff)
+	userPrompt := fmt.Sprintf("Analyze this git diff.\n\n%s\n\nRespond with ONLY JSON.", req.Diff)
 
 	url := p.BuildURL(req.Model, req.BaseURL)
 	if url == "" {

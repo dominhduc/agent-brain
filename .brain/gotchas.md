@@ -63,3 +63,6 @@
 
 ### [2026-04-04 22:16:55] LLM JSON parsing fails with 'JSON parsing failed' even when content looks valid. Root cause: complex prompts with markdown-style formatting confuse models. Fix: simplify prompts - short system prompt, minimal user prompt, explicit 'start with { and end with }' instruction.
 
+
+### [2026-04-04 22:35:31] Config.Load() must not fail on read/parse errors - return defaults with warning instead of error. If Load() returns an error, any caller that ignores it will use DefaultConfig() and overwrite the file via Save(). Always make Load() fail-safe.
+
