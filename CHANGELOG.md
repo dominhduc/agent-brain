@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.6.0] - 2026-04-04
+
+### Added
+- Multi-provider support: OpenAI, Anthropic, Google Gemini, Ollama, Custom
+- Provider selection in setup wizard (4 steps)
+- `base-url` config key for custom provider
+- Provider-specific model suggestions in setup wizard
+
+### Changed
+- `provider` config key is now enum type
+- `api-key` description updated to generic "API key"
+- `base-url` hidden in config list unless provider=custom
+
+### Fixed
+- Config setup wizard: empty custom model now falls back to default
+
 ## [v0.5.0] - 2026-04-04
 
 ### Fixed
