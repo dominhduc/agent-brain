@@ -17,8 +17,32 @@ When I correct you, express frustration about a repeated mistake, or point out a
 3. Treat every correction as permanent — don't repeat mistakes
 
 ### At Session End
-Run `brain eval` to write a self-evaluation to the current session file.
-Include: what you did, what worked, what failed, confidence scores, knowledge persisted.
+1. Run `brain eval` to write a self-evaluation to the current session file.
+   Include: what you did, what worked, what failed, confidence scores, knowledge persisted.
+2. Run `brain status` to check MEMORY.md line count.
+   If over 200 lines, run `brain prune --dry-run` to preview stale entries.
+   Ask the user before pruning. Only prune with approval.
+
+### Maintenance
+Run periodically (or when MEMORY.md exceeds 200 lines):
+
+- `brain status` — check health, queue state, and line counts
+- `brain prune --dry-run` — preview what would be removed from topic files
+- `brain prune` — archive matching entries to `.brain/archived/`
+- `brain review` — approve/reject pending daemon-analyzed entries
+
+**Prune patterns (.brainprune):** Create a `.brainprune` file at project root
+with one pattern per line. Topic file lines matching any pattern get archived.
+Use patterns for outdated entries: old version references, resolved issues,
+or entries no longer relevant to the current codebase.
+
+Example .brainprune:
+```
+# Old patterns no longer relevant
+v0.3.0
+old-api-endpoint
+deprecated function name
+```
 
 ### Confidence Reporting
 Always report confidence on technical decisions:
