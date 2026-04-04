@@ -49,29 +49,14 @@ func Analyze(req AnalyzeRequest) (Finding, error) {
 		}
 	}
 
-	systemPrompt := `You are a coding assistant analyzing git commits.
+	systemPrompt := "You are a code analyst. Always respond with ONLY a valid JSON object, no markdown, no explanation."
+	userPrompt := `Analyze this git diff and extract knowledge. Respond with ONLY this JSON format, no other text:
+{"gotchas":["..."],"patterns":["..."],"decisions":["..."],"architecture":["..."],"confidence":"HIGH|MEDIUM|LOW"}
 
-Your task: extract knowledge from the diff that would help future coding sessions.
+Rules: use empty arrays [] if nothing found. Keep entries short (one sentence each). Only include relevant categories.
 
-Output: ONLY valid JSON. No markdown, no code fences, no explanations.
-Start your response with { and end with }.
-
-JSON format:
-{"gotchas": [], "patterns": [], "decisions": [], "architecture": [], "confidence": "HIGH"}
-
-Rules:
-- Only extract non-obvious knowledge
-- If nothing found, return empty arrays
-- Be specific: include file paths, function names
-- confidence must be HIGH, MEDIUM, or LOW
-
-Categories:
-- gotchas: error patterns, edge cases, quirks
-- patterns: naming conventions, structure patterns
-- decisions: why choices were made
-- architecture: module relationships, data flow`
-
-	userPrompt := fmt.Sprintf("Analyze this git diff.\n\n%s\n\nRespond with ONLY JSON.", req.Diff)
+Diff:
+` + req.Diff
 
 	url := p.BuildURL(req.Model, req.BaseURL)
 	if url == "" {

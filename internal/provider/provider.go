@@ -121,7 +121,9 @@ func (p *OpenRouter) ParseResponse(body []byte) (string, error) {
 	var resp struct {
 		Choices []struct {
 			Message struct {
-				Content string `json:"content"`
+				Content   string `json:"content"`
+				Refusal   string `json:"refusal"`
+				Reasoning string `json:"reasoning"`
 			} `json:"message"`
 		} `json:"choices"`
 	}
@@ -131,7 +133,22 @@ func (p *OpenRouter) ParseResponse(body []byte) (string, error) {
 	if len(resp.Choices) == 0 {
 		return "", fmt.Errorf("no choices in response")
 	}
-	return resp.Choices[0].Message.Content, nil
+	msg := resp.Choices[0].Message
+	if msg.Content != "" && !strings.HasPrefix(msg.Content, "Thinking") {
+		return msg.Content, nil
+	}
+	if msg.Refusal != "" {
+		return "", fmt.Errorf("refused: %s", msg.Refusal)
+	}
+	if msg.Reasoning != "" {
+		start := strings.Index(msg.Reasoning, "{")
+		end := strings.LastIndex(msg.Reasoning, "}")
+		if start >= 0 && end > start {
+			return msg.Reasoning[start:end+1], nil
+		}
+		return msg.Reasoning, nil
+	}
+	return "", fmt.Errorf("empty response")
 }
 
 type Anthropic struct{}
