@@ -60,3 +60,6 @@
 
 ### [2026-04-04 22:05:35] Config key names: use 'api-key' (friendly) in user-facing messages, not 'llm.api_key' (dot-path). The ResolveKey function accepts both, but user messages should be consistent.
 
+
+### [2026-04-04 22:16:55] Analyzer LLM prompts: keep simple. System prompt rules, user prompt just says 'analyze this diff'. Output format in system prompt only. Avoid markdown examples in user prompt - models try to format response as code blocks.
+

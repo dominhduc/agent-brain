@@ -60,3 +60,6 @@
 
 ### [2026-04-04 22:05:35] Daemon getDiff must handle first commit (HEAD~1 doesn't exist). Use empty-tree fallback: git hash-object -t tree /dev/null to get empty tree hash, then diff empty_tree..HEAD. Without this, first commit in any repo fails processing.
 
+
+### [2026-04-04 22:16:55] LLM JSON parsing fails with 'JSON parsing failed' even when content looks valid. Root cause: complex prompts with markdown-style formatting confuse models. Fix: simplify prompts - short system prompt, minimal user prompt, explicit 'start with { and end with }' instruction.
+

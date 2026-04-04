@@ -105,11 +105,15 @@ func Load() (Config, error) {
 		if os.IsNotExist(err) {
 			return cfg, nil
 		}
-		return cfg, fmt.Errorf("failed to read config file: %w", err)
+		// File exists but couldn't read - return defaults but log warning
+		fmt.Fprintf(os.Stderr, "Warning: could not read config file: %v\n", err)
+		return cfg, nil
 	}
 
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		return cfg, fmt.Errorf("failed to parse config file: %w", err)
+		// File has invalid YAML - return defaults but log warning
+		fmt.Fprintf(os.Stderr, "Warning: could not parse config file: %v\n", err)
+		return cfg, nil
 	}
 
 	// Env var overrides file
