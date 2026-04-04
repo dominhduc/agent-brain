@@ -15,3 +15,6 @@
 
 ### [2026-04-03 08:42:47] Changed version from const to var so goreleaser ldflags can override it at build time — -X main.version={{.Version}}
 
+
+### [2026-04-04 16:19:17] Removed 'custom' as a direct provider value. Users must name their custom providers (e.g. groq, together). This makes config more readable and allows switching between multiple custom endpoints.
+

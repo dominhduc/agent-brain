@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
 )
 
@@ -81,14 +82,15 @@ func findCurrentProjectBrainDir() (string, error) {
 	}
 	dir := cwd
 	for {
-		brainPath := dir + "/.brain"
+		brainPath := filepath.Join(dir, ".brain")
 		if _, err := os.Stat(brainPath); err == nil {
 			return dir, nil
 		}
-		if dir == "/" {
+		parent := filepath.Dir(dir)
+		if parent == dir {
 			return "", fmt.Errorf("no .brain directory found")
 		}
-		dir = dir + "/.."
+		dir = parent
 	}
 }
 

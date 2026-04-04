@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.8.1] - 2026-04-04
+
+### Fixed
+- Per-project daemon lock: lock file now includes project hash, allowing multiple project daemons to run simultaneously
+- Queue counting in `brain daemon status` and `brain status`: filter to `commit-*.json` only (matching daemon processing filter)
+- `findCurrentProjectBrainDir` uses filepath.Join instead of string concatenation (cross-platform safe)
+
 ## [v0.8.0] - 2026-04-04
 
 ### Changed

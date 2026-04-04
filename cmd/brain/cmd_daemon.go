@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"os/exec"
@@ -93,7 +95,7 @@ func cmdDaemonStatus() {
 
 	if entries, e := os.ReadDir(queueDir); e == nil {
 		for _, e := range entries {
-			if !e.IsDir() && strings.HasSuffix(e.Name(), ".json") {
+			if !e.IsDir() && strings.HasPrefix(e.Name(), "commit-") && strings.HasSuffix(e.Name(), ".json") {
 				pendingCount++
 			}
 		}
@@ -121,6 +123,11 @@ func cmdDaemonStatus() {
 	}
 }
 
+func projectHash(workDir string) string {
+	hash := sha256.Sum256([]byte(workDir))
+	return hex.EncodeToString(hash[:4])
+}
+
 func lockFilePath() (string, error) {
 	cacheDir, err := os.UserCacheDir()
 	if err != nil {
@@ -130,6 +137,20 @@ func lockFilePath() (string, error) {
 	if err := os.MkdirAll(lockDir, 0700); err != nil {
 		return "", err
 	}
+
+	brainDir, err := brain.FindBrainDir()
+	if err == nil {
+		workDir := filepath.Dir(brainDir)
+		hash := projectHash(workDir)
+		return filepath.Join(lockDir, fmt.Sprintf("brain-daemon-%s.pid", hash)), nil
+	}
+
+	cwd, _ := os.Getwd()
+	if cwd != "" {
+		hash := projectHash(cwd)
+		return filepath.Join(lockDir, fmt.Sprintf("brain-daemon-%s.pid", hash)), nil
+	}
+
 	return filepath.Join(lockDir, "brain-daemon.pid"), nil
 }
 

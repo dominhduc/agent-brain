@@ -49,7 +49,7 @@ func cmdStatus(jsonFlag bool) {
 	doneCount := 0
 	if entries, err := os.ReadDir(queueDir); err == nil {
 		for _, e := range entries {
-			if !e.IsDir() && strings.HasSuffix(e.Name(), ".json") {
+			if !e.IsDir() && strings.HasPrefix(e.Name(), "commit-") && strings.HasSuffix(e.Name(), ".json") {
 				queuePendingCount++
 			}
 		}

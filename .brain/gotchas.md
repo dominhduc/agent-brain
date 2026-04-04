@@ -36,3 +36,6 @@
 
 ### [2026-04-04 15:45:59] Config setup wizard flow: When provider = custom, Step 3 should first ask for base-url, THEN Step 3b ask for model. Other providers skip base-url and go directly to model selection.
 
+
+### [2026-04-04 16:19:17] Config setup wizard order matters: Provider → Base URL → API Key → Model → Profile. Never ask for API key before knowing WHERE it goes (the endpoint/base URL).
+

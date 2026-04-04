@@ -36,3 +36,6 @@
 
 ### [2026-04-04 15:27:33] Global vs local installation: brain binary is fully self-contained (CGO_ENABLED=0 static binary), uses os.Getwd() to find project context, walks up from cwd to find .brain/. Can be installed anywhere in PATH, global install works perfectly.
 
+
+### [2026-04-04 16:19:17] Named custom providers: option 6 in setup wizard now asks for a name (e.g. 'groq'), base-url, api-key, model. Stored in custom_providers map in config.yaml. Provider field stores the name, not 'custom'. Analyzer resolves unknown provider names from custom_providers config.
+
