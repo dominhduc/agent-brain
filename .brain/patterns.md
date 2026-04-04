@@ -30,3 +30,6 @@
 
 ### [2026-04-04 07:02:07] After any code push that changes CLI behavior or help text: ALWAYS tag a new version (minor for UX fixes, patch for bug fixes) and push tag. Then verify with 'gh release list' and run 'brain update' to test. Never skip this step.
 
+
+### [2026-04-04 11:28:09] CLI setup wizard model validation: For provider selection, allow both number input (1,2,3) OR direct model name input. Validate model format for each provider and warn if it doesn't match typical patterns, but let user override with confirmation.
+

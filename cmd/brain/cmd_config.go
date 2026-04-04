@@ -266,16 +266,21 @@ func cmdConfigSetup() {
 		"custom":    {"gpt-4o-mini", "gpt-4o", "llama3.2"},
 	}
 
+	formatWarnings := map[string]string{
+		"openrouter": "should be in vendor/model format (e.g., anthropic/claude-3.5-haiku)",
+		"openai":     "should start with gpt-, o1-, or o3-",
+		"anthropic":  "should start with claude-",
+		"gemini":     "should contain 'gemini'",
+		"ollama":     "no specific format required",
+		"custom":     "no specific format required",
+	}
+
 	models := modelMap[provider]
 	fmt.Println("Step 3/4: Model")
-	for i, m := range models {
-		fmt.Printf("  %d. %s", i+1, m)
-		if i == 0 {
-			fmt.Printf(" [default]")
-		}
-		fmt.Println()
-	}
-	fmt.Print("Choose a model (1-" + fmt.Sprint(len(models)) + ", or press Enter for default): ")
+	fmt.Printf("  Suggested for %s: %s\n", provider, strings.Join(models, ", "))
+	fmt.Println("  Or enter any model name directly")
+	fmt.Println()
+	fmt.Print("Enter model name (or 1-" + fmt.Sprint(len(models)) + " to select, Enter for default): ")
 	modelChoice, _ := reader.ReadString('\n')
 	modelChoice = strings.TrimSpace(modelChoice)
 	fmt.Println()
@@ -286,10 +291,29 @@ func cmdConfigSetup() {
 		fmt.Sscanf(modelChoice, "%d", &idx)
 		if idx >= 1 && idx <= len(models) {
 			model = models[idx-1]
+		} else {
+			model = modelChoice
 		}
 	}
 	if model == "" {
 		model = models[0]
+	}
+
+	warning := formatWarnings[provider]
+	if warning != "" && provider != "ollama" && provider != "custom" {
+		valid := validateModelFormat(provider, model)
+		if !valid {
+			fmt.Printf("  ⚠ Warning: Model %q doesn't match typical format for %s\n", model, provider)
+			fmt.Printf("    (%s)\n", warning)
+			fmt.Print("  Continue anyway? (y/n): ")
+			confirm, _ := reader.ReadString('\n')
+			confirm = strings.TrimSpace(strings.ToLower(confirm))
+			fmt.Println()
+			if confirm != "y" && confirm != "yes" {
+				fmt.Println("Setup cancelled. Run 'brain config setup' to try again.")
+				os.Exit(0)
+			}
+		}
 	}
 
 	fmt.Println("Step 4/4: Review Profile")
@@ -344,4 +368,22 @@ func maskKey(key string) string {
 		return "****"
 	}
 	return key[:4] + "****" + key[len(key)-2:]
+}
+
+func validateModelFormat(provider, model string) bool {
+	switch provider {
+	case "openrouter":
+		return strings.Contains(model, "/")
+	case "openai":
+		return strings.HasPrefix(model, "gpt-") ||
+			strings.HasPrefix(model, "o1-") ||
+			strings.HasPrefix(model, "o3-") ||
+			strings.HasPrefix(model, "o4-")
+	case "anthropic":
+		return strings.HasPrefix(model, "claude-")
+	case "gemini":
+		return strings.Contains(model, "gemini")
+	default:
+		return true
+	}
 }
