@@ -17,11 +17,12 @@ import (
 const maxDiffSize = 2000 * 100
 
 type QueueItem struct {
-	Timestamp string `json:"timestamp"`
-	Repo      string `json:"repo"`
-	DiffStat  string `json:"diff_stat"`
-	Files     string `json:"files"`
-	Attempts  int    `json:"attempts"`
+	Timestamp   string `json:"timestamp"`
+	Repo        string `json:"repo"`
+	DiffStat    string `json:"diff_stat"`
+	Files       string `json:"files"`
+	Attempts    int    `json:"attempts"`
+	ErrorReason string `json:"error_reason,omitempty"`
 }
 
 type DiffGetter func(repo string) (string, error)
@@ -31,30 +32,30 @@ type AnalyzeFunc func(req analyzer.AnalyzeRequest) (analyzer.Finding, error)
 func ProcessItemWithDeps(processingPath, queueDir, brainDir, projectRoot string, maxRetries int, getDiff DiffGetter, analyzeFn AnalyzeFunc) (bool, error) {
 	data, err := os.ReadFile(processingPath)
 	if err != nil {
-		moveToFailed(processingPath, queueDir)
+		moveToFailed(processingPath, queueDir, fmt.Sprintf("reading queue item: %v", err))
 		return false, fmt.Errorf("reading queue item: %w", err)
 	}
 
 	var item QueueItem
 	if err := json.Unmarshal(data, &item); err != nil {
-		moveToFailed(processingPath, queueDir)
+		moveToFailed(processingPath, queueDir, fmt.Sprintf("parsing queue item: %v", err))
 		return false, fmt.Errorf("parsing queue item: %w", err)
 	}
 
 	if item.Timestamp == "" || item.Repo == "" {
-		moveToFailed(processingPath, queueDir)
+		moveToFailed(processingPath, queueDir, "invalid queue item: missing timestamp or repo")
 		return false, fmt.Errorf("invalid queue item: missing timestamp or repo")
 	}
 
 	if len(item.Timestamp) > 20 || len(item.Repo) > 4096 {
-		moveToFailed(processingPath, queueDir)
+		moveToFailed(processingPath, queueDir, "invalid queue item: field too long")
 		return false, fmt.Errorf("invalid queue item: field too long")
 	}
 
 	absRepo, _ := filepath.Abs(item.Repo)
 	absRoot, _ := filepath.Abs(projectRoot)
 	if absRepo != absRoot {
-		moveToFailed(processingPath, queueDir)
+		moveToFailed(processingPath, queueDir, fmt.Sprintf("security: repo %q does not match project root %q", absRepo, absRoot))
 		return false, fmt.Errorf("security: queue item repo %q does not match project root %q", absRepo, absRoot)
 	}
 
@@ -74,7 +75,7 @@ func ProcessItemWithDeps(processingPath, queueDir, brainDir, projectRoot string,
 	if err != nil || diff == "" {
 		item.Attempts++
 		if item.Attempts >= maxRetries {
-			moveToFailed(processingPath, queueDir)
+			moveToFailed(processingPath, queueDir, fmt.Sprintf("getting diff failed after %d attempts: %v", item.Attempts, err))
 			return false, fmt.Errorf("getting diff failed after %d attempts", item.Attempts)
 		}
 		saveAndRequeue(processingPath, itemPath(processingPath), item)
@@ -102,7 +103,7 @@ func ProcessItemWithDeps(processingPath, queueDir, brainDir, projectRoot string,
 	if err != nil {
 		item.Attempts++
 		if item.Attempts >= maxRetries {
-			moveToFailed(processingPath, queueDir)
+			moveToFailed(processingPath, queueDir, fmt.Sprintf("LLM analysis failed after %d attempts: %v", item.Attempts, err))
 			return false, fmt.Errorf("LLM analysis failed after %d attempts: %w", item.Attempts, err)
 		}
 		saveAndRequeue(processingPath, itemPath(processingPath), item)
@@ -186,10 +187,23 @@ func RecoverStaleProcessing(brainDir string) {
 	}
 }
 
-func moveToFailed(itemPath, queueDir string) {
+func moveToFailed(itemPath, queueDir string, reason string) {
 	failedDir := filepath.Join(queueDir, "failed")
 	os.MkdirAll(failedDir, 0755)
-	os.Rename(itemPath, filepath.Join(failedDir, filepath.Base(itemPath)))
+
+	data, err := os.ReadFile(itemPath)
+	if err == nil {
+		var item QueueItem
+		if json.Unmarshal(data, &item) == nil {
+			item.ErrorReason = reason
+			itemData, _ := json.Marshal(item)
+			os.WriteFile(itemPath, itemData, 0600)
+		}
+	}
+
+	destName := strings.TrimSuffix(filepath.Base(itemPath), ".processing")
+	destPath := filepath.Join(failedDir, destName)
+	os.Rename(itemPath, destPath)
 }
 
 func moveToDone(itemPath, queueDir string) {

@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -19,7 +20,7 @@ import (
 
 func cmdDaemon() {
 	if len(os.Args) < 3 {
-		fmt.Println("Usage: brain daemon <start|stop|status|run>")
+		fmt.Println("Usage: brain daemon <start|stop|status|failed|run>")
 		os.Exit(1)
 	}
 
@@ -32,6 +33,8 @@ func cmdDaemon() {
 		cmdDaemonStatus()
 	case "run":
 		runDaemon()
+	case "failed":
+		cmdDaemonFailed()
 	default:
 		fmt.Printf("Unknown daemon command: %s\nWhat to do: use start, stop, status, or run.\n", os.Args[2])
 		os.Exit(1)
@@ -120,6 +123,53 @@ func cmdDaemonStatus() {
 	doneDir := filepath.Join(queueDir, "done")
 	if entries, e := os.ReadDir(doneDir); e == nil && len(entries) > 0 {
 		fmt.Printf("Last processed:  %s\n", entries[len(entries)-1].Name())
+	}
+}
+
+func cmdDaemonFailed() {
+	brainDir, err := brain.FindBrainDir()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: run 'brain init' first.\n", err)
+		os.Exit(1)
+	}
+
+	failedDir := filepath.Join(brainDir, ".queue", "failed")
+	entries, err := os.ReadDir(failedDir)
+	if err != nil {
+		fmt.Println("No failed items.")
+		return
+	}
+
+	if len(entries) == 0 {
+		fmt.Println("No failed items.")
+		return
+	}
+
+	fmt.Printf("Failed Items (%d)\n", len(entries))
+	fmt.Println("=================")
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		name := strings.TrimSuffix(e.Name(), ".processing")
+		data, err := os.ReadFile(filepath.Join(failedDir, e.Name()))
+		if err != nil {
+			fmt.Printf("  %s (could not read)\n", name)
+			continue
+		}
+		var item daemon.QueueItem
+		if err := json.Unmarshal(data, &item); err != nil {
+			fmt.Printf("  %s (could not parse)\n", name)
+			continue
+		}
+		reason := item.ErrorReason
+		if reason == "" {
+			reason = "unknown (old format — reprocess or delete)"
+		}
+		fmt.Printf("  %s\n", name)
+		fmt.Printf("    Error: %s\n", reason)
+		fmt.Printf("    Attempts: %d\n", item.Attempts)
+		fmt.Printf("    Files: %s\n", item.Files)
 	}
 }
 

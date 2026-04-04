@@ -48,3 +48,6 @@
 
 ### [2026-04-04 17:21:06] findCurrentProjectBrainDir must use filepath.Join() and filepath.Dir() for cross-platform safety. String concat (dir + '/.brain' and dir + '/..') breaks on Windows and can loop forever without a proper termination check.
 
+
+### [2026-04-04 17:39:30] Config setup wizard must load existing config (config.Load()), not start from DefaultConfig(). DefaultConfig() has empty API key — starting from it and saving wipes any existing key. Always load first, update selectively.
+

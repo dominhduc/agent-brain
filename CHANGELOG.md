@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.9.0] - 2026-04-04
+
+### Added
+- `brain daemon failed` — list failed queue items with error reasons
+- Failed items now store error reason in JSON (`error_reason` field)
+
+### Fixed
+- Failed items no longer keep `.processing` suffix in failed directory
+- Config setup preserves existing API key when user skips key prompt
+
 ## [v0.8.2] - 2026-04-04
 
 ### Fixed
