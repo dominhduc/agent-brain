@@ -33,8 +33,8 @@ func TestResolveKey_Unknown(t *testing.T) {
 
 func TestAllKeys_Count(t *testing.T) {
 	keys := AllKeys()
-	if len(keys) != 8 {
-		t.Errorf("expected 8 keys, got %d", len(keys))
+	if len(keys) != 9 {
+		t.Errorf("expected 9 keys, got %d", len(keys))
 	}
 }
 

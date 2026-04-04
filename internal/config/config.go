@@ -26,6 +26,7 @@ type LLMConfig struct {
 	Provider string `yaml:"provider"`
 	APIKey   string `yaml:"api_key"`
 	Model    string `yaml:"model"`
+	BaseURL  string `yaml:"base_url"`
 }
 
 type AnalysisConfig struct {
@@ -64,6 +65,7 @@ func DefaultConfig() Config {
 			Provider: "openrouter",
 			APIKey:   "",
 			Model:    "anthropic/claude-3.5-haiku",
+			BaseURL:  "",
 		},
 		Analysis: AnalysisConfig{
 			MaxDiffLines: 2000,

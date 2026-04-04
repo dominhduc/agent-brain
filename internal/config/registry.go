@@ -18,12 +18,27 @@ type ConfigKey struct {
 
 var allKeys = []ConfigKey{
 	{
+		Friendly:    "provider",
+		DotPath:     "llm.provider",
+		Type:        "enum",
+		Default:     "openrouter",
+		Description: "LLM provider",
+		Options:     []string{"openrouter", "openai", "anthropic", "gemini", "ollama", "custom"},
+	},
+	{
 		Friendly:    "api-key",
 		DotPath:     "llm.api_key",
 		Type:        "string",
 		Default:     "",
-		Description: "OpenRouter API key",
+		Description: "API key",
 		EnvVar:      "BRAIN_API_KEY",
+	},
+	{
+		Friendly:    "base-url",
+		DotPath:     "llm.base_url",
+		Type:        "string",
+		Default:     "",
+		Description: "Custom provider base URL (only for provider=custom)",
 	},
 	{
 		Friendly:    "model",
@@ -31,13 +46,6 @@ var allKeys = []ConfigKey{
 		Type:        "string",
 		Default:     "anthropic/claude-3.5-haiku",
 		Description: "LLM model name",
-	},
-	{
-		Friendly:    "provider",
-		DotPath:     "llm.provider",
-		Type:        "string",
-		Default:     "openrouter",
-		Description: "LLM provider",
 	},
 	{
 		Friendly:    "profile",
@@ -153,6 +161,8 @@ func (k *ConfigKey) ApplyValue(cfg *Config, value string) error {
 		cfg.LLM.Model = value
 	case "llm.provider":
 		cfg.LLM.Provider = value
+	case "llm.base_url":
+		cfg.LLM.BaseURL = value
 	case "review.profile":
 		cfg.Review.Profile = value
 	case "daemon.poll_interval":
@@ -179,6 +189,8 @@ func (k *ConfigKey) GetValue(cfg *Config) string {
 		return cfg.LLM.Model
 	case "llm.provider":
 		return cfg.LLM.Provider
+	case "llm.base_url":
+		return cfg.LLM.BaseURL
 	case "review.profile":
 		return cfg.Review.Profile
 	case "daemon.poll_interval":

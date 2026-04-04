@@ -61,6 +61,9 @@ func cmdConfigShow() {
 	} else {
 		fmt.Println("API Key:     not set")
 	}
+	if cfg.LLM.Provider == "custom" && cfg.LLM.BaseURL != "" {
+		fmt.Printf("Base URL:    %s\n", cfg.LLM.BaseURL)
+	}
 	fmt.Printf("Profile:     %s\n", cfg.Review.Profile)
 	if prof, err := profile.FromName(cfg.Review.Profile); err == nil {
 		fmt.Printf("  → %s\n", prof.Description())
@@ -76,7 +79,7 @@ func cmdConfigShow() {
 func cmdConfigGet() {
 	if len(os.Args) < 4 {
 		fmt.Println("Usage: brain config get <key>")
-		fmt.Println("Keys: api-key, model, provider, profile, poll-interval, max-retries, retry-backoff, max-diff-lines")
+		fmt.Println("Keys: provider, api-key, base-url, model, profile, poll-interval, max-retries, retry-backoff, max-diff-lines")
 		os.Exit(1)
 	}
 
@@ -107,7 +110,7 @@ func cmdConfigGet() {
 func cmdConfigSet() {
 	if len(os.Args) < 5 {
 		fmt.Println("Usage: brain config set <key> <value>")
-		fmt.Println("Keys: api-key, model, provider, profile, poll-interval, max-retries, retry-backoff, max-diff-lines")
+		fmt.Println("Keys: provider, api-key, base-url, model, profile, poll-interval, max-retries, retry-backoff, max-diff-lines")
 		os.Exit(1)
 	}
 
@@ -153,6 +156,9 @@ func cmdConfigList() {
 	fmt.Println("Configuration Keys")
 	fmt.Println("==================")
 	for _, k := range config.AllKeys() {
+		if k.Friendly == "base-url" && cfg.LLM.Provider != "custom" {
+			continue
+		}
 		value := k.GetValue(&cfg)
 		current := value
 		if current == "" {
@@ -215,38 +221,78 @@ func cmdConfigSetup() {
 	fmt.Println("===============================")
 	fmt.Println()
 
-	fmt.Println("Step 1/3: API Key")
-	fmt.Print("Enter your OpenRouter API key (or press Enter to skip): ")
-	apiKey, _ := reader.ReadString('\n')
-	apiKey = strings.TrimSpace(apiKey)
+	fmt.Println("Step 1/4: Provider")
+	fmt.Println("  1. openrouter  - Aggregates 100+ models, single API key [default]")
+	fmt.Println("  2. openai     - Direct OpenAI API")
+	fmt.Println("  3. anthropic  - Claude models")
+	fmt.Println("  4. gemini     - Google Gemini models")
+	fmt.Println("  5. ollama     - Local models (requires Ollama running)")
+	fmt.Println("  6. custom     - Custom OpenAI-compatible endpoint")
+	fmt.Print("Choose a provider (1-6, or press Enter for default): ")
+	providerChoice, _ := reader.ReadString('\n')
+	providerChoice = strings.TrimSpace(providerChoice)
 	fmt.Println()
 
-	fmt.Println("Step 2/3: Model")
-	fmt.Println("  1. anthropic/claude-3.5-haiku (fast, cheap ~$0.01/commit) [default]")
-	fmt.Println("  2. openai/gpt-4o-mini")
-	fmt.Println("  3. google/gemini-2.5-flash")
-	fmt.Println("  4. Custom model name")
-	fmt.Print("Choose a model (1-4, or press Enter for default): ")
+	provider := "openrouter"
+	switch providerChoice {
+	case "2":
+		provider = "openai"
+	case "3":
+		provider = "anthropic"
+	case "4":
+		provider = "gemini"
+	case "5":
+		provider = "ollama"
+	case "6":
+		provider = "custom"
+	}
+
+	needsAPIKey := provider != "ollama"
+	var apiKey string
+	if needsAPIKey {
+		fmt.Println("Step 2/4: API Key")
+		fmt.Print("Enter your API key (or press Enter to skip): ")
+		apiKey, _ = reader.ReadString('\n')
+		apiKey = strings.TrimSpace(apiKey)
+		fmt.Println()
+	}
+
+	modelMap := map[string][]string{
+		"openrouter": {"anthropic/claude-3.5-haiku", "openai/gpt-4o-mini", "google/gemini-2.5-flash"},
+		"openai":     {"gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"},
+		"anthropic":  {"claude-3-5-haiku-20241022", "claude-3-opus-20240229", "claude-3-sonnet-20240229"},
+		"gemini":     {"gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"},
+		"ollama":     {"llama3.2", "qwen2.5", "phi3"},
+		"custom":    {"gpt-4o-mini", "gpt-4o", "llama3.2"},
+	}
+
+	models := modelMap[provider]
+	fmt.Println("Step 3/4: Model")
+	for i, m := range models {
+		fmt.Printf("  %d. %s", i+1, m)
+		if i == 0 {
+			fmt.Printf(" [default]")
+		}
+		fmt.Println()
+	}
+	fmt.Print("Choose a model (1-" + fmt.Sprint(len(models)) + ", or press Enter for default): ")
 	modelChoice, _ := reader.ReadString('\n')
 	modelChoice = strings.TrimSpace(modelChoice)
 	fmt.Println()
 
-	model := "anthropic/claude-3.5-haiku"
-	switch modelChoice {
-	case "2":
-		model = "openai/gpt-4o-mini"
-	case "3":
-		model = "google/gemini-2.5-flash"
-	case "4":
-		fmt.Print("Enter custom model name: ")
-		customModel, _ := reader.ReadString('\n')
-		model = strings.TrimSpace(customModel)
-		if model == "" {
-			model = "anthropic/claude-3.5-haiku"
+	model := models[0]
+	if modelChoice != "" {
+		idx := 0
+		fmt.Sscanf(modelChoice, "%d", &idx)
+		if idx >= 1 && idx <= len(models) {
+			model = models[idx-1]
 		}
 	}
+	if model == "" {
+		model = models[0]
+	}
 
-	fmt.Println("Step 3/3: Review Profile")
+	fmt.Println("Step 4/4: Review Profile")
 	fmt.Println("  1. guard   - Review every entry (recommended for new projects) [default]")
 	fmt.Println("  2. assist  - Auto-deduplicate, but review each unique entry")
 	fmt.Println("  3. agent   - Fully automatic, no review needed")
@@ -264,6 +310,7 @@ func cmdConfigSetup() {
 	}
 
 	cfg := config.DefaultConfig()
+	cfg.LLM.Provider = provider
 	if apiKey != "" {
 		cfg.LLM.APIKey = apiKey
 	}
@@ -276,6 +323,7 @@ func cmdConfigSetup() {
 	}
 
 	fmt.Println("Configuration saved!")
+	fmt.Printf("  Provider: %s\n", cfg.LLM.Provider)
 	fmt.Printf("  API Key:  %s\n", maskKeyOrNotSet(cfg.LLM.APIKey))
 	fmt.Printf("  Model:    %s\n", cfg.LLM.Model)
 	fmt.Printf("  Profile:  %s\n", cfg.Review.Profile)

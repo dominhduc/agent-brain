@@ -283,10 +283,11 @@ func runDaemon() {
 
 			analyzeFn := func(req analyzer.AnalyzeRequest) (analyzer.Finding, error) {
 				return analyzer.Analyze(analyzer.AnalyzeRequest{
-					Diff:       req.Diff,
-					APIKey:     apiKey,
-					Model:      cfg.LLM.Model,
-					APIBaseURL: "",
+					Diff:     req.Diff,
+					APIKey:   apiKey,
+					Model:    cfg.LLM.Model,
+					Provider: cfg.LLM.Provider,
+					BaseURL:  cfg.LLM.BaseURL,
 				})
 			}
 

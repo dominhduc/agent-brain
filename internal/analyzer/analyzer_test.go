@@ -32,10 +32,11 @@ func TestAnalyze_Success(t *testing.T) {
 	defer server.Close()
 
 	finding, err := Analyze(AnalyzeRequest{
-		Diff:       "some diff content",
-		APIKey:     "test-key",
-		Model:      "test-model",
-		APIBaseURL: server.URL,
+		Diff:     "some diff content",
+		APIKey:   "test-key",
+		Model:    "test-model",
+		Provider: "custom",
+		BaseURL:  server.URL,
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -65,10 +66,11 @@ func TestAnalyze_APIError(t *testing.T) {
 	defer server.Close()
 
 	_, err := Analyze(AnalyzeRequest{
-		Diff:       "some diff",
-		APIKey:     "bad-key",
-		Model:      "test-model",
-		APIBaseURL: server.URL,
+		Diff:     "some diff",
+		APIKey:   "bad-key",
+		Model:    "test-model",
+		Provider: "custom",
+		BaseURL:  server.URL,
 	})
 	if err == nil {
 		t.Fatal("expected error for 401 response")
@@ -85,12 +87,25 @@ func TestAnalyze_EmptyResponse(t *testing.T) {
 	defer server.Close()
 
 	_, err := Analyze(AnalyzeRequest{
-		Diff:       "some diff",
-		APIKey:     "test-key",
-		Model:      "test-model",
-		APIBaseURL: server.URL,
+		Diff:     "some diff",
+		APIKey:   "test-key",
+		Model:    "test-model",
+		Provider: "custom",
+		BaseURL:  server.URL,
 	})
 	if err == nil {
 		t.Fatal("expected error for empty choices")
+	}
+}
+
+func TestAnalyze_InvalidProvider(t *testing.T) {
+	_, err := Analyze(AnalyzeRequest{
+		Diff:     "some diff",
+		APIKey:   "test-key",
+		Model:    "test-model",
+		Provider: "invalid-provider",
+	})
+	if err == nil {
+		t.Fatal("expected error for invalid provider")
 	}
 }

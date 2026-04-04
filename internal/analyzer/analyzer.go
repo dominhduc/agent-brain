@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/dominhduc/agent-brain/internal/httpclient"
+	"github.com/dominhduc/agent-brain/internal/provider"
 )
 
 type Finding struct {
@@ -17,16 +18,22 @@ type Finding struct {
 }
 
 type AnalyzeRequest struct {
-	Diff       string
-	APIKey     string
-	Model      string
-	APIBaseURL string
+	Diff     string
+	APIKey   string
+	Model    string
+	Provider string
+	BaseURL  string
 }
 
 func Analyze(req AnalyzeRequest) (Finding, error) {
 	var finding Finding
 
-	prompt := fmt.Sprintf(`You are analyzing a git commit to extract knowledge for a coding agent's memory system.
+	p, err := provider.New(req.Provider)
+	if err != nil {
+		return finding, fmt.Errorf("invalid provider: %w", err)
+	}
+
+	systemPrompt := `You are analyzing a git commit to extract knowledge for a coding agent's memory system.
 
 The agent works on this codebase over time. Your job is to identify patterns, gotchas,
 decisions, and architectural insights from the code changes.
@@ -43,68 +50,34 @@ decisions, and architectural insights from the code changes.
 - **gotchas**: Things that could trip up the agent (error patterns, edge cases, quirks)
 - **patterns**: Conventions the code follows (naming, structure, tool choices)
 - **decisions**: Why certain choices were made (trade-offs, rejected alternatives visible in diff)
-- **architecture**: Module relationships, key abstractions, data flow
+- **architecture**: Module relationships, key abstractions, data flow`
 
-## Input
-Full diff:
-%s
+	userPrompt := fmt.Sprintf("## Input\nFull diff:\n%s\n\n## Output Format (JSON only)\n{\n  \"gotchas\": [\"Finding 1\", \"Finding 2\"],\n  \"patterns\": [\"Finding 1\"],\n  \"decisions\": [\"Finding 1\"],\n  \"architecture\": [],\n  \"confidence\": \"HIGH|MEDIUM|LOW\"\n}", req.Diff)
 
-## Output Format (JSON only)
-{
-  "gotchas": ["Finding 1", "Finding 2"],
-  "patterns": ["Finding 1"],
-  "decisions": ["Finding 1"],
-  "architecture": [],
-  "confidence": "HIGH|MEDIUM|LOW"
-}`, req.Diff)
-
-	reqBody := map[string]interface{}{
-		"model": req.Model,
-		"messages": []map[string]string{
-			{"role": "user", "content": prompt},
-		},
-	}
-
-	headers := map[string]string{
-		"Authorization": "Bearer " + req.APIKey,
-		"HTTP-Referer":  "https://github.com/dominhduc/agent-brain",
-		"X-Title":       "agent-brain",
-	}
-
-	url := req.APIBaseURL
+	url := p.BuildURL(req.Model, req.BaseURL)
 	if url == "" {
-		url = "https://openrouter.ai/api/v1/chat/completions"
+		return finding, fmt.Errorf("no URL for provider: %s (hint: set base-url for custom provider)", req.Provider)
 	}
 
-	respBody, err := httpclient.PostJSON(url, headers, reqBody)
+	headers := p.BuildHeaders(req.APIKey)
+	if req.Provider == "gemini" {
+		headers["Content-Type"] = "application/json"
+	}
+
+	body, err := p.BuildBody(req.Model, systemPrompt, userPrompt)
+	if err != nil {
+		return finding, fmt.Errorf("failed to build request body: %w", err)
+	}
+
+	respBody, err := httpclient.PostJSON(url, headers, body)
 	if err != nil {
 		return finding, err
 	}
 
-	var resp struct {
-		Choices []struct {
-			Message struct {
-				Content string `json:"content"`
-			} `json:"message"`
-		} `json:"choices"`
-		Error struct {
-			Message string `json:"message"`
-		} `json:"error"`
-	}
-
-	if err := json.Unmarshal(respBody, &resp); err != nil {
+	content, err := p.ParseResponse(respBody)
+	if err != nil {
 		return finding, fmt.Errorf("failed to parse response: %w", err)
 	}
-
-	if resp.Error.Message != "" {
-		return finding, fmt.Errorf("API error: %s", resp.Error.Message)
-	}
-
-	if len(resp.Choices) == 0 {
-		return finding, fmt.Errorf("no choices in response")
-	}
-
-	content := resp.Choices[0].Message.Content
 
 	jsonStart := strings.Index(content, "{")
 	jsonEnd := strings.LastIndex(content, "}")
@@ -118,4 +91,3 @@ Full diff:
 
 	return finding, nil
 }
-
