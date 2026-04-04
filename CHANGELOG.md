@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.6.1] - 2026-04-04
+
+### Added
+- Model format validation in setup wizard
+- Warning when model doesn't match provider's typical format
+- Allow user to override with confirmation
+
+### Changed
+- Setup wizard step 3: allow both number selection OR direct model name input
+- Clearer prompt: "Enter model name (or 1-3 to select, Enter for default)"
+
 ## [v0.6.0] - 2026-04-04
 
 ### Added
