@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-var version = "v0.11.0"
+var version = "v0.12.0"
 
 var (
 	commit string
@@ -88,7 +88,7 @@ Usage:
   brain prune                         Archive stale entries
 
   brain config <subcommand>           Configure brain
-  brain daemon <start|stop|restart|status|failed|retry>   Manage background daemon
+  brain daemon <start|stop|restart|status|failed|retry|run>   Manage background daemon
   brain doctor                        Run health check
   brain version                       Show version info
   brain update                        Update to latest version

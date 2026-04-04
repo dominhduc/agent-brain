@@ -129,7 +129,7 @@ func cmdInit() {
 	apiKey := config.GetAPIKey()
 	if apiKey == "" {
 		fmt.Println("\nOpenRouter API key not configured.")
-		fmt.Println("What to do: set it with 'brain config set llm.api_key <your-openrouter-key>'")
+		fmt.Println("What to do: run 'brain config set api-key <your-openrouter-key>'")
 		fmt.Println("The daemon is registered but won't process commits until you set a key.")
 	}
 
@@ -249,12 +249,29 @@ const agentsTemplate = "# Project Instructions\n\n" +
 	"1. Add the learning: `brain add gotcha \"...\"` or `brain add pattern \"...\"`\n" +
 	"2. Update MEMORY.md if the index needs refreshing\n" +
 	"3. Treat every correction as permanent — don't repeat mistakes\n\n" +
-	"### Knowledge Review\n" +
-	"Daemon-analyzed entries go to a pending queue. Run `brain review` to approve/reject them.\n" +
-	"Only approved entries become permanent knowledge in topic files.\n\n" +
 	"### At Session End\n" +
-	"Run `brain eval` to write a self-evaluation to the current session file.\n" +
-	"Include: what you did, what worked, what failed, confidence scores, knowledge persisted.\n\n" +
+	"1. Run `brain eval` to write a self-evaluation to the current session file.\n" +
+	"   Include: what you did, what worked, what failed, confidence scores, knowledge persisted.\n" +
+	"2. Run `brain status` to check MEMORY.md line count.\n" +
+	"   If over 200 lines, run `brain prune --dry-run` to preview stale entries.\n" +
+	"   Ask the user before pruning. Only prune with approval.\n\n" +
+	"### Maintenance\n" +
+	"Run periodically (or when MEMORY.md exceeds 200 lines):\n\n" +
+	"- `brain status` — check health, queue state, and line counts\n" +
+	"- `brain prune --dry-run` — preview what would be removed from topic files\n" +
+	"- `brain prune` — archive matching entries to `.brain/archived/`\n" +
+	"- `brain review` — approve/reject pending daemon-analyzed entries\n\n" +
+	"**Prune patterns (.brainprune):** Create a `.brainprune` file at project root\n" +
+	"with one pattern per line. Topic file lines matching any pattern get archived.\n" +
+	"Use patterns for outdated entries: old version references, resolved issues,\n" +
+	"or entries no longer relevant to the current codebase.\n\n" +
+	"Example .brainprune:\n" +
+	"```\n" +
+	"# Old patterns no longer relevant\n" +
+	"v0.3.0\n" +
+	"old-api-endpoint\n" +
+	"deprecated function name\n" +
+	"```\n\n" +
 	"### Confidence Reporting\n" +
 	"Always report confidence on technical decisions:\n" +
 	"- HIGH: documented best practice, matches codebase patterns\n" +

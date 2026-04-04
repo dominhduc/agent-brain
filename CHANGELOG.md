@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.12.0] - 2026-04-04
+
+### Fixed
+- AGENTS.md template now matches repo (includes Maintenance, Session End, Prune patterns sections)
+- Config key name unified: all messages use `api-key` (not `llm.api_key`)
+- First commit now works: daemon uses empty-tree fallback when `HEAD~1` doesn't exist
+- `brain doctor` now checks daemon status
+
+### Changed
+- `brain daemon run` documented in help text
+
 ## [v0.11.0] - 2026-04-04
 
 ### Changed

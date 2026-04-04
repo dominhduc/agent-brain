@@ -48,3 +48,9 @@
 
 ### [2026-04-04 19:48:51] Daemon management commands: start, stop, restart, status, failed, retry. restart = stop + start (useful after config changes). retry = move all failed/ items back to .queue/, reset attempts to 0 and clear error_reason. Failed items retain their original queue JSON data.
 
+
+### [2026-04-04 20:13:19] brain status is the single command for full project state: hub stats, config (provider/model/key/profile), daemon (running/queue), and health warnings. The Health section only appears when there are issues. Subcommands (brain daemon status, brain config, brain doctor) still work for detailed views.
+
+
+### [2026-04-04 21:08:55] brain prune workflow: create .brainprune at project root with one pattern per line. Lines in topic files matching patterns get archived to .brain/archived/. Run 'brain prune --dry-run' first to preview. Use for outdated entries: old versions, resolved issues, deprecated patterns.
+

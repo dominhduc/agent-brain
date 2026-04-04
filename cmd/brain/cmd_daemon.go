@@ -315,7 +315,7 @@ func runDaemon() {
 	apiKey := config.GetAPIKey()
 	if apiKey == "" {
 		fmt.Fprintln(os.Stderr, "Warning: OpenRouter API key not configured yet.")
-		fmt.Fprintln(os.Stderr, "What to do: run 'brain config set llm.api_key <your-openrouter-key>'")
+		fmt.Fprintln(os.Stderr, "What to do: run 'brain config set api-key <your-openrouter-key>'")
 		fmt.Fprintln(os.Stderr, "Daemon will start processing once the key is set.")
 	}
 
@@ -416,13 +416,21 @@ func runDaemon() {
 
 			fmt.Printf("Processing: %s\n", filepath.Base(processingPath))
 
-			getDiff := func(repo string) (string, error) {
-				out, err := exec.Command("git", "-C", repo, "diff", "HEAD~1").CombinedOutput()
-				if err != nil {
-					return "", err
+		getDiff := func(repo string) (string, error) {
+			out, err := exec.Command("git", "-C", repo, "diff", "HEAD~1").CombinedOutput()
+			if err != nil {
+				emptyTree, _ := exec.Command("git", "-C", repo, "hash-object", "-t", "tree", "/dev/null").Output()
+				emptyTreeStr := strings.TrimSpace(string(emptyTree))
+				if emptyTreeStr != "" {
+					out, err = exec.Command("git", "-C", repo, "diff", emptyTreeStr+"..HEAD").CombinedOutput()
+					if err == nil {
+						return string(out), nil
+					}
 				}
-				return string(out), nil
+				return "", err
 			}
+			return string(out), nil
+		}
 
 			analyzeFn := func(req analyzer.AnalyzeRequest) (analyzer.Finding, error) {
 				return analyzer.Analyze(analyzer.AnalyzeRequest{

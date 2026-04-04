@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 
 	"github.com/dominhduc/agent-brain/internal/brain"
 	"github.com/dominhduc/agent-brain/internal/config"
+	"github.com/dominhduc/agent-brain/internal/service"
 )
 
 func cmdDoctor() {
@@ -17,6 +19,7 @@ func cmdDoctor() {
 		checkGit,
 		checkBrainDir,
 		checkConfig,
+		checkDaemon,
 		checkPreflight,
 	}
 
@@ -90,4 +93,17 @@ func checkPreflight() (string, bool, string) {
 		return "Preflight", false, "git required but not found"
 	}
 	return "Preflight", true, "all dependencies available"
+}
+
+func checkDaemon() (string, bool, string) {
+	brainDir, err := brain.FindBrainDir()
+	if err != nil {
+		return "Daemon", false, "no project .brain/ found"
+	}
+	workDir := filepath.Dir(brainDir)
+	running := service.IsRunning(workDir)
+	if running {
+		return "Daemon", true, "running"
+	}
+	return "Daemon", false, "not running (run 'brain daemon start')"
 }
