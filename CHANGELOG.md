@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.5.0] - 2026-04-04
+
+### Fixed
+- CLI help text reorganized for better UX consistency
+- Config keys now in logical order (LLM → Review → Daemon → Analysis)
+- Removed redundant verbose flags ([--json], [--dry-run], [--all]) from help text
+
 ## [v0.4.0] - 2026-04-04
 
 ### Added
