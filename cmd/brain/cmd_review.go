@@ -13,6 +13,14 @@ import (
 	"github.com/dominhduc/agent-brain/internal/tui"
 )
 
+func isTerminal() bool {
+	fi, err := os.Stdin.Stat()
+	if err != nil {
+		return false
+	}
+	return fi.Mode()&os.ModeCharDevice != 0
+}
+
 func cmdReview(allFlag, yesFlag bool) {
 	brainDir, err := brain.FindBrainDir()
 	if err != nil {
@@ -66,24 +74,34 @@ func cmdReview(allFlag, yesFlag bool) {
 		prof = profile.DefaultProfile()
 	}
 
-	fmt.Printf("Reviewing %d pending entries (profile: %s)\n", len(entries), prof.Name)
-	fmt.Println()
+	fmt.Printf("Reviewing %d pending entries (profile: %s)\n\n", len(entries), prof.Name)
 
-	if prof.AutoAccept || yesFlag {
-		accepted, rejectedIDs := autoAcceptEntries(entries, prof)
-		writeAccepted(accepted, pendingDir)
-		removeEntries(accepted, rejectedIDs, pendingDir)
-		fmt.Printf("Auto-accepted %d entries (auto-dedup: %v)\n", len(accepted), prof.AutoDedup)
-		return
+	useTUI := !prof.AutoAccept && !yesFlag && isTerminal()
+
+	if useTUI {
+		doInteractiveReview(entries, prof, pendingDir)
+	} else {
+		doAutoAccept(entries, prof, pendingDir, yesFlag || !isTerminal())
 	}
+}
 
+func doAutoAccept(entries []review.PendingEntry, prof profile.Profile, pendingDir string, nonInteractive bool) {
+	accepted, rejectedIDs := autoAcceptEntries(entries, prof)
+	writeAccepted(accepted, pendingDir)
+	removeEntries(accepted, rejectedIDs, pendingDir)
+
+	msg := "Auto-accepted %d entries (auto-dedup: %v)\n"
+	if nonInteractive {
+		msg = "Auto-accepted %d entries in non-interactive mode (auto-dedup: %v)\n"
+	}
+	fmt.Printf(msg, len(accepted), prof.AutoDedup)
+}
+
+func doInteractiveReview(entries []review.PendingEntry, prof profile.Profile, pendingDir string) {
 	accepted, rejectedIDs, err := tui.RunReview(entries, prof.Name, os.Stdout)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Interactive review unavailable (%v).\nFalling back to auto-accept. Use --yes to skip this message.\n", err)
-		accepted, rejectedIDs = autoAcceptEntries(entries, prof)
-		writeAccepted(accepted, pendingDir)
-		removeEntries(accepted, rejectedIDs, pendingDir)
-		fmt.Printf("Auto-accepted %d entries (auto-dedup: %v)\n", len(accepted), prof.AutoDedup)
+		fmt.Fprintf(os.Stderr, "Interactive review failed: %v\nFalling back to auto-accept.\n", err)
+		doAutoAccept(entries, prof, pendingDir, true)
 		return
 	}
 
@@ -93,7 +111,6 @@ func cmdReview(allFlag, yesFlag bool) {
 
 	writeAccepted(accepted, pendingDir)
 	removeEntries(accepted, rejectedIDs, pendingDir)
-
 	fmt.Printf("\nApplied %d entries, rejected %d.\n", len(accepted), len(rejectedIDs))
 }
 

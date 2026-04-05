@@ -63,3 +63,21 @@
 
 ### [2026-04-04 22:16:55] Analyzer LLM prompts: keep simple. System prompt rules, user prompt just says 'analyze this diff'. Output format in system prompt only. Avoid markdown examples in user prompt - models try to format response as code blocks.
 
+
+### [2026-04-05 07:12:27] Handling multiple body types in HTTP requests
+
+
+### [2026-04-05 07:12:27] Type switch used to handle different body types
+
+
+### [2026-04-05 07:57:51] HTTP client uses a type switch to handle various body types.
+
+
+### [2026-04-05 07:57:51] Tests set XDG_CONFIG_HOME for configuration isolation.
+
+
+### [2026-04-05 07:57:51] Type switch statement used to handle different HTTP request body types
+
+
+### [2026-04-05 07:57:51] XDG_CONFIG_HOME setperfor test config directory isolation
+

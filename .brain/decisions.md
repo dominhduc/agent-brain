@@ -18,3 +18,18 @@
 
 ### [2026-04-04 16:19:17] Removed 'custom' as a direct provider value. Users must name their custom providers (e.g. groq, together). This makes config more readable and allows switching between multiple custom endpoints.
 
+
+### [2026-04-05 07:12:27] Support for non-JSON request bodies
+
+
+### [2026-04-05 07:12:27] Support for pre-encoded byte slices in POST requests
+
+
+### [2026-04-05 07:57:51] Users must name custom providers explicitly instead of using a generic 'custom' value.
+
+
+### [2026-04-05 07:57:51] Support non-JSON and pre-encoded byte slices in HTTP POST requests
+
+
+### [2026-04-05 07:57:51] Require named custom providers instead of generic 'custom' value
+

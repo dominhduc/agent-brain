@@ -66,3 +66,15 @@
 
 ### [2026-04-04 22:35:31] Config.Load() must not fail on read/parse errors - return defaults with warning instead of error. If Load() returns an error, any caller that ignores it will use DefaultConfig() and overwrite the file via Save(). Always make Load() fail-safe.
 
+
+### [2026-04-05 07:12:27] Debug output may be enabled in production
+
+
+### [2026-04-05 07:57:51] Config.Load returns defaults with warnings to prevent file corruption on parse errors.
+
+
+### [2026-04-05 07:57:51] Debug output may be enabled in production accidentally.
+
+
+### [2026-04-05 07:57:51] Debug output may be enabled in production by accident
+
