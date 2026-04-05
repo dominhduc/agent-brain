@@ -1,0 +1,10 @@
+# Gitleaks configuration for agent-brain
+# Suppress false positives from test fixtures — secrets scanner tests use
+# intentional example secrets to verify detection works correctly.
+
+[[allowlists]]
+description = "Test fixture secrets in scanner and config tests"
+paths = [
+  '''internal/secrets/scanner_test\.go''',
+  '''internal/config/config_test\.go''',
+]
