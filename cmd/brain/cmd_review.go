@@ -13,14 +13,6 @@ import (
 	"github.com/dominhduc/agent-brain/internal/tui"
 )
 
-func isTerminal() bool {
-	fi, err := os.Stdin.Stat()
-	if err != nil {
-		return false
-	}
-	return fi.Mode()&os.ModeCharDevice != 0
-}
-
 func cmdReview(allFlag, yesFlag bool) {
 	brainDir, err := brain.FindBrainDir()
 	if err != nil {
@@ -76,12 +68,12 @@ func cmdReview(allFlag, yesFlag bool) {
 
 	fmt.Printf("Reviewing %d pending entries (profile: %s)\n\n", len(entries), prof.Name)
 
-	useTUI := !prof.AutoAccept && !yesFlag && isTerminal()
+	useTUI := !prof.AutoAccept && !yesFlag && tui.CanUseRawMode()
 
 	if useTUI {
 		doInteractiveReview(entries, prof, pendingDir)
 	} else {
-		doAutoAccept(entries, prof, pendingDir, yesFlag || !isTerminal())
+		doAutoAccept(entries, prof, pendingDir, yesFlag || !tui.CanUseRawMode())
 	}
 }
 

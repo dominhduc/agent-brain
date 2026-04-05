@@ -13,6 +13,12 @@ type termState struct {
 	termios syscall.Termios
 }
 
+func CanUseRawMode() bool {
+	var termios syscall.Termios
+	_, _, errno := syscall.Syscall6(syscall.SYS_IOCTL, os.Stdin.Fd(), uintptr(syscall.TCGETS), uintptr(unsafe.Pointer(&termios)), 0, 0, 0)
+	return errno == 0
+}
+
 func EnableRawMode() (*termState, error) {
 	fd := os.Stdin.Fd()
 	var oldTermios syscall.Termios
