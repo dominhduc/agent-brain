@@ -33,3 +33,51 @@
 
 ### [2026-04-05 07:57:51] Require named custom providers instead of generic 'custom' value
 
+
+### [2026-04-05 08:34:34] Unified API key configuration key renamed from nested llm.api_key to flat api-key.
+
+
+### [2026-04-05 08:34:34] Named custom providers replaced single custom option to improve configurability.
+
+
+### [2026-04-05 08:34:34] Auto-accept flag implemented to replace interactive TUI in CI/automated workflows.
+
+
+### [2026-04-05 08:34:34] Project-specific daemon service names generated via unique hash lookup.
+
+
+### [2026-04-05 08:34:34] Config setup wizard flow prioritized provider selection over base URL.
+
+
+### [2026-04-05 08:34:34] Per-project daemon locks include project hashes for parallelization.
+
+
+### [2026-04-05 08:34:34] XDG_CONFIG_HOME is used to isolate test config writes from production.
+
+
+### [2026-04-05 10:39:47] Unified API key configuration key renamed from nested llm.api_key to flat api-key
+
+
+### [2026-04-05 10:39:47] Auto-accept flag implemented to replace interactive TUI in CI/automated workflows
+
+
+### [2026-04-05 10:39:47] XDG_CONFIG_HOME is used to isolate test config writes from production configuration
+
+
+### [2026-04-05 10:39:47] Named custom providers replaced single custom option to improve configurability
+
+
+### [2026-04-05 10:39:47] Unified API key configuration key renamed to flat api-key structure
+
+
+### [2026-04-05 10:39:47] Named custom providers replaced single custom option for better configurability
+
+
+### [2026-04-05 10:39:47] Project-specific daemon service names generated via unique hash lookup
+
+
+### [2026-04-05 10:39:47] Per-project daemon locks include project hashes for parallelization support
+
+
+### [2026-04-05 10:39:47] Config setup wizard prioritizes provider selection over base URL setup
+

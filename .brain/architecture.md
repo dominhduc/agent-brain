@@ -39,3 +39,51 @@
 
 ### [2026-04-05 07:57:51] Config.Load() returns defaults with warnings instead of errors
 
+
+### [2026-04-05 08:34:34] Human-in-the-loop review system supports distinct autonomy profiles for automated approvals.
+
+
+### [2026-04-05 08:34:34] Multi-project daemon support isolates service names per project hash.
+
+
+### [2026-04-05 08:34:34] Cross-platform file handling uses filepath.Join instead of OS string concatenation.
+
+
+### [2026-04-05 08:34:34] Environment isolation ensures tests do not pollute production configuration files.
+
+
+### [2026-04-05 08:34:34] Daemon processes queue items with backoff retry logic.
+
+
+### [2026-04-05 08:34:34] Multiple LLM providers are supported via unified config section.
+
+
+### [2026-04-05 08:34:34] Human-in-the-loop review system integrates directly with git hooks.
+
+
+### [2026-04-05 10:39:47] Human-in-the-loop review system supports distinct autonomy profiles for approvals
+
+
+### [2026-04-05 10:39:47] Multi-project daemon support isolates service names per project hash
+
+
+### [2026-04-05 10:39:47] Cross-platform file handling uses filepath.Join instead of OS string concatenation
+
+
+### [2026-04-05 10:39:47] Multiple LLM providers are supported via unified config section
+
+
+### [2026-04-05 10:39:47] Human-in-the-loop review system supports distinct autonomy profiles for automated approvals
+
+
+### [2026-04-05 10:39:47] Daemon processes queue items with backoff retry logic
+
+
+### [2026-04-05 10:39:47] Multiple LLM providers supported via unified config section
+
+
+### [2026-04-05 10:39:47] Environment isolation ensures tests do not pollute production configuration files
+
+
+### [2026-04-05 10:39:47] Human-in-the-loop review integrates directly with git hooks
+

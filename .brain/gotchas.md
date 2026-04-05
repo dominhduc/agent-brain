@@ -78,3 +78,48 @@
 
 ### [2026-04-05 07:57:51] Debug output may be enabled in production by accident
 
+
+### [2026-04-05 08:34:34] PostJSON double-marshaling sends base64-encoded garbage to LLM APIs instead of raw JSON.
+
+
+### [2026-04-05 08:34:34] Direct TTY operations cause TCGETS errors when not in interactive terminal.
+
+
+### [2026-04-05 08:34:34] Testing config writes can corrupt live settings without proper isolation.
+
+
+### [2026-04-05 08:34:34] String-based path concatenation breaks on cross-platform environments.
+
+
+### [2026-04-05 08:34:34] Double-marshaling PostJSON returned base64 garbage to LLM APIs.
+
+
+### [2026-04-05 08:34:34] Non-TTY inputs initially caused TCGETS errors in review commands.
+
+
+### [2026-04-05 08:34:34] Corrupted config files required specific logic to return defaults gracefully.
+
+
+### [2026-04-05 10:33:34] Test entry 1
+
+
+### [2026-04-05 10:39:47] PostJSON double-marshaling sends base64-encoded garbage to LLM APIs instead of raw JSON
+
+
+### [2026-04-05 10:39:47] String-based path concatenation breaks on cross-platform environments
+
+
+### [2026-04-05 10:39:47] Direct TTY operations cause TCGETS errors when not in interactive terminal
+
+
+### [2026-04-05 10:39:47] Testing config writes can corrupt live settings without proper isolation
+
+
+### [2026-04-05 10:39:47] Direct TTY operations without TCGETS detection cause TCGETS errors in non-interactive mode
+
+
+### [2026-04-05 10:39:47] Non-TTY inputs cause TCGETS errors in review commands
+
+
+### [2026-04-05 10:39:47] Corrupted config files require graceful defaults instead of crashes
+
