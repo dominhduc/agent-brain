@@ -14,6 +14,10 @@ import (
 func TestCmdReview_NoPendingEntries(t *testing.T) {
 	setupTestProject(t)
 
+	configDir := filepath.Join(t.TempDir(), "config")
+	os.Setenv("XDG_CONFIG_HOME", configDir)
+	defer os.Unsetenv("XDG_CONFIG_HOME")
+
 	oldArgs := os.Args
 	os.Args = []string{"brain", "review"}
 	defer func() { os.Args = oldArgs }()
@@ -27,6 +31,10 @@ func TestCmdReview_NoPendingEntries(t *testing.T) {
 
 func TestCmdReview_WithPendingEntries(t *testing.T) {
 	tmpDir := setupTestProject(t)
+
+	configDir := filepath.Join(t.TempDir(), "config")
+	os.Setenv("XDG_CONFIG_HOME", configDir)
+	defer os.Unsetenv("XDG_CONFIG_HOME")
 
 	cfg := config.DefaultConfig()
 	cfg.Review.Profile = "agent"
