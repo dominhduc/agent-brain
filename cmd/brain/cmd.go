@@ -50,7 +50,8 @@ func main() {
 		cmdVersion()
 	case "review":
 		allFlag := hasFlag("--all")
-		cmdReview(allFlag)
+		yesFlag := hasFlag("--yes") || hasFlag("-y")
+		cmdReview(allFlag, yesFlag)
 	case "update":
 		cmdUpdate()
 	case "doctor":

@@ -13,7 +13,7 @@ import (
 	"github.com/dominhduc/agent-brain/internal/tui"
 )
 
-func cmdReview(allFlag bool) {
+func cmdReview(allFlag, yesFlag bool) {
 	brainDir, err := brain.FindBrainDir()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: run 'brain init' first.\n", err)
@@ -69,81 +69,75 @@ func cmdReview(allFlag bool) {
 	fmt.Printf("Reviewing %d pending entries (profile: %s)\n", len(entries), prof.Name)
 	fmt.Println()
 
-	if prof.AutoAccept {
-		accepted := entries
-		var rejectedIDs []string
-		if prof.AutoDedup {
-			seen := make(map[string]bool)
-			var unique []review.PendingEntry
-			for _, e := range entries {
-				fp := e.Fingerprint()
-				if seen[fp] {
-					rejectedIDs = append(rejectedIDs, e.ID)
-					continue
-				}
-				seen[fp] = true
-				unique = append(unique, e)
-			}
-			accepted = unique
-		}
-
-		timestamp := time.Now().Format("2006-01-02 15:04:05")
-		for _, e := range accepted {
-			path, err := brain.TopicFilePath(e.Topic)
-			if err != nil {
-				continue
-			}
-			f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
-			if err != nil {
-				continue
-			}
-			fmt.Fprintf(f, "\n### [%s] %s\n\n", timestamp, e.Content)
-			f.Close()
-		}
-		for _, e := range accepted {
-			review.RemovePendingEntry(pendingDir, e.ID)
-		}
-		for _, id := range rejectedIDs {
-			review.RemovePendingEntry(pendingDir, id)
-		}
-		fmt.Printf("Auto-accepted %d entries (profile: agent, auto-dedup: %v)\n", len(accepted), prof.AutoDedup)
+	if prof.AutoAccept || yesFlag {
+		accepted, rejectedIDs := autoAcceptEntries(entries, prof)
+		writeAccepted(accepted, pendingDir)
+		removeEntries(accepted, rejectedIDs, pendingDir)
+		fmt.Printf("Auto-accepted %d entries (auto-dedup: %v)\n", len(accepted), prof.AutoDedup)
 		return
 	}
 
 	accepted, rejectedIDs, err := tui.RunReview(entries, prof.Name, os.Stdout)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error in review UI: %v\n", err)
-		os.Exit(1)
+		fmt.Fprintf(os.Stderr, "Interactive review unavailable (%v).\nFalling back to auto-accept. Use --yes to skip this message.\n", err)
+		accepted, rejectedIDs = autoAcceptEntries(entries, prof)
+		writeAccepted(accepted, pendingDir)
+		removeEntries(accepted, rejectedIDs, pendingDir)
+		fmt.Printf("Auto-accepted %d entries (auto-dedup: %v)\n", len(accepted), prof.AutoDedup)
+		return
 	}
 
 	if accepted == nil && rejectedIDs == nil {
 		return
 	}
 
-	timestamp := time.Now().Format("2006-01-02 15:04:05")
+	writeAccepted(accepted, pendingDir)
+	removeEntries(accepted, rejectedIDs, pendingDir)
 
+	fmt.Printf("\nApplied %d entries, rejected %d.\n", len(accepted), len(rejectedIDs))
+}
+
+func autoAcceptEntries(entries []review.PendingEntry, prof profile.Profile) ([]review.PendingEntry, []string) {
+	accepted := entries
+	var rejectedIDs []string
+	if prof.AutoDedup {
+		seen := make(map[string]bool)
+		var unique []review.PendingEntry
+		for _, e := range entries {
+			fp := e.Fingerprint()
+			if seen[fp] {
+				rejectedIDs = append(rejectedIDs, e.ID)
+				continue
+			}
+			seen[fp] = true
+			unique = append(unique, e)
+		}
+		accepted = unique
+	}
+	return accepted, rejectedIDs
+}
+
+func writeAccepted(accepted []review.PendingEntry, pendingDir string) {
+	timestamp := time.Now().Format("2006-01-02 15:04:05")
 	for _, e := range accepted {
 		path, err := brain.TopicFilePath(e.Topic)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: could not find topic file for %s: %v\n", e.Topic, err)
 			continue
 		}
 		f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: could not open %s: %v\n", path, err)
 			continue
 		}
 		fmt.Fprintf(f, "\n### [%s] %s\n\n", timestamp, e.Content)
 		f.Close()
 	}
+}
 
+func removeEntries(accepted []review.PendingEntry, rejectedIDs []string, pendingDir string) {
 	for _, id := range rejectedIDs {
 		review.RemovePendingEntry(pendingDir, id)
 	}
-
 	for _, e := range accepted {
 		review.RemovePendingEntry(pendingDir, e.ID)
 	}
-
-	fmt.Printf("\nApplied %d entries, rejected %d.\n", len(accepted), len(rejectedIDs))
 }
