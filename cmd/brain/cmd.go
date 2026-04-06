@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-var version = "v0.17.0"
+var version = "v0.17.1"
 
 var (
 	commit string

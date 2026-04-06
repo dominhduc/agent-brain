@@ -71,11 +71,11 @@ func cmdReview(allFlag, yesFlag, ttyFlag bool) {
 	fmt.Printf("Reviewing %d pending entries (profile: %s)\n\n", len(entries), prof.Name)
 
 	canUseTTY := tui.CanUseRawMode()
-	useTUI := !prof.AutoAccept && !yesFlag && (ttyFlag || canUseTTY)
+	useTUI := !prof.AutoAccept && !yesFlag && !ttyFlag && canUseTTY
 
 	if useTUI {
 		doInteractiveReview(entries, prof, pendingDir)
-	} else if !prof.AutoAccept && !yesFlag && !canUseTTY {
+	} else if !prof.AutoAccept && !yesFlag {
 		doLineBufferedReview(entries, prof, pendingDir)
 	} else {
 		doAutoAccept(entries, prof, pendingDir, yesFlag || !canUseTTY)

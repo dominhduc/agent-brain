@@ -159,3 +159,9 @@
 
 ### [2026-04-06 13:43:38] TUI input handling adds specific logic to differentiate between initial and mid-loop stdin closure.
 
+
+### [2026-04-06 15:41:55] Terminal state is managed within the internal/tui module.
+
+
+### [2026-04-06 15:41:55] Terminals are identified via stdin file descriptors using wrapper functions.
+

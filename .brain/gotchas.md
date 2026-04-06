@@ -195,3 +195,9 @@
 
 ### [2026-04-06 13:43:38] EOF detection logic changed to distinguish between initial and sub-sequence reads.
 
+
+### [2026-04-06 15:41:55] Non-blocking reads for terminal detection fail when no input is pending.
+
+
+### [2026-04-06 15:41:55] Manual file descriptor syscalls are error-prone under varying terminal states.
+
