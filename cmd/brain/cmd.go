@@ -7,8 +7,6 @@ import (
 
 var version = "v0.16.4"
 
-// test
-
 var (
 	commit string
 	date   string
