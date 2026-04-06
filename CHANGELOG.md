@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.16.3] - 2026-04-06
+
+### Fixed
+- `brain review` now auto-accepts entries when stdin is closed without interaction (SSH edge case)
+
 ## [v0.16.2] - 2026-04-06
 
 ### Fixed

@@ -101,6 +101,8 @@ func doInteractiveReview(entries []review.PendingEntry, prof profile.Profile, pe
 	}
 
 	if accepted == nil && rejectedIDs == nil {
+		fmt.Fprintf(os.Stderr, "Input closed without interaction, auto-accepting all entries.\n")
+		doAutoAccept(entries, prof, pendingDir, false)
 		return
 	}
 
