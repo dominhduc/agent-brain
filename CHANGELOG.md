@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.16.0] - 2026-04-06
+
+### Added
+- `brain get --summary` flag for compact topic overview with entry counts and duplicate warnings
+- `brain get --json` now works with both summary and full output modes
+- Automatic deduplication on `brain add` — skips adding entries with duplicate normalized content
+
+### Changed
+- `brain get all` now includes overview section with topic stats and deduplicates displayed content
+
 ## [v0.15.0] - 2026-04-05
 
 ### Fixed
