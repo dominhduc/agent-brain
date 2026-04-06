@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/dominhduc/agent-brain/internal/brain"
@@ -13,7 +15,7 @@ import (
 	"github.com/dominhduc/agent-brain/internal/tui"
 )
 
-func cmdReview(allFlag, yesFlag bool) {
+func cmdReview(allFlag, yesFlag, ttyFlag bool) {
 	brainDir, err := brain.FindBrainDir()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: run 'brain init' first.\n", err)
@@ -68,12 +70,15 @@ func cmdReview(allFlag, yesFlag bool) {
 
 	fmt.Printf("Reviewing %d pending entries (profile: %s)\n\n", len(entries), prof.Name)
 
-	useTUI := !prof.AutoAccept && !yesFlag && tui.CanUseRawMode()
+	canUseTTY := tui.CanUseRawMode()
+	useTUI := !prof.AutoAccept && !yesFlag && (ttyFlag || canUseTTY)
 
 	if useTUI {
 		doInteractiveReview(entries, prof, pendingDir)
+	} else if !prof.AutoAccept && !yesFlag && !canUseTTY {
+		doLineBufferedReview(entries, prof, pendingDir)
 	} else {
-		doAutoAccept(entries, prof, pendingDir, yesFlag || !tui.CanUseRawMode())
+		doAutoAccept(entries, prof, pendingDir, yesFlag || !canUseTTY)
 	}
 }
 
@@ -108,6 +113,82 @@ func doInteractiveReview(entries []review.PendingEntry, prof profile.Profile, pe
 	writeAccepted(accepted, pendingDir)
 	removeEntries(accepted, rejectedIDs, pendingDir)
 	fmt.Printf("\nApplied %d entries, rejected %d.\n", len(accepted), len(rejectedIDs))
+}
+
+func doLineBufferedReview(entries []review.PendingEntry, prof profile.Profile, pendingDir string) {
+	reader := bufio.NewReader(os.Stdin)
+
+	var accepted []review.PendingEntry
+	var rejectedIDs []string
+
+	for i, e := range entries {
+		fmt.Printf("Entry %d/%d [%s]\n", i+1, len(entries), e.Topic)
+		fmt.Printf("  %s\n", truncateForPrompt(e.Content, 60))
+		fmt.Print("Accept? (y/n/q/a): ")
+
+		input, err := reader.ReadString('\n')
+		isEOF := err != nil && strings.Contains(err.Error(), "EOF")
+
+		if err != nil && !isEOF {
+			fmt.Fprintf(os.Stderr, "Error reading input: %v\n", err)
+			input = "y"
+		}
+
+		input = strings.TrimSpace(strings.ToLower(input))
+
+		if input == "" || isEOF {
+			input = "y"
+		}
+
+		switch input {
+		case "y":
+			accepted = append(accepted, e)
+		case "n":
+			rejectedIDs = append(rejectedIDs, e.ID)
+		case "a":
+			remaining := entries[i:]
+			for _, rem := range remaining {
+				accepted = append(accepted, rem)
+			}
+			rejectedIDs = append(rejectedIDs, collectIDs(entries[i+1:])...)
+			goto done
+		case "q":
+			rejectedIDs = append(rejectedIDs, collectIDs(entries[i+1:])...)
+			goto done
+		default:
+			accepted = append(accepted, e)
+		}
+	}
+
+done:
+	writeAccepted(accepted, pendingDir)
+	removeEntries(accepted, rejectedIDs, pendingDir)
+
+	acceptedCount := len(accepted)
+	rejectedCount := len(rejectedIDs)
+
+	if rejectedCount > 0 {
+		fmt.Printf("\nAccepted %d entries, rejected %d.\n", acceptedCount, rejectedCount)
+	} else {
+		fmt.Printf("\nAccepted %d entries.\n", acceptedCount)
+	}
+}
+
+func collectIDs(entries []review.PendingEntry) []string {
+	var ids []string
+	for _, e := range entries {
+		ids = append(ids, e.ID)
+	}
+	return ids
+}
+
+func truncateForPrompt(s string, maxLen int) string {
+	lines := strings.Split(s, "\n")
+	firstLine := lines[0]
+	if len(firstLine) > maxLen {
+		return firstLine[:maxLen-3] + "..."
+	}
+	return firstLine
 }
 
 func autoAcceptEntries(entries []review.PendingEntry, prof profile.Profile) ([]review.PendingEntry, []string) {

@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-var version = "v0.16.6"
+var version = "v0.17.0"
 
 var (
 	commit string
@@ -52,7 +52,8 @@ func main() {
 	case "review":
 		allFlag := hasFlag("--all")
 		yesFlag := hasFlag("--yes") || hasFlag("-y")
-		cmdReview(allFlag, yesFlag)
+		ttyFlag := hasFlag("--tty")
+		cmdReview(allFlag, yesFlag, ttyFlag)
 	case "update":
 		cmdUpdate()
 	case "doctor":

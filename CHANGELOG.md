@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.17.0] - 2026-04-06
+
+### Added
+- Line-buffered fallback for `brain review` when TUI is not available (stdin is /dev/null)
+  - Prompts user per-entry with y/n/q/a options
+  - Works in non-TTY environments where TUI can't run
+  - `y` = accept, `n` = reject, `a` = accept all, `q` = quit (leave rest pending)
+  - Empty input defaults to `y` (accept), stdin EOF defaults to `y` (accept)
+- Added `--tty` flag to force TUI mode in `brain review`
+
 ## [v0.16.6] - 2026-04-06
 
 ### Fixed
