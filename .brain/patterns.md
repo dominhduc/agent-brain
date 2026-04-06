@@ -132,3 +132,9 @@
 
 ### [2026-04-06 08:36:33] Agent code must be machine-reasonable: mutable state, hidden dependencies, and entangled side effects make agent output non-deterministic and impossible to debug. Code should follow: pure functions (same input → same output, no globals/DB/logging inside), explicit data flow (trace linearly), side effects at boundaries (I/O in thin outer layer), composition over coupling (small replaceable functions). When agent modifies function, scope of breakage must be exactly one function
 
+
+### [2026-04-06 10:30:43] brain get now supports --summary flag for compact view with entry counts and duplicate warnings
+
+
+### [2026-04-06 10:30:47] brain add now automatically deduplicates entries - checks normalized message content before adding, skips if duplicate exists
+

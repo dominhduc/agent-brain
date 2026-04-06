@@ -11,6 +11,7 @@ Go 1.24, stdlib only (no external dependencies), net/http/httptest, t.TempDir(),
 - `go test ./... -count=1 -race` — run all tests with race detection
 - `GOOS=<os> GOARCH=<arch> go build -buildvcs=false -o /dev/null ./cmd/brain` — cross-platform build check
 - `make build` — build binary to bin/brain
+- `brain get <topic>` — get knowledge (use --summary for compact view, --json for JSON output)
 
 ## Key Patterns
 - TDD for internal packages (write test first in internal/<pkg>/<pkg>_test.go)
@@ -39,4 +40,4 @@ Go 1.24, stdlib only (no external dependencies), net/http/httptest, t.TempDir(),
 - `decisions.md` — Architecture decisions and rationale
 
 ## Last Updated
-2026-04-03
+2026-04-06
