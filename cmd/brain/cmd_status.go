@@ -12,6 +12,7 @@ import (
 	"github.com/dominhduc/agent-brain/internal/config"
 	"github.com/dominhduc/agent-brain/internal/review"
 	"github.com/dominhduc/agent-brain/internal/service"
+	"github.com/dominhduc/agent-brain/internal/updater"
 )
 
 func cmdStatus(jsonFlag bool) {
@@ -142,7 +143,20 @@ func cmdStatus(jsonFlag bool) {
 	}
 
 	// Text output
-	fmt.Printf("brain %s  %s/%s\n", version, runtime.GOOS, runtime.GOARCH)
+	fmt.Printf("brain %s  %s/%s", version, runtime.GOOS, runtime.GOARCH)
+	if commit != "" {
+		short := commit
+		if len(short) > 7 {
+			short = short[:7]
+		}
+		fmt.Printf("  %s", short)
+	}
+	fmt.Println()
+	if latest, err := updater.CheckLatest(version); err == nil && latest != "" {
+		if latest != version {
+			fmt.Printf("  (update available: %s)\n", latest)
+		}
+	}
 	fmt.Println()
 
 	fmt.Println("Hub")

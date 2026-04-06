@@ -279,3 +279,21 @@
 
 ### [2026-04-06 15:48:51] Removes test comments from binary source code.
 
+
+### [2026-04-06 16:02:42] Use standard library packages like golang.org/x/term instead of custom syscall wrappers
+
+
+### [2026-04-06 16:02:42] Default fallback to auto-accept entries when interaction fails
+
+
+### [2026-04-06 16:02:42] Decisions documented with timestamps in separate log
+
+
+### [2026-04-06 16:02:42] Simplified conditional logic for TUI vs line-buffered review selection
+
+
+### [2026-04-06 16:02:42] Version bump in code matches entry in CHANGELOG.md
+
+
+### [2026-04-06 16:02:42] UI failure triggers fallback to line-buffered mode
+

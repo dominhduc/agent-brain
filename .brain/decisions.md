@@ -222,3 +222,21 @@
 
 ### [2026-04-06 15:48:51] Modified useTUI logic to disable forced TUI via flag.
 
+
+### [2026-04-06 16:02:42] Adopted auto-accepting pending entries to avoid treating silent closure as fatal
+
+
+### [2026-04-06 16:02:42] Line-buffered fallback is now default for non-TTY sessions
+
+
+### [2026-04-06 16:02:42] Changed TUI condition to remove ttyFlag forcing TUI mode when stdin is not terminal
+
+
+### [2026-04-06 16:02:42] Adopted standard library packages for reliable TTY detection
+
+
+### [2026-04-06 16:02:42] TUI mode now only activates when !ttyFlag and canUseTTY
+
+
+### [2026-04-06 16:02:42] Switched from manual error reporting to automatic mode switching
+

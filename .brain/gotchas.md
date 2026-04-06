@@ -231,3 +231,18 @@
 
 ### [2026-04-06 15:48:51] Prior behavior of --tty flag forcing TUI is removed on non-terminals.
 
+
+### [2026-04-06 16:02:42] Non-blocking reads for terminal detection fail when no input is pending
+
+
+### [2026-04-06 16:02:42] Manual file descriptor syscalls are error-prone under varying terminal states
+
+
+### [2026-04-06 16:02:42] --tty flag previously forced TUI even when stdin was not a terminal
+
+
+### [2026-04-06 16:02:42] Prior behavior of --tty flag forcing TUI is removed on non-terminals
+
+
+### [2026-04-06 16:02:42] Changelog version date is set to the future
+

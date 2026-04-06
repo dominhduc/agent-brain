@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.17.3] - 2026-04-06
+
+### Added
+- `brain status` now shows commit hash and update available notification
+
 ## [v0.17.2] - 2026-04-06
 
 ### Fixed

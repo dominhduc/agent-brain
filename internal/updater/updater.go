@@ -310,3 +310,18 @@ func extractFromZip(data []byte) ([]byte, error) {
 func isBrainBinary(name string) bool {
 	return name == "brain" || name == "brain.exe" || strings.HasPrefix(name, "brain_")
 }
+
+func CheckLatest(currentVersion string) (string, error) {
+	release, err := FetchLatestRelease(FetchOptions{
+		APIBaseURL: "https://api.github.com",
+		Owner:      "dominhduc",
+		Repo:       "agent-brain",
+	})
+	if err != nil {
+		return "", err
+	}
+	if IsNewerVersion(currentVersion, release.TagName) {
+		return release.TagName, nil
+	}
+	return "", nil
+}

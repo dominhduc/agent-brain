@@ -198,3 +198,18 @@
 
 ### [2026-04-06 15:48:51] Terminals are identified via stdin file descriptors using wrapper functions.
 
+
+### [2026-04-06 16:02:42] Terminal state managed within internal/tui module via stdin file descriptors
+
+
+### [2026-04-06 16:02:42] Pending entries counting unified across cmd_status.go and cmd_review.go using review.LoadPendingEntries()
+
+
+### [2026-04-06 16:02:42] Terminals identified via stdin file descriptors using wrapper functions
+
+
+### [2026-04-06 16:02:42] TUI logic differentiates initial vs mid-loop stdin closure
+
+
+### [2026-04-06 16:02:42] Review command supports multiple UI modes within same structure
+
