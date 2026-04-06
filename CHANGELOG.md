@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.17.2] - 2026-04-06
+
+### Fixed
+- TUI EOF fallback: when TUI can't read stdin, falls back to line-buffered review instead of showing error
+
 ## [v0.17.1] - 2026-04-06
 
 ### Fixed

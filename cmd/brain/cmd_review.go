@@ -98,6 +98,8 @@ func doInteractiveReview(entries []review.PendingEntry, prof profile.Profile, pe
 	accepted, rejectedIDs, err := tui.RunReview(entries, prof.Name, os.Stdout)
 	if err != nil {
 		if accepted == nil && rejectedIDs == nil {
+			fmt.Fprintf(os.Stderr, "TUI not available, falling back to line-buffered review.\n\n")
+			doLineBufferedReview(entries, prof, pendingDir)
 			return
 		}
 		fmt.Fprintf(os.Stderr, "Interactive review failed: %v\nFalling back to auto-accept.\n", err)
@@ -106,7 +108,8 @@ func doInteractiveReview(entries []review.PendingEntry, prof profile.Profile, pe
 	}
 
 	if accepted == nil && rejectedIDs == nil {
-		fmt.Fprintf(os.Stderr, "No input available — interactive review requires a TTY.\nUse 'brain review --auto' to accept all entries without interaction.\n")
+		fmt.Fprintf(os.Stderr, "TUI not available, falling back to line-buffered review.\n\n")
+		doLineBufferedReview(entries, prof, pendingDir)
 		return
 	}
 
