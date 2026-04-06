@@ -165,3 +165,36 @@
 
 ### [2026-04-06 15:41:55] Terminals are identified via stdin file descriptors using wrapper functions.
 
+
+### [2026-04-06 15:47:20] Terminal identification via stdin file descriptors using wrapper functions
+
+
+### [2026-04-06 15:47:20] Differentiation between initial and mid-loop stdin closure in TUI input handling
+
+
+### [2026-04-06 15:47:20] cmd_review.go: Auto-accept for non-TTY when !yesFlag and !prof.AutoAccept
+
+
+### [2026-04-06 15:47:20] Terminal state managed within internal/tui module via stdin file descriptors
+
+
+### [2026-04-06 15:47:20] Terminal state managed within internal/tui module using stdin file descriptors
+
+
+### [2026-04-06 15:47:20] Terminal state managed within internal/tui module
+
+
+### [2026-04-06 15:47:20] Terminals identified via stdin file descriptors using wrapper functions
+
+
+### [2026-04-06 15:47:20] TUI logic differentiates initial vs mid-loop stdin closure
+
+
+### [2026-04-06 15:47:20] Review command handles TTY/auto-accept affinity logic
+
+
+### [2026-04-06 15:48:51] Terminal state is managed within the internal/tui module.
+
+
+### [2026-04-06 15:48:51] Terminals are identified via stdin file descriptors using wrapper functions.
+

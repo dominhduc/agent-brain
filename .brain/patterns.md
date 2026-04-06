@@ -234,3 +234,48 @@
 
 ### [2026-04-06 15:41:55] Version bump in code matches entry in CHANGELOG.md.
 
+
+### [2026-04-06 15:47:20] Use standard library packages like golang.org/x/term instead of custom syscall wrappers
+
+
+### [2026-04-06 15:47:20] Test comments removed from binary source code
+
+
+### [2026-04-06 15:47:20] Decisions documented with timestamps in separate log
+
+
+### [2026-04-06 15:47:20] Version bump in code matches entry in CHANGELOG.md
+
+
+### [2026-04-06 15:47:20] Simplified conditional logic for TUI vs line-buffered review selection
+
+
+### [2026-04-06 15:47:20] Use standard library packages like golang.org/x/term instead of syscall wrappers
+
+
+### [2026-04-06 15:47:20] Use standard library pkg like golang.org/x/term instead of custom syscall wrappers
+
+
+### [2026-04-06 15:47:20] Use standard library packages like golang.org/x/term instead of custom syscall wrappers
+
+
+### [2026-04-06 15:47:20] Decisions documented with timestamps in separate log
+
+
+### [2026-04-06 15:47:20] Version bump matches entry in CHANGELOG.md
+
+
+### [2026-04-06 15:47:20] Default fallback to auto-accept entries when interaction fails
+
+
+### [2026-04-06 15:48:51] Adopts external packages like golang.org/x/term over custom syscalls.
+
+
+### [2026-04-06 15:48:51] Auto-accept pending entries to avoid fatal silent closure treatment.
+
+
+### [2026-04-06 15:48:51] Decisions documented with timestamps in separate logs.
+
+
+### [2026-04-06 15:48:51] Removes test comments from binary source code.
+

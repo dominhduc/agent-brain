@@ -174,3 +174,51 @@
 
 ### [2026-04-06 15:41:55] Prefer auto-accepting pending entries to avoid treating silent closure as fatal.
 
+
+### [2026-04-06 15:47:20] Adopted golang.org/x/term for reliable TTY detection
+
+
+### [2026-04-06 15:47:20] Terminal state managed within internal/tui module
+
+
+### [2026-04-06 15:47:20] Prefer auto-accepting pending entries to avoid treating silent closure as fatal
+
+
+### [2026-04-06 15:47:20] Line-buffered fallback is now default for non-TTY sessions (no --tty needed)
+
+
+### [2026-04-06 15:47:20] Test comment insertion event logged by developer
+
+
+### [2026-04-06 15:47:20] Changed TUI condition to remove ttyFlag forcing TUI mode when stdin is not terminal
+
+
+### [2026-04-06 15:47:20] Adopt auto-accepting pending entries to avoid treating silent closure as fatal
+
+
+### [2026-04-06 15:47:20] Adopted golang.org/x/term for reliable TTY detection
+
+
+### [2026-04-06 15:47:20] TUI mode now only activates when !ttyFlag && canUseTTY
+
+
+### [2026-04-06 15:47:20] Prefer auto-accepting pending entries to avoid treating silent closure as fatal
+
+
+### [2026-04-06 15:47:20] Test comments removed from binary source code
+
+
+### [2026-04-06 15:47:20] Line-buffered fallback is now default for non-TTY sessions
+
+
+### [2026-04-06 15:47:20] --tty flag no longer forces TUI when stdin is not terminal
+
+
+### [2026-04-06 15:48:51] Adopted standard library packages for reliable TTY detection.
+
+
+### [2026-04-06 15:48:51] Prefer auto-accepting entries to avoid treating silent closure as fatal.
+
+
+### [2026-04-06 15:48:51] Modified useTUI logic to disable forced TUI via flag.
+

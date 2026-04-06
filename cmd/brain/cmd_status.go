@@ -10,6 +10,7 @@ import (
 
 	"github.com/dominhduc/agent-brain/internal/brain"
 	"github.com/dominhduc/agent-brain/internal/config"
+	"github.com/dominhduc/agent-brain/internal/review"
 	"github.com/dominhduc/agent-brain/internal/service"
 )
 
@@ -90,12 +91,9 @@ func cmdStatus(jsonFlag bool) {
 	var pendingEntries int
 	if brainDir != "" {
 		pendingDir := filepath.Join(brainDir, "pending")
-		if entries, e := os.ReadDir(pendingDir); e == nil {
-			for _, e := range entries {
-				if !e.IsDir() && strings.HasSuffix(e.Name(), ".json") {
-					pendingEntries++
-				}
-			}
+		entries, err := review.LoadPendingEntries(pendingDir)
+		if err == nil {
+			pendingEntries = len(entries)
 		}
 	}
 

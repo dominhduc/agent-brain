@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - `--tty` flag no longer forces TUI when stdin is not a terminal
 - Line-buffered fallback is now the default for non-TTY sessions (no `--tty` needed)
+- `brain status` and `brain review` now use the same counting method for pending entries
 
 ## [v0.17.0] - 2026-04-06
 
