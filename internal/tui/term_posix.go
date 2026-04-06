@@ -7,6 +7,8 @@ import (
 	"os"
 	"syscall"
 	"unsafe"
+
+	"golang.org/x/term"
 )
 
 type termState struct {
@@ -14,36 +16,7 @@ type termState struct {
 }
 
 func CanUseRawMode() bool {
-	fd := os.Stdin.Fd()
-	if !isTerminal(fd) {
-		return false
-	}
-	return isStdinReadable(fd)
-}
-
-func isTerminal(fd uintptr) bool {
-	var termios syscall.Termios
-	_, _, errno := syscall.Syscall6(syscall.SYS_IOCTL, fd, uintptr(syscall.TCGETS), uintptr(unsafe.Pointer(&termios)), 0, 0, 0)
-	return errno == 0
-}
-
-func isStdinReadable(fd uintptr) bool {
-	oldFlags, _, errno := syscall.Syscall(syscall.SYS_FCNTL, fd, syscall.F_GETFL, 0)
-	if errno != 0 {
-		return false
-	}
-	syscall.Syscall(syscall.SYS_FCNTL, fd, syscall.F_SETFL, oldFlags|syscall.O_NONBLOCK)
-	defer syscall.Syscall(syscall.SYS_FCNTL, fd, syscall.F_SETFL, oldFlags)
-
-	buf := make([]byte, 1)
-	n, _, errno := syscall.Syscall(syscall.SYS_READ, fd, uintptr(unsafe.Pointer(&buf[0])), 1)
-	if errno != 0 {
-		return false
-	}
-	if n > 0 {
-		syscall.Syscall(syscall.SYS_WRITE, fd, uintptr(unsafe.Pointer(&buf[0])), n)
-	}
-	return true
+	return term.IsTerminal(int(os.Stdin.Fd()))
 }
 
 func EnableRawMode() (*termState, error) {

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.16.5] - 2026-04-06
+
+### Fixed
+- `brain review` TTY detection: use `golang.org/x/term.IsTerminal()` instead of non-blocking read (which returned false when no key was pressed)
+
 ## [v0.16.4] - 2026-04-06
 
 ### Fixed
