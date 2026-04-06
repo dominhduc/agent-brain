@@ -183,3 +183,6 @@
 
 ### [2026-04-06 11:46:28] Content deduplication relies on normalized string comparison.
 
+
+### [2026-04-06 12:07:42] brain review now handles EOF gracefully - stdin closed during review exits cleanly instead of erroring
+

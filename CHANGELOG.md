@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.16.2] - 2026-04-06
+
+### Fixed
+- Use `golang.org/x/term.IsTerminal()` for reliable TTY detection in SSH/non-TTY environments
+- Silent exit on EOF instead of printing error message
+
 ## [v0.16.1] - 2026-04-06
 
 ### Fixed

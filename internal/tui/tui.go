@@ -250,7 +250,6 @@ func RunReview(entries []review.PendingEntry, profile string, writer io.Writer) 
 		n, readErr := os.Stdin.Read(buf[:1])
 		if readErr != nil {
 			if readErr == io.EOF {
-				fmt.Fprint(writer, RenderExitMessage("\n  Input stream closed.\n"))
 				return nil, nil, nil
 			}
 			return nil, nil, fmt.Errorf("reading input: %w", readErr)

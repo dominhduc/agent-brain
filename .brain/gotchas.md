@@ -159,3 +159,6 @@
 
 ### [2026-04-06 11:46:28] Changelog entry date is set to future year 2026.
 
+
+### [2026-04-06 12:07:46] brain review TCGETS ioctl can succeed on non-TTY stdin in some environments - check stdin is character device before raw mode
+

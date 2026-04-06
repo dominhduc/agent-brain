@@ -93,7 +93,6 @@ func doInteractiveReview(entries []review.PendingEntry, prof profile.Profile, pe
 	accepted, rejectedIDs, err := tui.RunReview(entries, prof.Name, os.Stdout)
 	if err != nil {
 		if accepted == nil && rejectedIDs == nil {
-			fmt.Fprintf(os.Stderr, "Interactive review exited cleanly.\n")
 			return
 		}
 		fmt.Fprintf(os.Stderr, "Interactive review failed: %v\nFalling back to auto-accept.\n", err)
