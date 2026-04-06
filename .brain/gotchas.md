@@ -162,3 +162,36 @@
 
 ### [2026-04-06 12:07:46] brain review TCGETS ioctl can succeed on non-TTY stdin in some environments - check stdin is character device before raw mode
 
+
+### [2026-04-06 13:43:38] Double-marshaling POST JSON sends base64 garbage instead of raw JSON to LLM APIs
+
+
+### [2026-04-06 13:43:38] Direct TTY operations cause TCGETS errors when not in interactive terminal mode
+
+
+### [2026-04-06 13:43:38] String-based path concatenation breaks on cross-platform environments without filepath utilities
+
+
+### [2026-04-06 13:43:38] Hidden dependencies trap agents: functions using GLOBAL_CONFIG or singletons look pure but fail in production
+
+
+### [2026-04-06 13:43:38] Testing config writes can corrupt live settings without proper isolation
+
+
+### [2026-04-06 13:43:38] Go constants cannot be overridden by ldflags — use var instead
+
+
+### [2026-04-06 13:43:38] EOF errors in TUI review needed graceful handling instead of error treatment
+
+
+### [2026-04-06 13:43:38] stdin device checking required before TCGETS calls
+
+
+### [2026-04-06 13:43:38] TCGETS ioctl may succeed on non-TTY stdin in some environments - must verify stdin is character device before entering raw mode
+
+
+### [2026-04-06 13:43:38] SSH sessions can close stdin without explicit user interaction, triggering unintended errors.
+
+
+### [2026-04-06 13:43:38] EOF detection logic changed to distinguish between initial and sub-sequence reads.
+

@@ -123,3 +123,42 @@
 
 ### [2026-04-06 11:46:28] Integrated topic statistics into the main list view.
 
+
+### [2026-04-06 13:43:38] Implementation strictly limits external dependencies to Go standard library only
+
+
+### [2026-04-06 13:43:38] CLI command logic isolated in cmd/brain/cmd.go
+
+
+### [2026-04-06 13:43:38] Knowledge base uses separate MEMORY.md and PATTERNS.md files within .brain/
+
+
+### [2026-04-06 13:43:38] TopicSummary struct separates metadata from actual content
+
+
+### [2026-04-06 13:43:38] Duplicate detection adds entries to a set before committing to prevent redundancy
+
+
+### [2026-04-06 13:43:38] Unified API key configuration renamed to flat api-key structure
+
+
+### [2026-04-06 13:43:38] Named custom providers replace single custom option for better configurability
+
+
+### [2026-04-06 13:43:38] Added --summary flag for compact view with entry counts and duplicate warnings
+
+
+### [2026-04-06 13:43:38] Version variable consistent with CHANGELOG release version
+
+
+### [2026-04-06 13:43:38] Architecture decisions documented in dedicated decisions.md file
+
+
+### [2026-04-06 13:43:38] Silent exit on EOF instead of printing error messages for cleaner UX
+
+
+### [2026-04-06 13:43:38] Removed 'exited cleanly' console output to reduce noise when review completes without actions
+
+
+### [2026-04-06 13:43:38] Prefer auto-accepting pending entries rather than treating silent closure as fatal error.
+

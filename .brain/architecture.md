@@ -126,3 +126,36 @@
 
 ### [2026-04-06 11:46:28] CLI command logic isolated in cmd/brain/cmd.go.
 
+
+### [2026-04-06 13:43:38] Stratified knowledge hub with separate topic files under .brain/
+
+
+### [2026-04-06 13:43:38] Human-in-the-loop review integrates with git hooks
+
+
+### [2026-04-06 13:43:38] Multi-project daemon support isolates service names per project hash
+
+
+### [2026-04-06 13:43:38] Environment isolation uses XDG_CONFIG_HOME to prevent test pollution
+
+
+### [2026-04-06 13:43:38] Cross-platform file handling avoids OS string concatenation
+
+
+### [2026-04-06 13:43:38] Gitleaks integration with path-based exclusions for test fixtures
+
+
+### [2026-04-06 13:43:38] Centralized GetTopicSummary() generates TopicSummary structs per file
+
+
+### [2026-04-06 13:43:38] Content deduplication via map[string]bool tracking
+
+
+### [2026-04-06 13:43:38] CLI tool interface supports JSON output for machine-readable parsing
+
+
+### [2026-04-06 13:43:38] Simplified term_posix.go by replacing manual syscall with standard library term.IsTerminal() for cross-platform compatibility
+
+
+### [2026-04-06 13:43:38] TUI input handling adds specific logic to differentiate between initial and mid-loop stdin closure.
+

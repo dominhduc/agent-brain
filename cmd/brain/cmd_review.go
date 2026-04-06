@@ -101,8 +101,7 @@ func doInteractiveReview(entries []review.PendingEntry, prof profile.Profile, pe
 	}
 
 	if accepted == nil && rejectedIDs == nil {
-		fmt.Fprintf(os.Stderr, "Input closed without interaction, auto-accepting all entries.\n")
-		doAutoAccept(entries, prof, pendingDir, false)
+		fmt.Fprintf(os.Stderr, "No input available — interactive review requires a TTY.\nUse 'brain review --auto' to accept all entries without interaction.\n")
 		return
 	}
 

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.16.4] - 2026-04-06
+
+### Fixed
+- `brain review` TTY detection: use `select()` to verify stdin is actually readable before entering TUI mode
+
 ## [v0.16.3] - 2026-04-06
 
 ### Fixed

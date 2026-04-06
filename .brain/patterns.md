@@ -186,3 +186,39 @@
 
 ### [2026-04-06 12:07:42] brain review now handles EOF gracefully - stdin closed during review exits cleanly instead of erroring
 
+
+### [2026-04-06 13:43:38] Modular CLI structure splits monolithic main.go into per-command files
+
+
+### [2026-04-06 13:43:38] Queue-based daemon processing includes backoff retry logic and error reason tracking
+
+
+### [2026-04-06 13:43:38] LLM prompts utilize explicit JSON schema for better structured output compliance
+
+
+### [2026-04-06 13:43:38] Entry deduplication via normalizeEntry() with whitespace collapsing
+
+
+### [2026-04-06 13:43:38] Machine-reasonable code: pure functions with explicit data flow and side effects at boundaries
+
+
+### [2026-04-06 13:43:38] SUPER principles: Side Effects at Edge, Uncoupled Logic, Pure Functions, Explicit Data Flow, Replaceable by Value
+
+
+### [2026-04-06 13:43:38] SPIRALS loop: Sense, Plan, Inquire, Refine, Act, Learn, Scan for agent collaboration
+
+
+### [2026-04-06 13:43:38] Auto-accept flag replaces interactive TUI in CI/automated workflows
+
+
+### [2026-04-06 13:43:38] Content deduplication via map[string]bool tracking before committing to set
+
+
+### [2026-04-06 13:43:38] Use golang.org/x/term.IsTerminal() for reliable TTY detection instead of manual syscall-based checks
+
+
+### [2026-04-06 13:43:38] State variable tracks loop phase to differentiate entry states.
+
+
+### [2026-04-06 13:43:38] Default fallback action implemented to auto-accept entries when interaction fails.
+
