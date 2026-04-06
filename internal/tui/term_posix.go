@@ -14,8 +14,19 @@ type termState struct {
 }
 
 func CanUseRawMode() bool {
+	fd := os.Stdin.Fd()
+	if fd < 0 {
+		return false
+	}
+	stat, err := os.Stdin.Stat()
+	if err != nil {
+		return false
+	}
+	if stat.Mode()&os.ModeCharDevice == 0 {
+		return false
+	}
 	var termios syscall.Termios
-	_, _, errno := syscall.Syscall6(syscall.SYS_IOCTL, os.Stdin.Fd(), uintptr(syscall.TCGETS), uintptr(unsafe.Pointer(&termios)), 0, 0, 0)
+	_, _, errno := syscall.Syscall6(syscall.SYS_IOCTL, fd, uintptr(syscall.TCGETS), uintptr(unsafe.Pointer(&termios)), 0, 0, 0)
 	return errno == 0
 }
 

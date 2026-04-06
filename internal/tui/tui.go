@@ -249,6 +249,10 @@ func RunReview(entries []review.PendingEntry, profile string, writer io.Writer) 
 
 		n, readErr := os.Stdin.Read(buf[:1])
 		if readErr != nil {
+			if readErr == io.EOF {
+				fmt.Fprint(writer, RenderExitMessage("\n  Input stream closed.\n"))
+				return nil, nil, nil
+			}
 			return nil, nil, fmt.Errorf("reading input: %w", readErr)
 		}
 		if n == 0 {
@@ -259,13 +263,23 @@ func RunReview(entries []review.PendingEntry, profile string, writer io.Writer) 
 
 		if ch == 27 {
 			_, err1 := os.Stdin.Read(buf[1:2])
-			if err1 != nil || buf[1] == 0 {
+			if err1 != nil {
+				if err1 == io.EOF {
+					handleKey(state, KeyEsc, writer)
+					continue
+				}
+				continue
+			}
+			if buf[1] == 0 {
 				handleKey(state, KeyEsc, writer)
 				continue
 			}
 			if buf[1] == '[' {
 				_, err2 := os.Stdin.Read(buf[2:3])
-				if err2 != nil || buf[2] == 0 {
+				if err2 != nil {
+					continue
+				}
+				if buf[2] == 0 {
 					continue
 				}
 				key := ParseArrowKey(buf[:3])

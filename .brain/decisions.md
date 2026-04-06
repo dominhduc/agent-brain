@@ -81,3 +81,45 @@
 
 ### [2026-04-05 10:39:47] Config setup wizard prioritizes provider selection over base URL setup
 
+
+### [2026-04-06 11:46:28] Auto-accept flag implemented to replace interactive TUI in CI/automated workflows.
+
+
+### [2026-04-06 11:46:28] Unified API key configuration renamed from nested structure to flat api-key.
+
+
+### [2026-04-06 11:46:28] Named custom providers replaced single custom option to improve configurability.
+
+
+### [2026-04-06 11:46:28] Project-specific daemon service names generated via unique hash lookup.
+
+
+### [2026-04-06 11:46:28] Added gitleaks allowlist for scanner/config test files
+
+
+### [2026-04-06 11:46:28] Added --summary flag for compact view with entry counts and duplicate warnings
+
+
+### [2026-04-06 11:46:28] Duplicate detection adds entries to a set before committing to prevent redundancy
+
+
+### [2026-04-06 11:46:28] TopicSummary struct separates metadata (counts, duplicates) from actual content
+
+
+### [2026-04-06 11:46:28] Normalize function uses strings.NewReplacer for whitespace normalization
+
+
+### [2026-04-06 11:46:28] Split SPL|ALS gate between planning and execution phases with human approval
+
+
+### [2026-04-06 11:46:28] Architecture decisions are documented in a dedicated decisions.md file for future reference
+
+
+### [2026-04-06 11:46:28] Tool interface updated to support JSON output for machine-readable command parsing
+
+
+### [2026-04-06 11:46:28] Added auto-deduplication to prevent duplicate entries on save.
+
+
+### [2026-04-06 11:46:28] Integrated topic statistics into the main list view.
+

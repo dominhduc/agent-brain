@@ -87,3 +87,42 @@
 
 ### [2026-04-05 10:39:47] Human-in-the-loop review integrates directly with git hooks
 
+
+### [2026-04-06 11:46:28] Human-in-the-loop review system integrates directly with git hooks.
+
+
+### [2026-04-06 11:46:28] Multi-project daemon support isolates service names per project hash.
+
+
+### [2026-04-06 11:46:28] Environment isolation uses XDG_CONFIG_HOME to prevent test pollution.
+
+
+### [2026-04-06 11:46:28] Cross-platform file handling avoids OS string concatenation.
+
+
+### [2026-04-06 11:46:28] Gitleaks integration with path-based exclusions for test fixtures
+
+
+### [2026-04-06 11:46:28] Stratified knowledge hub with separate topic files under .brain/
+
+
+### [2026-04-06 11:46:28] Centralized GetTopicSummary() generates TopicSummary structs per file
+
+
+### [2026-04-06 11:46:28] Content deduplication performed via deduplicateContent() with map[string]bool tracking
+
+
+### [2026-04-06 11:46:28] summaryFlag conditional redirect to brain.GetAllSummaries() before main logic
+
+
+### [2026-04-06 11:46:28] Test coverage includes cross-file entry types (gotchas, patterns, memory) for deduplication
+
+
+### [2026-04-06 11:46:28] Knowledge base structure uses separate MEMORY.md and PATTERNS.md files within the .brain directory
+
+
+### [2026-04-06 11:46:28] Implementation strictly limits external dependencies to Go standard library only
+
+
+### [2026-04-06 11:46:28] CLI command logic isolated in cmd/brain/cmd.go.
+

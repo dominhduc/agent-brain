@@ -138,3 +138,48 @@
 
 ### [2026-04-06 10:30:47] brain add now automatically deduplicates entries - checks normalized message content before adding, skips if duplicate exists
 
+
+### [2026-04-06 11:46:28] Modular CLI structure splits monolithic main.go into per-command files.
+
+
+### [2026-04-06 11:46:28] Queue-based daemon processing includes backoff retry logic and error reason tracking.
+
+
+### [2026-04-06 11:46:28] LLM prompts utilize explicit JSON schema for better structured output compliance.
+
+
+### [2026-04-06 11:46:28] Platform-specific terminal capability checks prevent issues with raw mode usage.
+
+
+### [2026-04-06 11:46:28] path-based allowlist for specific test files
+
+
+### [2026-04-06 11:46:28] SUPER principles: S=Side Effects at Edge, U=Uncoupled Logic, P=Pure & Total Functions, E=Explicit Data Flow, R=Replaceable by Value
+
+
+### [2026-04-06 11:46:28] SPIRALS loop: Sense, Plan, Inquire, Refine, Act, Learn, Scan for agent collaboration
+
+
+### [2026-04-06 11:46:28] Entry deduplication via normalizeEntry() with strings.ToLower() and whitespace collapsing
+
+
+### [2026-04-06 11:46:28] Machine-reasonable code: pure functions with explicit data flow and side effects at boundaries
+
+
+### [2026-04-06 11:46:28] Agent functions should be pure with side effects isolated to a thin outer layer
+
+
+### [2026-04-06 11:46:28] TDD is required for internal packages to maintain code integrity
+
+
+### [2026-04-06 11:46:28] Add command now deduplicates entries based on normalized message content
+
+
+### [2026-04-06 11:46:28] Version variable consistent with changelog release version.
+
+
+### [2026-04-06 11:46:28] New CLI flags support JSON and compact summary output.
+
+
+### [2026-04-06 11:46:28] Content deduplication relies on normalized string comparison.
+

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.16.1] - 2026-04-06
+
+### Fixed
+- `brain review` EOF error: Handle `io.EOF` gracefully in TUI input loop instead of treating it as an error
+- Improved `CanUseRawMode()` to check stdin is a character device before attempting TCGETS
+- Graceful exit message when stdin is closed during interactive review
+
 ## [v0.16.0] - 2026-04-06
 
 ### Added

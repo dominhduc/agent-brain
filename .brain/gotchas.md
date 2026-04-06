@@ -126,3 +126,36 @@
 
 ### [2026-04-06 08:36:31] Hidden dependencies trap agents: functions that use GLOBAL_CONFIG, Database.get_instance(), or singletons look pure by signature but fail in production. Agents can't see implicit state. Every function dependency must be explicit in parameters. This is the #1 reason agent projects degrade in production — each iteration introduces subtle state corruption from invisible blast radius
 
+
+### [2026-04-06 11:46:28] Double-marshaling PostJSON sends base64 garbage instead of raw JSON to LLM APIs.
+
+
+### [2026-04-06 11:46:28] Direct TTY operations cause TCGETS errors when not in interactive terminal mode.
+
+
+### [2026-04-06 11:46:28] String-based path concatenation breaks on cross-platform environments without filepath utilities.
+
+
+### [2026-04-06 11:46:28] Testing config writes can corrupt live settings without proper isolation.
+
+
+### [2026-04-06 11:46:28] Test fixture secrets cause false positives without proper exclusions
+
+
+### [2026-04-06 11:46:28] Hidden dependencies trap agents — every function dependency must be explicit in parameters
+
+
+### [2026-04-06 11:46:28] Duplicate entries across iterations degrade production code over time
+
+
+### [2026-04-06 11:46:28] Go constants cannot be overridden by ldflags — use var instead
+
+
+### [2026-04-06 11:46:28] Mutable state and hidden dependencies make agent output non-deterministic and impossible to debug
+
+
+### [2026-04-06 11:46:28] Skipping normalization checks risks adding duplicate entries to the knowledge base
+
+
+### [2026-04-06 11:46:28] Changelog entry date is set to future year 2026.
+
