@@ -177,6 +177,23 @@ func AddEntry(topic string, message string) error {
 		return err
 	}
 
+	normalizedMsg := normalizeEntry(message)
+	data, err := os.ReadFile(path)
+	if err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("failed to read %s: %w", filepath.Base(path), err)
+	}
+	if data != nil {
+		existing := string(data)
+		lines := strings.Split(existing, "\n")
+		for _, line := range lines {
+			msg := extractMessageFromEntry(line)
+			lineNormalized := normalizeEntry(msg)
+			if lineNormalized == normalizedMsg && lineNormalized != "" {
+				return nil
+			}
+		}
+	}
+
 	timestamp := time.Now().Format("2006-01-02 15:04:05")
 	entry := fmt.Sprintf("\n### [%s] %s\n\n", timestamp, message)
 
@@ -231,4 +248,138 @@ func MemoryLineCount() (int, error) {
 		count++
 	}
 	return count, scanner.Err()
+}
+
+func normalizeEntry(message string) string {
+	re := strings.NewReplacer(
+		"\n", " ",
+		"\r", "",
+		"  ", " ",
+	)
+	normalized := re.Replace(message)
+	normalized = strings.ToLower(strings.TrimSpace(normalized))
+	return normalized
+}
+
+func extractMessageFromEntry(line string) string {
+	if strings.HasPrefix(line, "### [") {
+		idx := strings.Index(line, "] ")
+		if idx > 0 {
+			return line[idx+2:]
+		}
+	}
+	return line
+}
+
+type TopicSummary struct {
+	Name          string `json:"name"`
+	EntryCount    int    `json:"entry_count"`
+	LineCount     int    `json:"line_count"`
+	HasDuplicates bool   `json:"has_duplicates"`
+}
+
+func GetTopicSummary(name string) (TopicSummary, error) {
+	path, err := TopicFilePath(name)
+	if err != nil {
+		return TopicSummary{}, err
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return TopicSummary{}, fmt.Errorf("failed to read %s: %w", filepath.Base(path), err)
+	}
+
+	content := string(data)
+	lines := strings.Split(content, "\n")
+
+	entryCount := 0
+	for _, line := range lines {
+		if strings.HasPrefix(line, "### [") {
+			entryCount++
+		}
+	}
+
+	hasDupes := detectDuplicates(content)
+
+	return TopicSummary{
+		Name:          name,
+		EntryCount:    entryCount,
+		LineCount:     len(lines),
+		HasDuplicates: hasDupes,
+	}, nil
+}
+
+func detectDuplicates(content string) bool {
+	lines := strings.Split(content, "\n")
+	seen := make(map[string]bool)
+	for _, line := range lines {
+		if strings.HasPrefix(line, "### [") {
+			normalized := strings.ToLower(strings.TrimSpace(line))
+			if seen[normalized] {
+				return true
+			}
+			seen[normalized] = true
+		}
+	}
+	return false
+}
+
+func GetAllSummaries() ([]TopicSummary, error) {
+	var summaries []TopicSummary
+	for _, topic := range AvailableTopics() {
+		summary, err := GetTopicSummary(topic)
+		if err != nil {
+			return nil, err
+		}
+		summaries = append(summaries, summary)
+	}
+	return summaries, nil
+}
+
+func GetAllTopicsWithSummary() (string, error) {
+	summaries, err := GetAllSummaries()
+	if err != nil {
+		return "", err
+	}
+
+	var result strings.Builder
+
+	result.WriteString("# PROJECT MEMORY SUMMARY\n\n")
+	result.WriteString("## Overview\n\n")
+	for _, s := range summaries {
+		result.WriteString(fmt.Sprintf("- **%s**: %d entries, %d lines", s.Name, s.EntryCount, s.LineCount))
+		if s.HasDuplicates {
+			result.WriteString(" (⚠️ duplicates detected)")
+		}
+		result.WriteString("\n")
+	}
+	result.WriteString("\n---\n\n")
+
+	for _, topic := range AvailableTopics() {
+		content, err := GetTopic(topic)
+		if err != nil {
+			return "", err
+		}
+		deduped := deduplicateContent(content)
+		result.WriteString(fmt.Sprintf("## %s\n\n%s\n---\n\n", strings.ToUpper(topic), deduped))
+	}
+	return result.String(), nil
+}
+
+func deduplicateContent(content string) string {
+	lines := strings.Split(content, "\n")
+	seen := make(map[string]bool)
+	var result []string
+
+	for _, line := range lines {
+		if strings.HasPrefix(line, "### [") {
+			normalized := strings.ToLower(strings.TrimSpace(line))
+			if seen[normalized] {
+				continue
+			}
+			seen[normalized] = true
+		}
+		result = append(result, line)
+	}
+	return strings.Join(result, "\n")
 }

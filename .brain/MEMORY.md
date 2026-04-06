@@ -18,6 +18,9 @@ Go 1.24, stdlib only (no external dependencies), net/http/httptest, t.TempDir(),
 - Error messages include "What to do:" guidance
 - Package extraction: create internal/<pkg>/, write tests, update main.go, delete old code
 - Commit after every task, run tests before and after
+- SUPER principles for agent-friendly code (S: Side Effects at Edge, U: Uncoupled Logic, P: Pure & Total Functions, E: Explicit Data Flow, R: Replaceable by Value)
+- SPIRALS process loop for agent collaboration (Sense, Plan, Inquire, Refine, Act, Learn, Scan)
+- Code must be machine-reasonable: no hidden state, no globals, no entangled side effects
 
 ## Active Gotchas
 - Go const cannot be overridden by ldflags — use var instead
@@ -27,6 +30,7 @@ Go 1.24, stdlib only (no external dependencies), net/http/httptest, t.TempDir(),
 - filepath.Join() always, never string concat with /
 - os.UserHomeDir() errors must be handled, never discard with ,_
 - syscall.Flock doesn't exist on Windows — use build tags
+- Hidden dependencies (globals, singletons) trap agents — every dependency must be explicit in function parameters
 
 ## Topic Files
 - `gotchas.md` — Error patterns and fixes

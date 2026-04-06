@@ -123,3 +123,12 @@
 
 ### [2026-04-05 10:39:47] XDG_CONFIG_HOME used to isolate test config writes from production
 
+
+### [2026-04-06 08:36:28] SUPER principles for agent-friendly code: 5 constraints — S: Side Effects at Edge (I/O in thin outer layer, never in business logic), U: Uncoupled Logic (dependencies as parameters, not globals), P: Pure & Total Functions (deterministic, handle every input, return Result not throw), E: Explicit Data Flow (linear pipeline, each step returns new value), R: Replaceable by Value (referential transparency — can swap function call with its result). Agents working on SUPER-compliant code pass tests 3x more often on first try
+
+
+### [2026-04-06 08:36:30] SPIRALS process loop for human-agent collaboration: 7-step cycle — S: Sense (gather context), P: Plan (draft approach, define done), I: Inquire (identify knowledge gaps), R: Refine (simplify, 80/20, split >3pt tickets), A: Act (write code following SUPER), L: Learn (run tests, record failures), S: Scan (zoom out, check regressions, prevent infinite loops). Split into SPIR|ALS with human approval gate between planning and execution phases
+
+
+### [2026-04-06 08:36:33] Agent code must be machine-reasonable: mutable state, hidden dependencies, and entangled side effects make agent output non-deterministic and impossible to debug. Code should follow: pure functions (same input → same output, no globals/DB/logging inside), explicit data flow (trace linearly), side effects at boundaries (I/O in thin outer layer), composition over coupling (small replaceable functions). When agent modifies function, scope of breakage must be exactly one function
+

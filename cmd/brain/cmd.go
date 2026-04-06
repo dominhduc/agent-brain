@@ -25,13 +25,14 @@ func main() {
 	}
 
 	jsonFlag := hasFlag("--json")
+	summaryFlag := hasFlag("--summary")
 	dryRun := hasFlag("--dry-run")
 
 	switch os.Args[1] {
 	case "init":
 		cmdInit()
 	case "get":
-		cmdGet(jsonFlag)
+		cmdGet(jsonFlag, summaryFlag)
 	case "search":
 		cmdSearch(jsonFlag)
 	case "add":
@@ -80,6 +81,7 @@ func printUsage() {
 Usage:
   brain init                          Initialize knowledge hub in project
   brain get <topic>                   Get knowledge (memory|gotchas|patterns|decisions|architecture|all)
+                                      Flags: --summary (compact view), --json
   brain search <query>                Search across all knowledge
   brain add <topic> "<message>"      Add entry to topic
 

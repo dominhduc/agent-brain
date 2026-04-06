@@ -1,6 +1,7 @@
 package brain
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -240,7 +241,7 @@ func TestAddEntry_MultipleEntries(t *testing.T) {
 	setupTestBrainDir(t)
 
 	for i := 0; i < 5; i++ {
-		if err := AddEntry("patterns", "pattern entry"); err != nil {
+		if err := AddEntry("patterns", fmt.Sprintf("pattern entry %d", i)); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -252,6 +253,27 @@ func TestAddEntry_MultipleEntries(t *testing.T) {
 	occurrences := strings.Count(content, "pattern entry")
 	if occurrences != 5 {
 		t.Errorf("expected 5 occurrences, got %d", occurrences)
+	}
+}
+
+func TestAddEntry_Deduplication(t *testing.T) {
+	setupTestBrainDir(t)
+
+	if err := AddEntry("gotchas", "Test deduplication entry"); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := AddEntry("gotchas", "Test deduplication entry"); err != nil {
+		t.Fatal(err)
+	}
+
+	content, err := GetTopic("gotchas")
+	if err != nil {
+		t.Fatal(err)
+	}
+	occurrences := strings.Count(content, "Test deduplication entry")
+	if occurrences != 1 {
+		t.Errorf("expected 1 occurrence (deduplication), got %d", occurrences)
 	}
 }
 

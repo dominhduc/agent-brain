@@ -123,3 +123,6 @@
 
 ### [2026-04-05 10:39:47] Corrupted config files require graceful defaults instead of crashes
 
+
+### [2026-04-06 08:36:31] Hidden dependencies trap agents: functions that use GLOBAL_CONFIG, Database.get_instance(), or singletons look pure by signature but fail in production. Agents can't see implicit state. Every function dependency must be explicit in parameters. This is the #1 reason agent projects degrade in production — each iteration introduces subtle state corruption from invisible blast radius
+
