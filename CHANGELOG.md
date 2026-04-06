@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.16.6] - 2026-04-06
+
+### Fixed
+- `brain review` TTY detection: add `os.Stdin.Stat()` check for `ModeCharDevice` to correctly detect `/dev/null` stdin in tmux/SSH sessions
+
 ## [v0.16.5] - 2026-04-06
 
 ### Fixed
