@@ -22,7 +22,7 @@ func TestCmdReview_NoPendingEntries(t *testing.T) {
 	os.Args = []string{"brain", "review"}
 	defer func() { os.Args = oldArgs }()
 
-	output := captureStdout(func() { cmdReview(false, false) })
+	output := captureStdout(func() { cmdReview(false, false, false) })
 
 	if output == "" {
 		t.Log("cmdReview returned empty output (expected for no pending entries)")
@@ -56,7 +56,7 @@ func TestCmdReview_WithPendingEntries(t *testing.T) {
 	os.Args = []string{"brain", "review"}
 	defer func() { os.Args = oldArgs }()
 
-	output := captureStdout(func() { cmdReview(false, false) })
+	output := captureStdout(func() { cmdReview(false, false, false) })
 
 	if output == "" {
 		t.Fatal("expected output from cmdReview with pending entries")
