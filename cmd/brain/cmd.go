@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-var version = "v0.17.3"
+var version = "v0.18.0"
 
 var (
 	commit string
@@ -41,6 +41,8 @@ func main() {
 		cmdEval()
 	case "prune":
 		cmdPrune(dryRun)
+	case "sleep":
+		cmdSleep(dryRun)
 	case "status":
 		cmdStatus(jsonFlag)
 	case "daemon":
@@ -58,6 +60,14 @@ func main() {
 		cmdUpdate()
 	case "doctor":
 		cmdDoctor()
+	case "index":
+		cmdIndex()
+	case "wm":
+		cmdWM()
+	case "handoff":
+		cmdHandoff()
+	case "outcome":
+		cmdOutcome()
 	case "--help", "-h", "help":
 		printUsage()
 	default:
@@ -90,10 +100,15 @@ Usage:
   brain status                        Show hub statistics
   brain review                        Review pending entries
   brain prune                         Archive stale entries
+  brain sleep                         Consolidate memory (decay + archive)
 
   brain config <subcommand>           Configure brain
+  brain wm push|read|clear|flush      Working memory (session-local notes)
+  brain handoff create|latest|resume  Session handoffs
+  brain outcome --good|--bad          Feedback on retrieved memories
   brain daemon <start|stop|restart|status|failed|retry|run>   Manage background daemon
   brain doctor                        Run health check
+  brain index rebuild                 Rebuild metadata index
   brain version                       Show version info
   brain update                        Update to latest version
 

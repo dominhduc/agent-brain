@@ -132,12 +132,14 @@ func TopicFilePath(topic string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	return TopicFilePathForDir(topic, brainDir)
+}
 
+func TopicFilePathForDir(topic string, brainDir string) (string, error) {
 	filename, ok := topicFiles[strings.ToLower(topic)]
 	if !ok {
 		return "", fmt.Errorf("unknown topic '%s'. Available topics: memory, gotchas, patterns, decisions, architecture.\nWhat to do: use one of the listed topic names.", topic)
 	}
-
 	return filepath.Join(brainDir, filename), nil
 }
 

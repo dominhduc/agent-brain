@@ -1,12 +1,20 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
+	"regexp"
+	"strings"
+	"time"
 
 	"github.com/dominhduc/agent-brain/internal/brain"
+	"github.com/dominhduc/agent-brain/internal/index"
+	"github.com/dominhduc/agent-brain/internal/outcome"
 )
+
+var entryLineRe = regexp.MustCompile(`^### \[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]`)
 
 func cmdGet(jsonFlag, summaryFlag bool) {
 	if len(os.Args) < 3 {
@@ -71,16 +79,52 @@ func cmdGet(jsonFlag, summaryFlag bool) {
 		return
 	}
 
-	content, err := brain.GetTopic(topic)
+	path, err := brain.TopicFilePath(topic)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 
+	data, err := os.ReadFile(path)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error reading %s: %v\n", topic, err)
+		os.Exit(1)
+	}
+
+	brainDir, _ := brain.FindBrainDir()
+	idx, _ := index.Load(brainDir)
+	now := time.Now()
+
 	if jsonFlag {
-		data, _ := json.MarshalIndent(map[string]string{topic: content}, "", "  ")
 		fmt.Println(string(data))
-	} else {
-		fmt.Println(content)
+		return
+	}
+
+	scanner := bufio.NewScanner(strings.NewReader(string(data)))
+	var retrievedKeys []string
+	for scanner.Scan() {
+		line := scanner.Text()
+		matches := entryLineRe.FindStringSubmatch(line)
+		if matches != nil {
+			timestamp := matches[1]
+			entry, found := idx.Get(topic, timestamp)
+			if found {
+				strength := index.CalculateStrength(entry, now)
+				fmt.Printf("●%.2f  %s\n", strength, line)
+				entry.RetrievalCount++
+				entry.LastRetrieved = now
+				idx.Set(topic, timestamp, entry)
+				retrievedKeys = append(retrievedKeys, index.MakeKey(topic, timestamp))
+			} else {
+				fmt.Println(line)
+			}
+		} else {
+			fmt.Println(line)
+		}
+	}
+
+	if len(retrievedKeys) > 0 {
+		idx.Save(brainDir)
+		outcome.Track(brainDir, retrievedKeys)
 	}
 }

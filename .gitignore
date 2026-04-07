@@ -9,6 +9,10 @@ dist/
 .brain/.queue/
 .brain/pending/
 .brain/sessions/
+.brain/index.json
+.brain/buffer/
+.brain/handoffs/
+.brain/.session/
 EXECUTION_PLAN.md
 REPO_AGENTS.md
 docs/plans/

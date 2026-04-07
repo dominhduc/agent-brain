@@ -89,7 +89,7 @@ func cmdInit() {
 	}
 
 	gitignorePath := filepath.Join(cwd, ".gitignore")
-	entries := []string{".brain/archived/", ".brain/.queue/", ".brain/pending/"}
+	entries := []string{".brain/archived/", ".brain/.queue/", ".brain/pending/", ".brain/index.json", ".brain/buffer/", ".brain/handoffs/", ".brain/.session/"}
 	existing := ""
 	if data, err := os.ReadFile(gitignorePath); err == nil {
 		existing = string(data)

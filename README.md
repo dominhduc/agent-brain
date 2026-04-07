@@ -4,6 +4,8 @@
 
 `brain` is a CLI tool that creates a per-project knowledge hub (`.brain/`) for AI coding agents. It tracks what your agent learns, auto-analyzes commits via LLM, and feeds accumulated knowledge back into every new session.
 
+**v0.18.0** adds biological memory: decay, retrieval strengthening, working memory, session handoffs, and outcome feedback. Your knowledge base now gets smarter over time — stale entries fade, important ones stick.
+
 Works with **OpenCode**, **Claude Code**, **Cursor**, **Windsurf**, and any agent that can run shell commands.
 
 ---
@@ -136,7 +138,7 @@ Run this **once per project**. After that, everything is automatic.
 
 ### `brain get <topic>`
 
-Read accumulated knowledge.
+Read accumulated knowledge. Entries show a strength indicator (`●0.82`) based on recency and usage.
 
 ```bash
 brain get gotchas        # See known pitfalls
@@ -146,6 +148,8 @@ brain get gotchas --json # Machine-readable output
 ```
 
 Topics: `memory`, `gotchas`, `patterns`, `decisions`, `architecture`, `all`
+
+Retrieval automatically strengthens memories (extends their half-life).
 
 ### `brain search <query>`
 
@@ -196,6 +200,63 @@ brain prune             # Actually prune
 ```
 
 Reads patterns from `.brainprune` (like `.gitignore` for knowledge). Moves matching entries to `.brain/archived/`.
+
+### `brain sleep [--dry-run]`
+
+Run memory consolidation — the biological "sleep" cycle.
+
+```bash
+brain sleep           # Archive decayed entries, merge related patterns
+brain sleep --dry-run # Preview what would change
+```
+
+Entries with strength below threshold (from disuse) are archived. Related patterns are merged into consolidated insights.
+
+### `brain index rebuild`
+
+Rebuild the metadata index from topic files.
+
+```bash
+brain index rebuild
+```
+
+Useful if the index gets out of sync. Safe to run anytime — no data is lost.
+
+### `brain wm push|read|clear|flush`
+
+Working memory — session-local scratchpad for current-state notes.
+
+```bash
+brain wm push "investigating the auth bug" --importance 0.9
+brain wm read
+brain wm clear
+brain wm flush    # Same as clear, call at session end
+```
+
+Bounded to 20 entries. Lowest-importance entries are evicted when full. Auto-cleared between sessions.
+
+### `brain handoff create|latest|show|resume`
+
+Session handoffs — persist task summary + next steps for continuity.
+
+```bash
+brain handoff create --summary "Fixed auth middleware" --next "Add tests for edge cases"
+brain handoff latest
+brain handoff resume
+```
+
+The latest handoff is automatically included in `brain get all` output.
+
+### `brain outcome --good|--bad`
+
+Feedback on retrieved memories — did they help?
+
+```bash
+brain outcome --good   # Strengthen last-retrieved entries (+5 days half-life)
+brain outcome --bad    # Weaken last-retrieved entries (-3 days half-life)
+```
+
+Tightens the feedback loop: memories that help survive longer, irrelevant ones fade faster.
 
 ### `brain status [--json]`
 
@@ -528,6 +589,9 @@ your-project/
 │   │   ├── commit-*.json
 │   │   └── done/
 │   ├── pending/                # Entries awaiting review (local only)
+│   ├── index.json              # Metadata index (local only)
+│   ├── buffer/                 # Working memory (local only)
+│   ├── handoffs/               # Session handoffs (local only)
 │   └── archived/                # Pruned entries (local only)
 │
 └── .brainprune                  # Patterns for knowledge pruning (optional)
@@ -541,6 +605,7 @@ your-project/
 - [ ] **Choose your preferred model** in `~/.config/brain/config.yaml` (default: `anthropic/claude-3.5-haiku`)
 - [ ] **Review daemon configuration:** `brain daemon status`
 - [ ] **Run `brain init`** in your first project
+- [ ] **Optional:** After working, run `brain outcome --good` to strengthen helpful memories
 
 ---
 
