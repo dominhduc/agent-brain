@@ -14,6 +14,7 @@ type Handoff struct {
 	Next      string    `json:"next"`
 	Session   string    `json:"session"`
 	Timestamp time.Time `json:"timestamp"`
+	Topic     string    `json:"topic"`
 }
 
 const (
@@ -29,7 +30,7 @@ func latestPath(brainDir string) string {
 	return filepath.Join(handoffDir(brainDir), latestFile)
 }
 
-func Create(brainDir, summary, next, session string) (*Handoff, error) {
+func Create(brainDir, summary, next, session, topic string) (*Handoff, error) {
 	dir := handoffDir(brainDir)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return nil, fmt.Errorf("creating handoff dir: %w", err)
@@ -41,6 +42,7 @@ func Create(brainDir, summary, next, session string) (*Handoff, error) {
 		Next:      next,
 		Session:   session,
 		Timestamp: time.Now(),
+		Topic:     topic,
 	}
 
 	data, err := json.MarshalIndent(h, "", "  ")

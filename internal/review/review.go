@@ -14,13 +14,14 @@ import (
 )
 
 type PendingEntry struct {
-	ID        string    `json:"id"`
-	Topic     string    `json:"topic"`
-	Content   string    `json:"content"`
-	CommitSHA string    `json:"commit_sha"`
-	Timestamp time.Time `json:"timestamp"`
-	Confidence string   `json:"confidence"`
-	Source    string    `json:"source"`
+	ID         string    `json:"id"`
+	Topic      string    `json:"topic"`
+	Content    string    `json:"content"`
+	CommitSHA  string    `json:"commit_sha"`
+	Timestamp  time.Time `json:"timestamp"`
+	Confidence string    `json:"confidence"`
+	Source     string    `json:"source"`
+	Topics     []string  `json:"topics"`
 }
 
 func (e PendingEntry) Fingerprint() string {

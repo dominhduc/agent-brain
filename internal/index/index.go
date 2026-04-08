@@ -19,6 +19,7 @@ type IndexEntry struct {
 	LastRetrieved   time.Time `json:"last_retrieved"`
 	HalfLifeDays    int       `json:"half_life_days"`
 	Confidence      string    `json:"confidence"`
+	Topics          []string  `json:"topics"`
 }
 
 type Index struct {
@@ -114,6 +115,33 @@ func newEmptyIndex() *Index {
 
 var entryHeaderRe = regexp.MustCompile(`^### \[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]`)
 
+var topicKeywords = map[string][]string{
+	"ui":           {"react", "css", "component", "style", "tailwind", "html", "frontend", "navbar", "button", "form", "responsive", "dark mode", "jsx", "typescript"},
+	"backend":      {"api", "handler", "controller", "service", "middleware", "route", "endpoint", "grpc", "rest", "graphql", "http", "server"},
+	"infrastructure": {"vps", "deploy", "docker", "ci", "cd", "kubernetes", "cloudflare", "nginx", "ssl", "domain", "dns", "server", "ubuntu", "fly.io", "render", "vercel"},
+	"database":     {"sql", "migration", "schema", "query", "postgres", "mysql", "sqlite", "mongo", "redis", "index", "table", "gorm", "prisma"},
+	"security":     {"auth", "secret", "token", "permission", "jwt", "oauth", "bcrypt", "argon2", "encrypt", "csrf", "cors", "password", "session"},
+	"testing":      {"test", "spec", "mock", "assert", "vitest", "jest", "pytest", "coverage", "tdd", "suite", "fixture"},
+	"architecture": {"module", "layer", "package", "directory", "structure", "pattern", "abstraction", "dependency", "interface", "refactor"},
+}
+
+func DetectTopics(text string) []string {
+	lower := strings.ToLower(text)
+	var topics []string
+	for topic, keywords := range topicKeywords {
+		for _, kw := range keywords {
+			if strings.Contains(lower, kw) {
+				topics = append(topics, topic)
+				break
+			}
+		}
+	}
+	if len(topics) == 0 {
+		topics = []string{"general"}
+	}
+	return topics
+}
+
 func Rebuild(brainDir string) (*Index, error) {
 	idx := newEmptyIndex()
 
@@ -130,30 +158,54 @@ func Rebuild(brainDir string) (*Index, error) {
 
 		content := string(data)
 		lines := strings.Split(content, "\n")
+		var currentEntry strings.Builder
+		var currentKey string
 		for _, line := range lines {
 			matches := entryHeaderRe.FindStringSubmatch(line)
-			if matches == nil {
+			if matches != nil {
+				if currentEntry.Len() > 0 {
+					key := currentKey
+					if _, exists := idx.Entries[key]; !exists {
+						halfLife := 7
+						if topic == "gotchas" {
+							halfLife = 14
+						}
+						entryTopics := DetectTopics(currentEntry.String())
+						idx.Entries[key] = IndexEntry{
+							Strength:       1.0,
+							RetrievalCount: 0,
+							LastRetrieved:  time.Now(),
+							HalfLifeDays:   halfLife,
+							Confidence:     "observed",
+							Topics:         entryTopics,
+						}
+					}
+				}
+				currentKey = MakeKey(topic, matches[1])
+				currentEntry.Reset()
+				currentEntry.WriteString(line)
 				continue
 			}
-
-			timestamp := matches[1]
-			key := MakeKey(topic, timestamp)
-
-			if _, exists := idx.Entries[key]; exists {
-				continue
+			if currentKey != "" {
+				currentEntry.WriteString("\n")
+				currentEntry.WriteString(line)
 			}
-
-			halfLife := 7
-			if topic == "gotchas" {
-				halfLife = 14
-			}
-
-			idx.Entries[key] = IndexEntry{
-				Strength:       1.0,
-				RetrievalCount: 0,
-				LastRetrieved:  time.Now(),
-				HalfLifeDays:   halfLife,
-				Confidence:     "observed",
+		}
+		if currentEntry.Len() > 0 && currentKey != "" {
+			if _, exists := idx.Entries[currentKey]; !exists {
+				halfLife := 7
+				if topic == "gotchas" {
+					halfLife = 14
+				}
+				entryTopics := DetectTopics(currentEntry.String())
+				idx.Entries[currentKey] = IndexEntry{
+					Strength:       1.0,
+					RetrievalCount: 0,
+					LastRetrieved:  time.Now(),
+					HalfLifeDays:   halfLife,
+					Confidence:     "observed",
+					Topics:         entryTopics,
+				}
 			}
 		}
 	}

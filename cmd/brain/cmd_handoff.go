@@ -10,6 +10,8 @@ import (
 )
 
 func cmdHandoff() {
+	fmt.Fprintln(os.Stderr, "Warning: 'brain handoff' is deprecated. Use 'brain eval' instead.")
+
 	if len(os.Args) < 3 {
 		fmt.Println("Usage: brain handoff <subcommand>")
 		fmt.Println("\nSubcommands:")
@@ -55,7 +57,7 @@ func cmdHandoff() {
 			fmt.Println("Usage: brain handoff create --summary \"...\" --next \"...\"")
 			os.Exit(1)
 		}
-		h, err := handoff.Create(brainDir, summary, next, session)
+		h, err := handoff.Create(brainDir, summary, next, session, "")
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)

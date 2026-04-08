@@ -4,7 +4,7 @@
 
 `brain` is a CLI tool that creates a per-project knowledge hub (`.brain/`) for AI coding agents. It tracks what your agent learns, auto-analyzes commits via LLM, and feeds accumulated knowledge back into every new session.
 
-**v0.18.0** adds biological memory: decay, retrieval strengthening, working memory, session handoffs, and outcome feedback. Your knowledge base now gets smarter over time — stale entries fade, important ones stick.
+**v0.19.0** adds topic-aware session management: 8-topic taxonomy (ui, backend, infrastructure, database, security, testing, architecture, general), `--focus` filtering, topic-tagged handoffs, and simplified commands. Working memory, handoffs, and outcome feedback are now built into core commands.
 
 Works with **OpenCode**, **Claude Code**, **Cursor**, **Windsurf**, and any agent that can run shell commands.
 
@@ -144,10 +144,13 @@ Read accumulated knowledge. Entries show a strength indicator (`●0.82`) based 
 brain get gotchas        # See known pitfalls
 brain get patterns       # See discovered conventions
 brain get all            # Load everything
+brain get all --focus "infrastructure"  # Filter by topic
 brain get gotchas --json # Machine-readable output
 ```
 
 Topics: `memory`, `gotchas`, `patterns`, `decisions`, `architecture`, `all`
+
+Use `--focus "<topic>"` to filter by the 8-topic taxonomy: `ui`, `backend`, `infrastructure`, `database`, `security`, `testing`, `architecture`, `general`.
 
 Retrieval automatically strengthens memories (extends their half-life).
 
@@ -157,9 +160,11 @@ Search across all knowledge files.
 
 ```bash
 brain search "auth"
-brain search "argon2"
+brain search "argon2" --topic "security"   # Filter by topic
 brain search "database" --json
 ```
+
+Use `--topic "<topic>"` to filter results by the 8-topic taxonomy.
 
 Returns matching lines with file names and line numbers.
 
@@ -171,24 +176,32 @@ Add knowledge manually (or have your agent do it).
 brain add gotcha "Project uses argon2, NOT bcrypt"
 brain add pattern "Tests use Vitest, not Jest"
 brain add decision "Chose SQLite over PostgreSQL for simplicity"
+brain add infrastructure gotcha "VPS uses Ubuntu 22.04"   # Tag with topic
+brain add --wm "investigating auth bug"                   # Working memory
 ```
+
+Use an 8-topic prefix (`ui`, `backend`, `infrastructure`, `database`, `security`, `testing`, `architecture`, `general`) before the entry type to tag entries.
+
+Use `--wm` to add to working memory (auto-flushed at session end).
 
 Entries are timestamped in ISO 8601 format with rich markdown formatting.
 
 ### `brain eval`
 
-Create a session evaluation file.
+Create a session evaluation file and handoff.
 
 ```bash
 brain eval
+brain eval --good    # Apply positive outcome + flush working memory
+brain eval --bad     # Apply negative outcome + flush working memory
 ```
 
 Creates `.brain/sessions/2026-04-02T14-30-00.md` with:
 - Git summary (what files changed, lines added/removed)
 - Recent commits
-- A placeholder for the agent to append its self-evaluation
+- Auto-created handoff with topic detection
 
-Your coding agent appends: objective, work completed, confidence scores, what worked/failed, lessons learned.
+Use `--good` or `--bad` to provide feedback on retrieved memories (strengthens or weakens them). Working memory is automatically flushed after eval.
 
 ### `brain prune [--dry-run]`
 
@@ -222,7 +235,9 @@ brain index rebuild
 
 Useful if the index gets out of sync. Safe to run anytime — no data is lost.
 
-### `brain wm push|read|clear|flush`
+### `brain wm push|read|clear|flush` *(deprecated)*
+
+> **Deprecated:** Use `brain add --wm "<message>"` instead.
 
 Working memory — session-local scratchpad for current-state notes.
 
@@ -233,9 +248,11 @@ brain wm clear
 brain wm flush    # Same as clear, call at session end
 ```
 
-Bounded to 20 entries. Lowest-importance entries are evicted when full. Auto-cleared between sessions.
+Bounded to 20 entries. Lowest-importance entries are evicted when full. Auto-cleared by `brain eval`.
 
-### `brain handoff create|latest|show|resume`
+### `brain handoff create|latest|show|resume` *(deprecated)*
+
+> **Deprecated:** Use `brain eval` instead — handoffs are auto-created.
 
 Session handoffs — persist task summary + next steps for continuity.
 
@@ -245,9 +262,11 @@ brain handoff latest
 brain handoff resume
 ```
 
-The latest handoff is automatically included in `brain get all` output.
+The latest handoff is automatically included in `brain get all --focus` output.
 
-### `brain outcome --good|--bad`
+### `brain outcome --good|--bad` *(deprecated)*
+
+> **Deprecated:** Use `brain eval --good` or `brain eval --bad` instead.
 
 Feedback on retrieved memories — did they help?
 
@@ -549,11 +568,26 @@ brain init
 When `brain init` creates `AGENTS.md`, it includes instructions for your coding agent:
 
 1. **At session start:** Run `brain get all` to load accumulated knowledge
-2. **During work:** Run `brain search <topic>` before unfamiliar code, `brain get gotchas` before debugging
-3. **When corrected:** Run `brain add gotcha "..."` or `brain add pattern "..."`
-4. **At session end:** Run `brain eval` to write a self-evaluation
+2. **During work:** Run `brain search "<topic>"` before unfamiliar code, `brain get gotchas` before debugging
+3. **When corrected:** Run `brain add <topic> "<...>"` or use topic prefix: `brain add infrastructure gotcha "..."`
+4. **At session end:** Run `brain eval` (or `brain eval --good` / `brain eval --bad` for feedback)
 
 The agent doesn't need to remember anything — the instructions are in AGENTS.md, which loads every session.
+
+### 8-Topic Taxonomy
+
+Entries are tagged with one or more topics for smarter filtering:
+
+| Topic | Keywords |
+|-------|----------|
+| `ui` | react, css, component, style, tailwind, html, frontend |
+| `backend` | api, handler, controller, service, middleware, route |
+| `infrastructure` | vps, deploy, docker, ci, cd, kubernetes, nginx |
+| `database` | sql, migration, schema, query, postgres, mysql |
+| `security` | auth, secret, token, jwt, oauth, encrypt |
+| `testing` | test, spec, mock, assert, vitest, jest |
+| `architecture` | module, layer, package, pattern, abstraction |
+| `general` | catch-all for cross-cutting knowledge |
 
 ### Compatibility
 
@@ -605,7 +639,7 @@ your-project/
 - [ ] **Choose your preferred model** in `~/.config/brain/config.yaml` (default: `anthropic/claude-3.5-haiku`)
 - [ ] **Review daemon configuration:** `brain daemon status`
 - [ ] **Run `brain init`** in your first project
-- [ ] **Optional:** After working, run `brain outcome --good` to strengthen helpful memories
+- [ ] **Optional:** After working, run `brain eval --good` to strengthen helpful memories
 
 ---
 

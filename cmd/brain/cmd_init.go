@@ -239,54 +239,29 @@ EOF
 const agentsTemplate = "# Project Instructions\n\n" +
 	"## Knowledge Base\n" +
 	"This project uses a `.brain/` knowledge hub managed by the `brain` CLI.\n\n" +
-	"### At Session Start\n" +
-	"Run `brain get all` to load accumulated project knowledge before starting work.\n\n" +
-	"### During Work\n" +
-	"- Run `brain search <topic>` before writing code against unfamiliar patterns\n" +
-	"- Run `brain get gotchas` before debugging to avoid known pitfalls\n\n" +
+	"### Session Workflow\n\n" +
+	"1. **Start:** Run `brain get all` to load accumulated knowledge\n" +
+	"2. **Work:** Run `brain search \"<topic>\"` before writing unfamiliar code\n" +
+	"3. **Learn:** Run `brain add <topic> \"<insight>\"` when you discover something\n" +
+	"4. **End:** Run `brain eval` to save your work and create a handoff\n\n" +
+	"That's it. Working memory, handoffs, and outcome feedback happen automatically.\n\n" +
+	"### Topics\n" +
+	"Use these topic names when adding entries:\n" +
+	"- `ui` — frontend, styling, UX\n" +
+	"- `backend` — API, business logic, services\n" +
+	"- `infrastructure` — deployment, VPS, CI/CD, Docker\n" +
+	"- `database` — schemas, migrations, queries\n" +
+	"- `security` — auth, secrets, permissions\n" +
+	"- `testing` — tests, mocks, fixtures\n" +
+	"- `architecture` — module structure, patterns\n" +
+	"- `general` — cross-cutting knowledge\n\n" +
+	"### Commands\n" +
+	"- `brain get all --focus \"<topic>\"` — Load knowledge filtered by topic\n" +
+	"- `brain add <topic> \"<message>\"` — Add entry with topic tag\n" +
+	"- `brain add --wm \"<message>\"` — Add to working memory\n" +
+	"- `brain eval [--good|--bad]` — End session, create handoff, apply feedback\n" +
+	"- `brain search \"<query>\" --topic \"<topic>\"` — Search within a topic\n\n" +
 	"### Self-Evolution\n" +
-	"When I correct you, express frustration about a repeated mistake, or point out a pattern:\n" +
-	"1. Add the learning: `brain add gotcha \"...\"` or `brain add pattern \"...\"`\n" +
-	"2. Update MEMORY.md if the index needs refreshing\n" +
-	"3. Treat every correction as permanent — don't repeat mistakes\n\n" +
+	"When corrected, add the learning: `brain add gotcha|pattern|decision \"<message>\"`\n\n" +
 	"### At Session End\n" +
-	"1. Run `brain eval` to write a self-evaluation to the current session file.\n" +
-	"   Include: what you did, what worked, what failed, confidence scores, knowledge persisted.\n" +
-	"2. Run `brain status` to check MEMORY.md line count.\n" +
-	"   If over 200 lines, run `brain prune --dry-run` to preview stale entries.\n" +
-	"   Ask the user before pruning. Only prune with approval.\n\n" +
-	"### Maintenance\n" +
-	"Run periodically (or when MEMORY.md exceeds 200 lines):\n\n" +
-	"- `brain status` — check health, queue state, and line counts\n" +
-	"- `brain prune --dry-run` — preview what would be removed from topic files\n" +
-	"- `brain prune` — archive matching entries to `.brain/archived/`\n" +
-	"- `brain review` — approve/reject pending daemon-analyzed entries\n\n" +
-	"**Prune patterns (.brainprune):** Create a `.brainprune` file at project root\n" +
-	"with one pattern per line. Topic file lines matching any pattern get archived.\n" +
-	"Use patterns for outdated entries: old version references, resolved issues,\n" +
-	"or entries no longer relevant to the current codebase.\n\n" +
-	"Example .brainprune:\n" +
-	"```\n" +
-	"# Old patterns no longer relevant\n" +
-	"v0.3.0\n" +
-	"old-api-endpoint\n" +
-	"deprecated function name\n" +
-	"```\n\n" +
-	"### Confidence Reporting\n" +
-	"Always report confidence on technical decisions:\n" +
-	"- HIGH: documented best practice, matches codebase patterns\n" +
-	"- MEDIUM: reasonable approach, alternatives exist\n" +
-	"- LOW: best guess, recommend verification\n" +
-	"When confidence is below HIGH, state what would increase it and the risks.\n\n" +
-	"### Clarifying Questions\n" +
-	"If requirements are ambiguous, ask BEFORE coding. Present 2-3 options with tradeoffs.\n\n" +
-	"### Safety Rules\n" +
-	"- NEVER delete files or run destructive commands without explicit approval\n" +
-	"- NEVER read or expose `.env` files or secrets\n" +
-	"- Flag risky changes (auth, payments, data mutations) and wait for my review\n\n" +
-	"## Project Overview\n" +
-	"[Auto-populated by daemon analysis or first agent session]\n\n" +
-	"## Stack\n" +
-	"[Auto-populated by daemon analysis or first agent session]\n\n" +
-	"## Commands\n" +
-	"[Auto-populated by daemon analysis or first agent session]\n"
+	"Run `brain eval` to write a self-evaluation and create a handoff for the next session.\n"

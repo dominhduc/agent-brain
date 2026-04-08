@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-var version = "v0.18.0"
+var version = "v0.19.0"
 
 var (
 	commit string
@@ -92,25 +92,32 @@ func printUsage() {
 Usage:
   brain init                          Initialize knowledge hub in project
   brain get <topic>                   Get knowledge (memory|gotchas|patterns|decisions|architecture|all)
-                                      Flags: --summary (compact view), --json
+                                      Flags: --summary (compact view), --json, --focus "<topic>"
   brain search <query>                Search across all knowledge
-  brain add <topic> "<message>"      Add entry to topic
+                                      Flags: --json, --topic "<topic>"
+  brain add <topic> "<message>"       Add entry to topic
+  brain add <8-topic> <topic> "<msg>" Add entry with topic tag
+  brain add --wm "<message>"          Add to working memory
 
-  brain eval                          Create session evaluation
+  brain eval                          Create session evaluation + handoff
+  brain eval --good                   Apply positive outcome + flush WM
+  brain eval --bad                    Apply negative outcome + flush WM
   brain status                        Show hub statistics
   brain review                        Review pending entries
   brain prune                         Archive stale entries
   brain sleep                         Consolidate memory (decay + archive)
 
   brain config <subcommand>           Configure brain
-  brain wm push|read|clear|flush      Working memory (session-local notes)
-  brain handoff create|latest|resume  Session handoffs
-  brain outcome --good|--bad          Feedback on retrieved memories
+  brain wm push|read|clear|flush      Working memory (deprecated: use 'brain add --wm')
+  brain handoff create|latest|resume  Session handoffs (deprecated: use 'brain eval')
+  brain outcome --good|--bad          Feedback on retrieved memories (deprecated: use 'brain eval')
   brain daemon <start|stop|restart|status|failed|retry|run>   Manage background daemon
   brain doctor                        Run health check
   brain index rebuild                 Rebuild metadata index
   brain version                       Show version info
   brain update                        Update to latest version
+
+8-Topic taxonomy: ui, backend, infrastructure, database, security, testing, architecture, general
 
 Config subcommands:
   brain config list                   List all settings
@@ -122,8 +129,13 @@ Config subcommands:
 Examples:
   brain init
   brain get gotchas
+  brain get all --focus "infrastructure"
   brain search "auth"
+  brain search "auth" --topic "security"
   brain add gotcha "Project uses argon2 NOT bcrypt"
+  brain add infrastructure gotcha "VPS uses Ubuntu 22.04"
+  brain add --wm "investigating auth bug"
+  brain eval --good
   brain config list
   brain config set api-key sk-...
   brain config setup

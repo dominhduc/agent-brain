@@ -113,7 +113,7 @@ func ProcessItemWithDeps(processingPath, queueDir, brainDir, projectRoot string,
 	pendingDir := filepath.Join(brainDir, "pending")
 	entryCount := 0
 
-	writePending := func(topic, content string) {
+	writePending := func(topic, content string, topics []string) {
 		if content == "" {
 			return
 		}
@@ -126,21 +126,22 @@ func ProcessItemWithDeps(processingPath, queueDir, brainDir, projectRoot string,
 			Timestamp:  time.Now(),
 			Confidence: finding.Confidence,
 			Source:     "daemon",
+			Topics:     topics,
 		}
 		review.SavePendingEntry(pendingDir, entry)
 	}
 
 	for _, g := range finding.Gotchas {
-		writePending("gotchas", g)
+		writePending("gotchas", g, finding.Topics)
 	}
 	for _, p := range finding.Patterns {
-		writePending("patterns", p)
+		writePending("patterns", p, finding.Topics)
 	}
 	for _, d := range finding.Decisions {
-		writePending("decisions", d)
+		writePending("decisions", d, finding.Topics)
 	}
 	for _, a := range finding.Architecture {
-		writePending("architecture", a)
+		writePending("architecture", a, finding.Topics)
 	}
 
 	moveToDone(processingPath, queueDir)

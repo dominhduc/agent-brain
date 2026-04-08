@@ -10,6 +10,8 @@ import (
 )
 
 func cmdOutcome() {
+	fmt.Fprintln(os.Stderr, "Warning: 'brain outcome' is deprecated. Use 'brain eval --good/--bad' instead.")
+
 	good := hasFlag("--good")
 	bad := hasFlag("--bad")
 

@@ -23,11 +23,22 @@ func cmdGet(jsonFlag, summaryFlag bool) {
 		fmt.Println("Flags:")
 		fmt.Println("  --summary    Show summary with entry counts and duplicate warnings")
 		fmt.Println("  --json       Output as JSON")
+		fmt.Println("  --focus      Filter by topic (e.g., --focus \"infrastructure\")")
 		fmt.Println("What to do: specify a topic name to retrieve.")
 		os.Exit(1)
 	}
 
 	topic := os.Args[2]
+	focusFlag := hasFlag("--focus")
+	var focusTopic string
+	if focusFlag {
+		for i := 3; i < len(os.Args); i++ {
+			if os.Args[i] == "--focus" && i+1 < len(os.Args) {
+				focusTopic = os.Args[i+1]
+				break
+			}
+		}
+	}
 
 	if summaryFlag {
 		summaries, err := brain.GetAllSummaries()
@@ -56,6 +67,20 @@ func cmdGet(jsonFlag, summaryFlag bool) {
 	}
 
 	if topic == "all" {
+		brainDir, _ := brain.FindBrainDir()
+		idx, _ := index.Load(brainDir)
+		now := time.Now()
+
+		if focusFlag && focusTopic != "" {
+			content, err := getFocusedTopics(focusTopic, idx, now, jsonFlag)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Println(content)
+			return
+		}
+
 		if jsonFlag {
 			topics := map[string]string{}
 			for _, t := range brain.AvailableTopics() {
@@ -127,4 +152,126 @@ func cmdGet(jsonFlag, summaryFlag bool) {
 		idx.Save(brainDir)
 		outcome.Track(brainDir, retrievedKeys)
 	}
+}
+
+func getFocusedTopics(focusTopic string, idx *index.Index, now time.Time, jsonFlag bool) (string, error) {
+	type scoredEntry struct {
+		topicFile   string
+		timestamp   string
+		content     string
+		strength    float64
+		relevance   int
+		entry       index.IndexEntry
+	}
+
+	var highRelevance, medRelevance, otherEntries []scoredEntry
+
+	for _, topicFile := range brain.AvailableTopics() {
+		content, err := brain.GetTopic(topicFile)
+		if err != nil {
+			continue
+		}
+
+		scanner := bufio.NewScanner(strings.NewReader(content))
+		var currentContent strings.Builder
+		var currentTimestamp string
+
+		flushEntry := func() {
+			if currentTimestamp == "" {
+				return
+			}
+			entry, found := idx.Get(topicFile, currentTimestamp)
+			if !found {
+				return
+			}
+
+			strength := index.CalculateStrength(entry, now)
+			content := strings.TrimSpace(currentContent.String())
+
+			var relevance int
+			for _, t := range entry.Topics {
+				if t == focusTopic {
+					relevance = 2
+					break
+				}
+				if t == "general" {
+					relevance = 1
+				}
+			}
+
+			se := scoredEntry{
+				topicFile: topicFile,
+				timestamp: currentTimestamp,
+				content:   content,
+				strength:  strength,
+				relevance: relevance,
+				entry:     entry,
+			}
+
+			switch relevance {
+			case 2:
+				highRelevance = append(highRelevance, se)
+			case 1:
+				medRelevance = append(medRelevance, se)
+			default:
+				otherEntries = append(otherEntries, se)
+			}
+		}
+
+		for scanner.Scan() {
+			line := scanner.Text()
+			matches := entryLineRe.FindStringSubmatch(line)
+			if matches != nil {
+				flushEntry()
+				currentTimestamp = matches[1]
+				currentContent.Reset()
+				currentContent.WriteString(strings.TrimPrefix(line, matches[0]))
+			} else if currentTimestamp != "" {
+				currentContent.WriteString(" ")
+				currentContent.WriteString(strings.TrimSpace(line))
+			}
+		}
+		flushEntry()
+	}
+
+	if jsonFlag {
+		result := map[string]interface{}{
+			"focus":          focusTopic,
+			"high_relevance": len(highRelevance),
+			"general":        len(medRelevance),
+			"other_topics":   len(otherEntries),
+		}
+		data, _ := json.MarshalIndent(result, "", "  ")
+		return string(data), nil
+	}
+
+	var result strings.Builder
+	result.WriteString(fmt.Sprintf("# Focused: %s\n\n", strings.ToUpper(focusTopic)))
+
+	if len(highRelevance) > 0 {
+		result.WriteString(fmt.Sprintf("## High Relevance (%d entries)\n\n", len(highRelevance)))
+		for _, se := range highRelevance {
+			result.WriteString(fmt.Sprintf("●%.2f  ### [%s] %s\n", se.strength, se.timestamp, se.content))
+		}
+		result.WriteString("\n")
+	}
+
+	if len(medRelevance) > 0 {
+		result.WriteString(fmt.Sprintf("## General (%d entries)\n\n", len(medRelevance)))
+		for _, se := range medRelevance {
+			result.WriteString(fmt.Sprintf("●%.2f  ### [%s] %s\n", se.strength, se.timestamp, se.content))
+		}
+		result.WriteString("\n")
+	}
+
+	if len(otherEntries) > 0 {
+		result.WriteString(fmt.Sprintf("## Other Topics (collapsed, %d entries)\n\n", len(otherEntries)))
+		result.WriteString("<details>\n")
+		for _, se := range otherEntries {
+			result.WriteString(fmt.Sprintf("●%.2f  ### [%s] %s\n", se.strength, se.timestamp, se.content))
+		}
+		result.WriteString("</details>\n")
+	}
+
+	return result.String(), nil
 }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/dominhduc/agent-brain/internal/brain"
 	"github.com/dominhduc/agent-brain/internal/config"
+	"github.com/dominhduc/agent-brain/internal/index"
 	"github.com/dominhduc/agent-brain/internal/profile"
 	"github.com/dominhduc/agent-brain/internal/review"
 	"github.com/dominhduc/agent-brain/internal/tui"
@@ -216,6 +217,10 @@ func autoAcceptEntries(entries []review.PendingEntry, prof profile.Profile) ([]r
 
 func writeAccepted(accepted []review.PendingEntry, pendingDir string) {
 	timestamp := time.Now().Format("2006-01-02 15:04:05")
+	brainDir, _ := brain.FindBrainDir()
+	idx, _ := index.Load(brainDir)
+	now := time.Now()
+
 	for _, e := range accepted {
 		path, err := brain.TopicFilePath(e.Topic)
 		if err != nil {
@@ -227,7 +232,17 @@ func writeAccepted(accepted []review.PendingEntry, pendingDir string) {
 		}
 		fmt.Fprintf(f, "\n### [%s] %s\n\n", timestamp, e.Content)
 		f.Close()
+
+		idx.Set(e.Topic, timestamp, index.IndexEntry{
+			Strength:       1.0,
+			RetrievalCount: 0,
+			LastRetrieved:  now,
+			HalfLifeDays:   7,
+			Confidence:     e.Confidence,
+			Topics:         e.Topics,
+		})
 	}
+	idx.Save(brainDir)
 }
 
 func removeEntries(accepted []review.PendingEntry, rejectedIDs []string, pendingDir string) {

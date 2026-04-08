@@ -9,6 +9,8 @@ import (
 )
 
 func cmdWM() {
+	fmt.Fprintln(os.Stderr, "Warning: 'brain wm' is deprecated. Use 'brain add --wm' instead.")
+
 	if len(os.Args) < 3 {
 		fmt.Println("Usage: brain wm <subcommand>")
 		fmt.Println("\nSubcommands:")

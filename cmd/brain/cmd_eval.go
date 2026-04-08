@@ -9,9 +9,16 @@ import (
 	"time"
 
 	"github.com/dominhduc/agent-brain/internal/brain"
+	"github.com/dominhduc/agent-brain/internal/handoff"
+	"github.com/dominhduc/agent-brain/internal/index"
+	"github.com/dominhduc/agent-brain/internal/outcome"
+	"github.com/dominhduc/agent-brain/internal/wm"
 )
 
 func cmdEval() {
+	good := hasFlag("--good")
+	bad := hasFlag("--bad")
+
 	cwd, err := os.Getwd()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: cannot determine current directory.\n")
@@ -43,6 +50,7 @@ func cmdEval() {
 	nameStatus := runGit(cwd, nameArgs...)
 	shortstat := runGit(cwd, shortArgs...)
 	log := runGit(cwd, "log", "--oneline", "-3")
+	diffContent := runGit(cwd, "diff", "HEAD~1")
 
 	if strings.TrimSpace(diffStat) == "" {
 		fmt.Println("No file changes detected since last session.")
@@ -90,6 +98,49 @@ func cmdEval() {
 
 	relPath, _ := filepath.Rel(cwd, sessionPath)
 	fmt.Printf("Session file created: %s\n", relPath)
+
+	topic := detectTopicFromDiff(diffContent)
+	summary := fmt.Sprintf("Modified %d files (%d created, %d modified, %d deleted)", len(created)+len(modified)+len(deleted), len(created), len(modified), len(deleted))
+	next := "Review session evaluation and continue work."
+
+	h, err := handoff.Create(brainDir, summary, next, timestamp, topic)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: could not create handoff: %v\n", err)
+	} else {
+		fmt.Printf("Handoff created: %s (topic: %s)\n", h.ID, topic)
+	}
+
+	if good || bad {
+		keys, _ := outcome.LoadKeys(brainDir)
+		idx, err := index.Load(brainDir)
+		if err == nil {
+			var adjusted int
+			for _, key := range keys {
+				entry, ok := idx.GetByRawKey(key)
+				if !ok {
+					continue
+				}
+				if good {
+					entry.HalfLifeDays += 5
+				} else if bad {
+					entry.HalfLifeDays = max(1, entry.HalfLifeDays-3)
+				}
+				idx.SetByRawKey(key, entry)
+				adjusted++
+			}
+			if err := idx.Save(brainDir); err == nil {
+				fmt.Printf("Applied %s outcome to %d entries\n", map[bool]string{true: "positive", false: "negative"}[good], adjusted)
+			}
+			outcome.Clear(brainDir)
+		}
+	}
+
+	if err := wm.Clear(brainDir); err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: could not clear working memory: %v\n", err)
+	} else {
+		fmt.Println("Working memory flushed.")
+	}
+
 	fmt.Println("Append your evaluation (objective, work completed, self-evaluation, lessons learned).")
 }
 
@@ -108,4 +159,12 @@ func formatList(items []string) string {
 		return "none"
 	}
 	return "`" + strings.Join(items, "`, `") + "`"
+}
+
+func detectTopicFromDiff(diff string) string {
+	topics := index.DetectTopics(diff)
+	if len(topics) > 0 {
+		return topics[0]
+	}
+	return "general"
 }

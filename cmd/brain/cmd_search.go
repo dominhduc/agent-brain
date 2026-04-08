@@ -11,16 +11,27 @@ import (
 	"strings"
 
 	"github.com/dominhduc/agent-brain/internal/brain"
+	"github.com/dominhduc/agent-brain/internal/index"
 )
 
 func cmdSearch(jsonFlag bool) {
 	if len(os.Args) < 3 {
 		fmt.Println("Usage: brain search <query>")
+		fmt.Println("Flags:")
+		fmt.Println("  --json       Output as JSON")
+		fmt.Println("  --topic      Filter by topic (e.g., --topic \"infrastructure\")")
 		fmt.Println("What to do: provide a search term to look for across knowledge files.")
 		os.Exit(1)
 	}
 
 	query := os.Args[2]
+	topicFilter := ""
+	for i := 3; i < len(os.Args); i++ {
+		if os.Args[i] == "--topic" && i+1 < len(os.Args) {
+			topicFilter = os.Args[i+1]
+			break
+		}
+	}
 
 	brainDir, err := brain.FindBrainDir()
 	if err != nil {
@@ -29,7 +40,16 @@ func cmdSearch(jsonFlag bool) {
 	}
 
 	files := []string{"MEMORY.md", "gotchas.md", "patterns.md", "decisions.md", "architecture.md"}
+	fileToTopic := map[string]string{
+		"MEMORY.md":      "memory",
+		"gotchas.md":     "gotchas",
+		"patterns.md":    "patterns",
+		"decisions.md":   "decisions",
+		"architecture.md": "architecture",
+	}
 	pattern := regexp.MustCompile("(?i)" + regexp.QuoteMeta(query))
+
+	idx, _ := index.Load(brainDir)
 
 	type Match struct {
 		File    string `json:"file"`
@@ -51,6 +71,32 @@ func cmdSearch(jsonFlag bool) {
 		for scanner.Scan() {
 			line := scanner.Text()
 			if pattern.MatchString(line) {
+				if topicFilter != "" && idx != nil {
+					regexMatches := entryLineRe.FindStringSubmatch(line)
+					if regexMatches != nil {
+						timestamp := regexMatches[1]
+						fileTopic := fileToTopic[f]
+						entry, found := idx.Get(fileTopic, timestamp)
+						if !found {
+							lineNum++
+							continue
+						}
+						hasTopic := false
+						for _, t := range entry.Topics {
+							if t == topicFilter {
+								hasTopic = true
+								break
+							}
+						}
+						if !hasTopic {
+							lineNum++
+							continue
+						}
+					} else {
+						lineNum++
+						continue
+					}
+				}
 				matches = append(matches, Match{
 					File:    f,
 					Line:    lineNum + 1,

@@ -16,6 +16,7 @@ type Finding struct {
 	Decisions    []string `json:"decisions"`
 	Architecture []string `json:"architecture"`
 	Confidence   string   `json:"confidence"`
+	Topics       []string `json:"topics"`
 }
 
 type AnalyzeRequest struct {
@@ -51,9 +52,9 @@ func Analyze(req AnalyzeRequest) (Finding, error) {
 
 	systemPrompt := "You are a code analyst. Always respond with ONLY a valid JSON object, no markdown, no explanation."
 	userPrompt := `Analyze this git diff and extract knowledge. Respond with ONLY this JSON format, no other text:
-{"gotchas":["..."],"patterns":["..."],"decisions":["..."],"architecture":["..."],"confidence":"HIGH|MEDIUM|LOW"}
+{"gotchas":["..."],"patterns":["..."],"decisions":["..."],"architecture":["..."],"confidence":"HIGH|MEDIUM|LOW","topics":["ui","backend","infrastructure","database","security","testing","architecture","general"]}
 
-Rules: use empty arrays [] if nothing found. Keep entries short (one sentence each). Only include relevant categories.
+Rules: use empty arrays [] if nothing found. Keep entries short (one sentence each). Only include relevant categories. For topics, classify each entry into one or more: ui, backend, infrastructure, database, security, testing, architecture. Use "general" if none match.
 
 Diff:
 ` + req.Diff
