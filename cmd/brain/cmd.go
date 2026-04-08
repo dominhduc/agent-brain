@@ -9,7 +9,7 @@ import (
 	"github.com/dominhduc/agent-brain/internal/otel"
 )
 
-var version = "v0.20.2"
+var version = "v0.20.3"
 
 var (
 	commit string
@@ -115,71 +115,71 @@ func printUsage() {
 	if v == "" {
 		v = "dev"
 	}
-	padding := 13 - len(v)
+	padding := 19 - len(v)
 	if padding < 0 {
 		padding = 0
 	}
 	fmt.Printf(`+--------------------------------------------------------------+
-|  agent-brain  --  AI Agent Knowledge Hub CLI  (%s)%s|
+|  brain  --  AI Agent Knowledge Hub CLI  (%s)%s|
 |  https://github.com/dominhduc/agent-brain                    |
 +--------------------------------------------------------------+
 
 QUICK START
-  agent-brain init                 Initialize knowledge hub in current project
-  agent-brain get <topic>          Retrieve knowledge (memory, gotchas, patterns, etc.)
-  agent-brain add <topic> "<msg>"  Record a new learning or decision
-  agent-brain search <query>       Search across all knowledge
+  brain init                 Initialize knowledge hub in current project
+  brain get <topic>          Retrieve knowledge (memory, gotchas, patterns, etc.)
+  brain add <topic> "<msg>"  Record a new learning or decision
+  brain search <query>       Search across all knowledge
 
 COMMON WORKFLOWS
-  Session start    agent-brain get all
-  Debugging        agent-brain get gotchas
-  Session end      agent-brain eval
-  Record learning  agent-brain add gotcha "The fix"
+  Session start    brain get all
+  Debugging        brain get gotchas
+  Session end      brain eval
+  Record learning  brain add gotcha "The fix"
 
 FULL REFERENCE
 
   GET & SEARCH
-    agent-brain get <topic>          Topics: memory, gotchas, patterns, decisions, architecture, all
-                                     Flags: --summary (compact), --json, --focus "<topic>"
-    agent-brain search <query>       Search all knowledge
-                                     Flags: --json, --topic "<topic>"
+    brain get <topic>          Topics: memory, gotchas, patterns, decisions, architecture, all
+                               Flags: --summary (compact), --json, --focus "<topic>"
+    brain search <query>       Search all knowledge
+                               Flags: --json, --topic "<topic>"
 
   ADD & EVAL
-    agent-brain add <topic> "<msg>"         Add entry to a topic
-    agent-brain add <area> <topic> "<msg>"  Add entry with area tag
-    agent-brain add --wm "<msg>"            Add to working memory
-    agent-brain eval                        Session evaluation + handoff
-                                            Flags: --good, --bad
+    brain add <topic> "<msg>"         Add entry to a topic
+    brain add <area> <topic> "<msg>"  Add entry with area tag
+    brain add --wm "<msg>"            Add to working memory
+    brain eval                        Session evaluation + handoff
+                                      Flags: --good, --bad
 
   MAINTENANCE
-    agent-brain status               Hub statistics & health
-    agent-brain review               Review pending daemon entries
-    agent-brain prune                Archive stale entries (--dry-run to preview)
-    agent-brain sleep                Consolidate memory (decay + archive)
+    brain status               Hub statistics & health
+    brain review               Review pending daemon entries
+    brain prune                Archive stale entries (--dry-run to preview)
+    brain sleep                Consolidate memory (decay + archive)
 
   CONFIG
-    agent-brain config list          List all settings
-    agent-brain config get <key>     Get a value
-    agent-brain config set <key> <value>  Set a value
-    agent-brain config reset <key>   Reset to default
-    agent-brain config setup         Interactive setup wizard
+    brain config list          List all settings
+    brain config get <key>     Get a value
+    brain config set <key> <value>  Set a value
+    brain config reset <key>   Reset to default
+    brain config setup         Interactive setup wizard
 
   ADVANCED
-    agent-brain daemon <action>      Actions: start, stop, restart, status, failed, retry, run
-    agent-brain doctor               Health check & diagnostics
-    agent-brain index rebuild        Rebuild metadata index
-    agent-brain update               Update to latest version
-    agent-brain version              Show version info
+    brain daemon <action>      Actions: start, stop, restart, status, failed, retry, run
+    brain doctor               Health check & diagnostics
+    brain index rebuild        Rebuild metadata index
+    brain update               Update to latest version
+    brain version              Show version info
 
 AREA TAXONOMY
   ui, backend, infrastructure, database, security, testing, architecture, general
 
 EXAMPLES
-  agent-brain init
-  agent-brain get gotchas
-  agent-brain search "auth" --topic "security"
-  agent-brain add infrastructure gotcha "VPS uses Ubuntu 22.04"
-  agent-brain eval --good
+  brain init
+  brain get gotchas
+  brain search "auth" --topic "security"
+  brain add infrastructure gotcha "VPS uses Ubuntu 22.04"
+  brain eval --good
 `, v, spaces(padding))
 }
 
