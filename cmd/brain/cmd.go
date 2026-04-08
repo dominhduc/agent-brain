@@ -1,8 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"time"
+
+	"github.com/dominhduc/agent-brain/internal/otel"
 )
 
 var version = "v0.19.0"
@@ -19,6 +23,14 @@ const (
 )
 
 func main() {
+	ctx := context.Background()
+
+	cfg := otel.LoadConfig()
+	if err := otel.Init(ctx, cfg); err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: failed to init OTel: %v\n", err)
+	}
+	defer otel.Shutdown(ctx)
+
 	if len(os.Args) < 2 {
 		printUsage()
 		os.Exit(0)
@@ -27,8 +39,20 @@ func main() {
 	jsonFlag := hasFlag("--json")
 	summaryFlag := hasFlag("--summary")
 	dryRun := hasFlag("--dry-run")
+	cmdName := os.Args[1]
 
-	switch os.Args[1] {
+	start := time.Now()
+	ctx, span := otel.StartSpan(ctx, "brain."+cmdName)
+	defer func() {
+		otel.SetAttributes(span,
+			otel.BrainCommand.String(cmdName),
+			otel.BrainVersion.String(version),
+			otel.BrainDurationMs.Int64(time.Since(start).Milliseconds()),
+		)
+		span.End()
+	}()
+
+	switch cmdName {
 	case "init":
 		cmdInit()
 	case "get":

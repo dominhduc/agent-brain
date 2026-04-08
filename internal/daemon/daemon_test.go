@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -48,7 +49,7 @@ func TestProcessItem_ValidItem(t *testing.T) {
 			Confidence: "HIGH",
 		}, nil
 	}
-	processed, err := ProcessItemWithDeps(processingPath, queueDir, brainDir, tmpDir, 3, mockDiff, mockAnalyze)
+	processed, err := ProcessItemWithDeps(context.Background(), processingPath, queueDir, brainDir, tmpDir, 3, mockDiff, mockAnalyze)
 	if err != nil {
 		t.Fatalf("ProcessItem failed: %v", err)
 	}
@@ -90,7 +91,7 @@ func TestProcessItem_InvalidJSON(t *testing.T) {
 	processingPath := filepath.Join(queueDir, "commit-bad.json.processing")
 	os.WriteFile(processingPath, []byte("not json"), 0600)
 
-	processed, err := ProcessItemWithDeps(processingPath, queueDir, tmpDir, tmpDir, 3, nil, nil)
+	processed, err := ProcessItemWithDeps(context.Background(), processingPath, queueDir, tmpDir, tmpDir, 3, nil, nil)
 	if err == nil {
 		t.Fatal("expected error for invalid JSON")
 	}
@@ -112,7 +113,7 @@ func TestProcessItem_WrongRepo(t *testing.T) {
 	processingPath := filepath.Join(queueDir, "commit-wrong.json.processing")
 	os.WriteFile(processingPath, itemData, 0600)
 
-	processed, _ := ProcessItemWithDeps(processingPath, queueDir, tmpDir, tmpDir, 3, nil, nil)
+	processed, _ := ProcessItemWithDeps(context.Background(), processingPath, queueDir, tmpDir, tmpDir, 3, nil, nil)
 	if processed {
 		t.Error("expected item to be rejected for wrong repo")
 	}
@@ -131,7 +132,7 @@ func TestProcessItem_EmptyTimestamp(t *testing.T) {
 	processingPath := filepath.Join(queueDir, "commit-empty.json.processing")
 	os.WriteFile(processingPath, itemData, 0600)
 
-	processed, _ := ProcessItemWithDeps(processingPath, queueDir, tmpDir, tmpDir, 3, nil, nil)
+	processed, _ := ProcessItemWithDeps(context.Background(), processingPath, queueDir, tmpDir, tmpDir, 3, nil, nil)
 	if processed {
 		t.Error("expected item to be rejected for empty timestamp")
 	}

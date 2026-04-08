@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,12 +12,18 @@ import (
 	"github.com/dominhduc/agent-brain/internal/brain"
 	"github.com/dominhduc/agent-brain/internal/config"
 	"github.com/dominhduc/agent-brain/internal/index"
+	"github.com/dominhduc/agent-brain/internal/otel"
 	"github.com/dominhduc/agent-brain/internal/profile"
 	"github.com/dominhduc/agent-brain/internal/review"
 	"github.com/dominhduc/agent-brain/internal/tui"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func cmdReview(allFlag, yesFlag, ttyFlag bool) {
+	ctx := context.Background()
+	ctx, span := otel.StartSpan(ctx, "brain.review")
+	defer otel.EndSpan(span, nil)
+
 	brainDir, err := brain.FindBrainDir()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: run 'brain init' first.\n", err)
@@ -74,18 +81,55 @@ func cmdReview(allFlag, yesFlag, ttyFlag bool) {
 	canUseTTY := tui.CanUseRawMode()
 	useTUI := !prof.AutoAccept && !yesFlag && !ttyFlag && canUseTTY
 
+	var accepted []review.PendingEntry
+	var rejectedIDs []string
+	var mode string
+
 	if useTUI {
-		doInteractiveReview(entries, prof, pendingDir)
+		mode = "tui"
+		accepted, rejectedIDs, err = tui.RunReview(entries, prof.Name, os.Stdout)
+		if err != nil {
+			if accepted == nil && rejectedIDs == nil {
+				fmt.Fprintf(os.Stderr, "TUI not available, falling back to line-buffered review.\n\n")
+				mode = "line_buffered"
+				accepted, rejectedIDs = doLineBufferedReview(ctx, span, entries, prof, pendingDir)
+			} else {
+				fmt.Fprintf(os.Stderr, "Interactive review failed: %v\nFalling back to auto-accept.\n", err)
+				mode = "auto"
+				doAutoAccept(ctx, span, entries, prof, pendingDir, true)
+				return
+			}
+		} else if accepted == nil && rejectedIDs == nil {
+			fmt.Fprintf(os.Stderr, "TUI not available, falling back to line-buffered review.\n\n")
+			mode = "line_buffered"
+			accepted, rejectedIDs = doLineBufferedReview(ctx, span, entries, prof, pendingDir)
+		} else {
+			writeAccepted(ctx, span, accepted, pendingDir)
+			removeEntries(accepted, rejectedIDs, pendingDir)
+			fmt.Printf("\nApplied %d entries, rejected %d.\n", len(accepted), len(rejectedIDs))
+		}
 	} else if !prof.AutoAccept && !yesFlag {
-		doLineBufferedReview(entries, prof, pendingDir)
+		mode = "line_buffered"
+		accepted, rejectedIDs = doLineBufferedReview(ctx, span, entries, prof, pendingDir)
 	} else {
-		doAutoAccept(entries, prof, pendingDir, yesFlag || !canUseTTY)
+		mode = "auto"
+		doAutoAccept(ctx, span, entries, prof, pendingDir, yesFlag || !canUseTTY)
+		return
 	}
+
+	otel.SetAttributes(span,
+		otel.BrainProfile.String(prof.Name),
+		otel.BrainReviewMode.String(mode),
+		otel.BrainReviewTotal.Int(len(entries)),
+		otel.BrainReviewAccepted.Int(len(accepted)),
+		otel.BrainReviewRejected.Int(len(rejectedIDs)),
+		otel.BrainDurationMs.Int64(0),
+	)
 }
 
-func doAutoAccept(entries []review.PendingEntry, prof profile.Profile, pendingDir string, nonInteractive bool) {
+func doAutoAccept(ctx context.Context, span trace.Span, entries []review.PendingEntry, prof profile.Profile, pendingDir string, nonInteractive bool) {
 	accepted, rejectedIDs := autoAcceptEntries(entries, prof)
-	writeAccepted(accepted, pendingDir)
+	writeAccepted(ctx, span, accepted, pendingDir)
 	removeEntries(accepted, rejectedIDs, pendingDir)
 
 	msg := "Auto-accepted %d entries (auto-dedup: %v)\n"
@@ -100,26 +144,97 @@ func doInteractiveReview(entries []review.PendingEntry, prof profile.Profile, pe
 	if err != nil {
 		if accepted == nil && rejectedIDs == nil {
 			fmt.Fprintf(os.Stderr, "TUI not available, falling back to line-buffered review.\n\n")
-			doLineBufferedReview(entries, prof, pendingDir)
+			doLineBufferedReviewFallback(entries, prof, pendingDir)
 			return
 		}
 		fmt.Fprintf(os.Stderr, "Interactive review failed: %v\nFalling back to auto-accept.\n", err)
-		doAutoAccept(entries, prof, pendingDir, true)
+		doAutoAcceptFallback(entries, prof, pendingDir, true)
 		return
 	}
 
 	if accepted == nil && rejectedIDs == nil {
 		fmt.Fprintf(os.Stderr, "TUI not available, falling back to line-buffered review.\n\n")
-		doLineBufferedReview(entries, prof, pendingDir)
+		doLineBufferedReviewFallback(entries, prof, pendingDir)
 		return
 	}
 
-	writeAccepted(accepted, pendingDir)
+	writeAcceptedSimple(accepted, pendingDir)
 	removeEntries(accepted, rejectedIDs, pendingDir)
 	fmt.Printf("\nApplied %d entries, rejected %d.\n", len(accepted), len(rejectedIDs))
 }
 
-func doLineBufferedReview(entries []review.PendingEntry, prof profile.Profile, pendingDir string) {
+func doLineBufferedReview(ctx context.Context, span trace.Span, entries []review.PendingEntry, prof profile.Profile, pendingDir string) ([]review.PendingEntry, []string) {
+	reader := bufio.NewReader(os.Stdin)
+
+	var accepted []review.PendingEntry
+	var rejectedIDs []string
+
+	for i, e := range entries {
+		fmt.Printf("Entry %d/%d [%s]\n", i+1, len(entries), e.Topic)
+		fmt.Printf("  %s\n", truncateForPrompt(e.Content, 60))
+		fmt.Print("Accept? (y/n/q/a): ")
+
+		input, err := reader.ReadString('\n')
+		isEOF := err != nil && strings.Contains(err.Error(), "EOF")
+
+		if err != nil && !isEOF {
+			fmt.Fprintf(os.Stderr, "Error reading input: %v\n", err)
+			input = "y"
+		}
+
+		input = strings.TrimSpace(strings.ToLower(input))
+
+		if input == "" || isEOF {
+			input = "y"
+		}
+
+		decision := "accepted"
+		switch input {
+		case "y":
+			accepted = append(accepted, e)
+		case "n":
+			rejectedIDs = append(rejectedIDs, e.ID)
+			decision = "rejected"
+		case "a":
+			remaining := entries[i:]
+			for _, rem := range remaining {
+				accepted = append(accepted, rem)
+			}
+			rejectedIDs = append(rejectedIDs, collectIDs(entries[i+1:])...)
+			decision = "accept_all"
+			goto done
+		case "q":
+			rejectedIDs = append(rejectedIDs, collectIDs(entries[i+1:])...)
+			decision = "quit"
+			goto done
+		default:
+			accepted = append(accepted, e)
+		}
+
+		otel.RecordEvent(span, "brain.review.entry",
+			otel.BrainEntryID.String(e.ID),
+			otel.BrainEntryTopic.String(e.Topic),
+			otel.BrainEntryDecision.String(decision),
+		)
+	}
+
+done:
+	writeAccepted(ctx, span, accepted, pendingDir)
+	removeEntries(accepted, rejectedIDs, pendingDir)
+
+	acceptedCount := len(accepted)
+	rejectedCount := len(rejectedIDs)
+
+	if rejectedCount > 0 {
+		fmt.Printf("\nAccepted %d entries, rejected %d.\n", acceptedCount, rejectedCount)
+	} else {
+		fmt.Printf("\nAccepted %d entries.\n", acceptedCount)
+	}
+
+	return accepted, rejectedIDs
+}
+
+func doLineBufferedReviewFallback(entries []review.PendingEntry, prof profile.Profile, pendingDir string) {
 	reader := bufio.NewReader(os.Stdin)
 
 	var accepted []review.PendingEntry
@@ -165,7 +280,7 @@ func doLineBufferedReview(entries []review.PendingEntry, prof profile.Profile, p
 	}
 
 done:
-	writeAccepted(accepted, pendingDir)
+	writeAcceptedSimple(accepted, pendingDir)
 	removeEntries(accepted, rejectedIDs, pendingDir)
 
 	acceptedCount := len(accepted)
@@ -176,6 +291,18 @@ done:
 	} else {
 		fmt.Printf("\nAccepted %d entries.\n", acceptedCount)
 	}
+}
+
+func doAutoAcceptFallback(entries []review.PendingEntry, prof profile.Profile, pendingDir string, nonInteractive bool) {
+	accepted, rejectedIDs := autoAcceptEntries(entries, prof)
+	writeAcceptedSimple(accepted, pendingDir)
+	removeEntries(accepted, rejectedIDs, pendingDir)
+
+	msg := "Auto-accepted %d entries (auto-dedup: %v)\n"
+	if nonInteractive {
+		msg = "Auto-accepted %d entries in non-interactive mode (auto-dedup: %v)\n"
+	}
+	fmt.Printf(msg, len(accepted), prof.AutoDedup)
 }
 
 func collectIDs(entries []review.PendingEntry) []string {
@@ -215,7 +342,49 @@ func autoAcceptEntries(entries []review.PendingEntry, prof profile.Profile) ([]r
 	return accepted, rejectedIDs
 }
 
-func writeAccepted(accepted []review.PendingEntry, pendingDir string) {
+func writeAccepted(ctx context.Context, span trace.Span, accepted []review.PendingEntry, pendingDir string) {
+	ctx, writeSpan := otel.StartSpan(ctx, "brain.review.write")
+	defer otel.EndSpan(writeSpan, nil)
+
+	timestamp := time.Now().Format("2006-01-02 15:04:05")
+	brainDir, _ := brain.FindBrainDir()
+	idx, _ := index.Load(brainDir)
+	now := time.Now()
+
+	for _, e := range accepted {
+		path, err := brain.TopicFilePath(e.Topic)
+		if err != nil {
+			continue
+		}
+		f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+		if err != nil {
+			continue
+		}
+		fmt.Fprintf(f, "\n### [%s] %s\n\n", timestamp, e.Content)
+		f.Close()
+
+		idx.Set(e.Topic, timestamp, index.IndexEntry{
+			Strength:       1.0,
+			RetrievalCount: 0,
+			LastRetrieved:  now,
+			HalfLifeDays:   7,
+			Confidence:     e.Confidence,
+			Topics:         e.Topics,
+		})
+
+		otel.RecordEvent(writeSpan, "brain.review.entry_written",
+			otel.BrainEntryID.String(e.ID),
+			otel.BrainEntryTopic.String(e.Topic),
+		)
+	}
+	idx.Save(brainDir)
+
+	otel.SetAttributes(writeSpan,
+		otel.BrainReviewAccepted.Int(len(accepted)),
+	)
+}
+
+func writeAcceptedSimple(accepted []review.PendingEntry, pendingDir string) {
 	timestamp := time.Now().Format("2006-01-02 15:04:05")
 	brainDir, _ := brain.FindBrainDir()
 	idx, _ := index.Load(brainDir)

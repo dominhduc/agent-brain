@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/dominhduc/agent-brain/internal/analyzer"
+	"github.com/dominhduc/agent-brain/internal/otel"
 	"github.com/dominhduc/agent-brain/internal/review"
 	"github.com/dominhduc/agent-brain/internal/secrets"
 )
@@ -29,25 +31,34 @@ type DiffGetter func(repo string) (string, error)
 
 type AnalyzeFunc func(req analyzer.AnalyzeRequest) (analyzer.Finding, error)
 
-func ProcessItemWithDeps(processingPath, queueDir, brainDir, projectRoot string, maxRetries int, getDiff DiffGetter, analyzeFn AnalyzeFunc) (bool, error) {
+func ProcessItemWithDeps(ctx context.Context, processingPath, queueDir, brainDir, projectRoot string, maxRetries int, getDiff DiffGetter, analyzeFn AnalyzeFunc) (bool, error) {
+	ctx, processSpan := otel.StartSpan(ctx, "brain.daemon.process")
+	defer otel.EndSpan(processSpan, nil)
+
 	data, err := os.ReadFile(processingPath)
 	if err != nil {
+		otel.SetAttributes(processSpan, otel.BrainDaemonItem.String(processingPath), otel.BrainDaemonOutcome.String("error"))
 		moveToFailed(processingPath, queueDir, fmt.Sprintf("reading queue item: %v", err))
 		return false, fmt.Errorf("reading queue item: %w", err)
 	}
 
 	var item QueueItem
 	if err := json.Unmarshal(data, &item); err != nil {
+		otel.SetAttributes(processSpan, otel.BrainDaemonItem.String(processingPath), otel.BrainDaemonOutcome.String("error"))
 		moveToFailed(processingPath, queueDir, fmt.Sprintf("parsing queue item: %v", err))
 		return false, fmt.Errorf("parsing queue item: %w", err)
 	}
 
+	otel.SetAttributes(processSpan, otel.BrainDaemonItem.String(processingPath), otel.BrainDaemonRepo.String(item.Repo), otel.BrainDaemonAttempt.Int(item.Attempts))
+
 	if item.Timestamp == "" || item.Repo == "" {
+		otel.SetAttributes(processSpan, otel.BrainDaemonOutcome.String("error"))
 		moveToFailed(processingPath, queueDir, "invalid queue item: missing timestamp or repo")
 		return false, fmt.Errorf("invalid queue item: missing timestamp or repo")
 	}
 
 	if len(item.Timestamp) > 20 || len(item.Repo) > 4096 {
+		otel.SetAttributes(processSpan, otel.BrainDaemonOutcome.String("error"))
 		moveToFailed(processingPath, queueDir, "invalid queue item: field too long")
 		return false, fmt.Errorf("invalid queue item: field too long")
 	}
@@ -55,11 +66,13 @@ func ProcessItemWithDeps(processingPath, queueDir, brainDir, projectRoot string,
 	absRepo, _ := filepath.Abs(item.Repo)
 	absRoot, _ := filepath.Abs(projectRoot)
 	if absRepo != absRoot {
+		otel.SetAttributes(processSpan, otel.BrainDaemonOutcome.String("error"))
 		moveToFailed(processingPath, queueDir, fmt.Sprintf("security: repo %q does not match project root %q", absRepo, absRoot))
 		return false, fmt.Errorf("security: queue item repo %q does not match project root %q", absRepo, absRoot)
 	}
 
 	var diff string
+	_, diffSpan := otel.StartSpan(ctx, "brain.daemon.diff")
 	if getDiff != nil {
 		diff, err = getDiff(item.Repo)
 	} else {
@@ -71,14 +84,19 @@ func ProcessItemWithDeps(processingPath, queueDir, brainDir, projectRoot string,
 			diff = string(out)
 		}
 	}
+	otel.SetAttributes(diffSpan, otel.BrainDiffSize.Int(len(diff)), otel.BrainDiffFiles.Int(strings.Count(diff, "diff --git")))
+	otel.EndSpan(diffSpan, err)
 
 	if err != nil || diff == "" {
 		item.Attempts++
+		outcome := "retry"
 		if item.Attempts >= maxRetries {
+			outcome = "fail"
 			moveToFailed(processingPath, queueDir, fmt.Sprintf("getting diff failed after %d attempts: %v", item.Attempts, err))
-			return false, fmt.Errorf("getting diff failed after %d attempts", item.Attempts)
+		} else {
+			saveAndRequeue(processingPath, itemPath(processingPath), item)
 		}
-		saveAndRequeue(processingPath, itemPath(processingPath), item)
+		otel.SetAttributes(processSpan, otel.BrainDaemonOutcome.String(outcome))
 		return false, fmt.Errorf("getting diff: %w", err)
 	}
 
@@ -86,27 +104,45 @@ func ProcessItemWithDeps(processingPath, queueDir, brainDir, projectRoot string,
 		diff = diff[:maxDiffSize]
 	}
 
+	_, secretsSpan := otel.StartSpan(ctx, "brain.daemon.secrets")
 	if findings := secrets.ScanDiff(diff); len(findings) > 0 {
+		secretTypes := make([]string, len(findings))
+		for i, f := range findings {
+			secretTypes[i] = f.Type
+		}
+		otel.SetAttributes(secretsSpan, otel.BrainSecretsFound.Int(len(findings)), otel.BrainSecretsTypes.StringSlice(secretTypes))
+		otel.EndSpan(secretsSpan, nil)
 		flaggedDir := filepath.Join(queueDir, "flagged")
 		os.MkdirAll(flaggedDir, 0755)
 		os.Rename(processingPath, filepath.Join(flaggedDir, filepath.Base(processingPath)))
+		otel.SetAttributes(processSpan, otel.BrainDaemonOutcome.String("fail"))
 		return false, fmt.Errorf("secret detected in diff (type: %s)", findings[0].Type)
 	}
+	otel.SetAttributes(secretsSpan, otel.BrainSecretsFound.Int(0))
+	otel.EndSpan(secretsSpan, nil)
 
+	_, analyzeSpan := otel.StartSpan(ctx, "brain.analyze")
 	var finding analyzer.Finding
 	if analyzeFn != nil {
+	analyzeStart := time.Now()
 		finding, err = analyzeFn(analyzer.AnalyzeRequest{Diff: diff})
+		latencyMs := time.Since(analyzeStart).Milliseconds()
+		otel.SetAttributes(analyzeSpan, otel.BrainLLMLatencyMs.Int64(latencyMs), otel.BrainLLMConfidence.String(finding.Confidence), otel.BrainFindingsGotchas.Int(len(finding.Gotchas)), otel.BrainFindingsPatterns.Int(len(finding.Patterns)), otel.BrainFindingsDecisions.Int(len(finding.Decisions)), otel.BrainFindingsArchitecture.Int(len(finding.Architecture)))
 	} else {
-		return false, fmt.Errorf("no analyze function provided")
+		err = fmt.Errorf("no analyze function provided")
 	}
+	otel.EndSpan(analyzeSpan, err)
 
 	if err != nil {
 		item.Attempts++
+		outcome := "retry"
 		if item.Attempts >= maxRetries {
+			outcome = "fail"
 			moveToFailed(processingPath, queueDir, fmt.Sprintf("LLM analysis failed after %d attempts: %v", item.Attempts, err))
-			return false, fmt.Errorf("LLM analysis failed after %d attempts: %w", item.Attempts, err)
+		} else {
+			saveAndRequeue(processingPath, itemPath(processingPath), item)
 		}
-		saveAndRequeue(processingPath, itemPath(processingPath), item)
+		otel.SetAttributes(processSpan, otel.BrainDaemonOutcome.String(outcome))
 		return false, fmt.Errorf("LLM analysis: %w", err)
 	}
 
@@ -145,6 +181,7 @@ func ProcessItemWithDeps(processingPath, queueDir, brainDir, projectRoot string,
 	}
 
 	moveToDone(processingPath, queueDir)
+	otel.SetAttributes(processSpan, otel.BrainDaemonOutcome.String("success"))
 	return true, nil
 }
 

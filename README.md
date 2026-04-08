@@ -380,6 +380,35 @@ brain config set api-key sk-or-v1-...   # Set API key
 brain config set model anthropic/claude-3.5-haiku  # Change model
 ```
 
+### OpenTelemetry Tracing
+
+Enable distributed tracing for debugging and observability:
+
+```bash
+# Enable OTel tracing
+brain config set otel.enabled true
+
+# Set the export endpoint
+brain config set otel.endpoint localhost:4317           # OTLP gRPC (default)
+brain config set otel.endpoint http://localhost:4318/v1/traces  # OTLP HTTP
+brain config set otel.endpoint stdout                   # Debug: print to console
+```
+
+When enabled, `brain` emits OpenTelemetry spans for:
+
+- **CLI commands** — every `brain` invocation (duration, args, exit code)
+- **Daemon pipeline** — queue processing, LLM analysis, file writes
+- **Review sessions** — `brain review` TUI interactions
+
+All spans follow OpenTelemetry semantic conventions (`db.system`, `rpc.service`, etc.) and are compatible with any OTLP collector:
+
+| Collector | Endpoint |
+|-----------|----------|
+| Jaeger | `localhost:4317` |
+| Grafana Tempo | `localhost:4317` |
+| Honeycomb | `api.honeycomb.io:443` |
+| stdout | `stdout` (debug only) |
+
 ---
 
 ## Configuration

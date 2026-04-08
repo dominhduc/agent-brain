@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -443,7 +444,7 @@ func runDaemon() {
 			}
 
 			processed, err := daemon.ProcessItemWithDeps(
-				processingPath, queueDir, brainDir,
+				context.Background(), processingPath, queueDir, brainDir,
 				filepath.Dir(brainDir), cfg.Daemon.MaxRetries,
 				getDiff, analyzeFn,
 			)
