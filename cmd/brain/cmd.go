@@ -111,57 +111,65 @@ func hasFlag(flag string) bool {
 }
 
 func printUsage() {
-	fmt.Println(`brain - AI Agent Knowledge Hub CLI
+	fmt.Println(`+--------------------------------------------------------------+
+|  agent-brain  --  AI Agent Knowledge Hub CLI  (v0.20.0)      |
+|  https://github.com/dominhduc/agent-brain                    |
++--------------------------------------------------------------+
 
-Usage:
-  brain init                          Initialize knowledge hub in project
-  brain get <topic>                   Get knowledge (memory|gotchas|patterns|decisions|architecture|all)
-                                      Flags: --summary (compact view), --json, --focus "<topic>"
-  brain search <query>                Search across all knowledge
-                                      Flags: --json, --topic "<topic>"
-  brain add <topic> "<message>"       Add entry to topic
-  brain add <8-topic> <topic> "<msg>" Add entry with topic tag
-  brain add --wm "<message>"          Add to working memory
+QUICK START
+  agent-brain init                 Initialize knowledge hub in current project
+  agent-brain get <topic>          Retrieve knowledge (memory, gotchas, patterns, etc.)
+  agent-brain add <topic> "<msg>"  Record a new learning or decision
+  agent-brain search <query>       Search across all knowledge
 
-  brain eval                          Create session evaluation + handoff
-  brain eval --good                   Apply positive outcome + flush WM
-  brain eval --bad                    Apply negative outcome + flush WM
-  brain status                        Show hub statistics
-  brain review                        Review pending entries
-  brain prune                         Archive stale entries
-  brain sleep                         Consolidate memory (decay + archive)
+COMMON WORKFLOWS
+  Session start    agent-brain get all
+  Debugging        agent-brain get gotchas
+  Session end      agent-brain eval
+  Record learning  agent-brain add gotcha "The fix"
 
-  brain config <subcommand>           Configure brain
-  brain wm push|read|clear|flush      Working memory (deprecated: use 'brain add --wm')
-  brain handoff create|latest|resume  Session handoffs (deprecated: use 'brain eval')
-  brain outcome --good|--bad          Feedback on retrieved memories (deprecated: use 'brain eval')
-  brain daemon <start|stop|restart|status|failed|retry|run>   Manage background daemon
-  brain doctor                        Run health check
-  brain index rebuild                 Rebuild metadata index
-  brain version                       Show version info
-  brain update                        Update to latest version
+FULL REFERENCE
 
-8-Topic taxonomy: ui, backend, infrastructure, database, security, testing, architecture, general
+  GET & SEARCH
+    agent-brain get <topic>          Topics: memory, gotchas, patterns, decisions, architecture, all
+                                     Flags: --summary (compact), --json, --focus "<topic>"
+    agent-brain search <query>       Search all knowledge
+                                     Flags: --json, --topic "<topic>"
 
-Config subcommands:
-  brain config list                   List all settings
-  brain config get <key>              Get a value (e.g., api-key, model)
-  brain config set <key> <value>      Set a value
-  brain config reset <key>            Reset to default
-  brain config setup                 Interactive setup wizard
+  ADD & EVAL
+    agent-brain add <topic> "<msg>"         Add entry to a topic
+    agent-brain add <area> <topic> "<msg>"  Add entry with area tag
+    agent-brain add --wm "<msg>"            Add to working memory
+    agent-brain eval                        Session evaluation + handoff
+                                            Flags: --good, --bad
 
-Examples:
-  brain init
-  brain get gotchas
-  brain get all --focus "infrastructure"
-  brain search "auth"
-  brain search "auth" --topic "security"
-  brain add gotcha "Project uses argon2 NOT bcrypt"
-  brain add infrastructure gotcha "VPS uses Ubuntu 22.04"
-  brain add --wm "investigating auth bug"
-  brain eval --good
-  brain config list
-  brain config set api-key sk-...
-  brain config setup
-  brain doctor`)
+  MAINTENANCE
+    agent-brain status               Hub statistics & health
+    agent-brain review               Review pending daemon entries
+    agent-brain prune                Archive stale entries (--dry-run to preview)
+    agent-brain sleep                Consolidate memory (decay + archive)
+
+  CONFIG
+    agent-brain config list          List all settings
+    agent-brain config get <key>     Get a value
+    agent-brain config set <key> <value>  Set a value
+    agent-brain config reset <key>   Reset to default
+    agent-brain config setup         Interactive setup wizard
+
+  ADVANCED
+    agent-brain daemon <action>      Actions: start, stop, restart, status, failed, retry, run
+    agent-brain doctor               Health check & diagnostics
+    agent-brain index rebuild        Rebuild metadata index
+    agent-brain update               Update to latest version
+    agent-brain version              Show version info
+
+AREA TAXONOMY
+  ui, backend, infrastructure, database, security, testing, architecture, general
+
+EXAMPLES
+  agent-brain init
+  agent-brain get gotchas
+  agent-brain search "auth" --topic "security"
+  agent-brain add infrastructure gotcha "VPS uses Ubuntu 22.04"
+  agent-brain eval --good`)
 }

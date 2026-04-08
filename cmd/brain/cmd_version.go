@@ -6,7 +6,7 @@ import (
 )
 
 func cmdVersion() {
-	fmt.Printf("brain %s", version)
+	fmt.Printf("agent-brain %s", version)
 	if commit != "" {
 		fmt.Printf("  commit: %s", commit)
 	}
