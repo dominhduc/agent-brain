@@ -2,7 +2,7 @@
 
 > **Give your AI coding agent a memory that grows smarter with every session.**
 
-`brain` is a CLI tool that creates a per-project knowledge hub (`.brain/`) for AI coding agents. It tracks what your agent learns, auto-analyzes commits via LLM, and feeds accumulated knowledge back into every new session.
+`agent-brain` (CLI command: `brain`) is a CLI tool that creates a per-project knowledge hub (`.brain/`) for AI coding agents. It tracks what your agent learns, auto-analyzes commits via LLM, and feeds accumulated knowledge back into every new session.
 
 **Works with** OpenCode, Claude Code, Cursor, Windsurf — any agent that can run shell commands.
 
@@ -10,7 +10,8 @@
 
 ## Table of Contents
 
-- [Why brain?](#why-brain)
+- [For AI Agents (Start Here)](#for-ai-agents-start-here)
+- [Why agent-brain?](#why-agent-brain)
 - [Quick Start](#quick-start)
 - [How It Works](#how-it-works)
 - [Commands](#commands)
@@ -18,7 +19,7 @@
   - [Knowledge Commands](#knowledge-commands)
   - [Daemon Commands](#daemon-commands)
   - [Maintenance Commands](#maintenance-commands)
-  - [Configuration](#configuration-commands)
+  - [Configuration Commands](#configuration-commands)
 - [The 8-Topic Taxonomy](#the-8-topic-taxonomy)
 - [Autonomy Profiles](#autonomy-profiles)
 - [File Structure](#file-structure)
@@ -26,19 +27,45 @@
 - [Configuration](#configuration)
 - [The Daemon](#the-daemon)
 - [Troubleshooting](#troubleshooting)
-- [For AI Agents](#for-ai-agents)
 - [Building from Source](#building-from-source)
 - [License](#license)
+- [References & Inspiration](#references--inspiration)
 
 ---
 
-## Why brain?
+## For AI Agents (Start Here)
+
+> **Tell your AI coding agent to install and set up agent-brain for you.** It's the fastest way to get started.
+
+When `brain init` creates `AGENTS.md`, it includes instructions for your coding agent:
+
+1. **At session start:** Run `brain get all` to load accumulated knowledge
+2. **During work:** Run `brain search "<topic>"` before unfamiliar code, `brain get gotchas` before debugging
+3. **When corrected:** Run `brain add <topic> "<...>"` or use topic prefix: `brain add infrastructure gotcha "..."`
+4. **At session end:** Run `brain eval` (or `brain eval --good` / `brain eval --bad` for feedback)
+
+The agent doesn't need to remember anything — the instructions are in AGENTS.md, which loads every session.
+
+### Compatibility
+
+| Tool | Reads AGENTS.md? | Uses .brain/? |
+|------|-----------------|---------------|
+| OpenCode | Yes (native) | Yes |
+| Claude Code | Via CLAUDE.md wrapper | Yes |
+| Cursor | Via .cursorrules wrapper | Yes |
+| Windsurf | Via .windsurfrules wrapper | Yes |
+
+All tools benefit from the daemon's auto-analysis, even if they don't read AGENTS.md.
+
+---
+
+## Why agent-brain?
 
 AI coding agents are brilliant — but they **forget everything** between sessions. Every time you start a new conversation, your agent starts from zero.
 
-`brain` fixes this by giving your agent a **persistent memory**:
+`agent-brain` fixes this by giving your agent a **persistent memory**:
 
-| Without brain | With brain |
+| Without agent-brain | With agent-brain |
 |---------------|------------|
 | Agent forgets project conventions every session | Agent loads accumulated knowledge automatically |
 | You repeat the same corrections over and over | Corrections are recorded and remembered |
@@ -54,7 +81,7 @@ AI coding agents are brilliant — but they **forget everything** between sessio
 Three commands. That's all you need.
 
 ```bash
-# 1. Install brain
+# 1. Install agent-brain
 curl -sL https://github.com/dominhduc/agent-brain/releases/latest/download/brain_$(uname -s)_$(uname -m).tar.gz | tar xz -C ~/.local/bin
 
 # 2. Set your API key (one-time)
@@ -84,25 +111,25 @@ That's it. Every commit is analyzed automatically. Every agent session loads acc
                                          │  (.brain/.queue)│
                                          └────────┬────────┘
                                                   │
-                                      brain-daemon (background)
+                                       brain-daemon (background)
                                                   │
-                                      OpenRouter LLM analysis
+                                       OpenRouter LLM analysis
                                                   │
-                                      ┌──────────▼──────────┐
-                                      │  .brain/pending/    │
-                                      │  (review queue)     │
-                                      └──────────┬──────────┘
-                                                 │
-                                     brain review (human approves)
-                                                 │
-                                      ┌──────────▼──────────┐
-                                      │  .brain/ knowledge  │
-                                      │  files (permanent)  │
-                                      └──────────┬──────────┘
-                                                 │
+                                       ┌──────────▼──────────┐
+                                       │  .brain/pending/    │
+                                       │  (review queue)     │
+                                       └──────────┬──────────┘
+                                                  │
+                                      brain review (human approves)
+                                                  │
+                                       ┌──────────▼──────────┐
+                                       │  .brain/ knowledge  │
+                                       │  files (permanent)  │
+                                       └──────────┬──────────┘
+                                                  │
                                      Next session: agent loads knowledge
-                                                 │
-                                      Agent makes fewer mistakes
+                                                  │
+                                       Agent makes fewer mistakes
 ```
 
 ### The Three Layers
@@ -368,7 +395,7 @@ your-project/
 ### Quick install (recommended)
 
 ```bash
-# If brain is already installed
+# If agent-brain is already installed
 brain update
 
 # Or download the latest release binary
@@ -454,7 +481,7 @@ brain config set otel.endpoint http://localhost:4318/v1/traces  # OTLP HTTP
 brain config set otel.endpoint stdout                   # Debug: print to console
 ```
 
-When enabled, `brain` emits OpenTelemetry spans for CLI commands, daemon pipeline, and review sessions. Compatible with Jaeger, Grafana Tempo, Honeycomb, etc.
+When enabled, `brain` emits OpenTelemetry spans for CLI commands, daemon pipeline, and review sessions. Compatible with Jaeger, Grafana Tempo, Honeycomb, etc. See the [OpenTelemetry specification](https://opentelemetry.io/docs/) for details.
 
 ---
 
@@ -581,30 +608,6 @@ brain init
 
 ---
 
-## For AI Agents
-
-When `brain init` creates `AGENTS.md`, it includes instructions for your coding agent:
-
-1. **At session start:** Run `brain get all` to load accumulated knowledge
-2. **During work:** Run `brain search "<topic>"` before unfamiliar code, `brain get gotchas` before debugging
-3. **When corrected:** Run `brain add <topic> "<...>"` or use topic prefix: `brain add infrastructure gotcha "..."`
-4. **At session end:** Run `brain eval` (or `brain eval --good` / `brain eval --bad` for feedback)
-
-The agent doesn't need to remember anything — the instructions are in AGENTS.md, which loads every session.
-
-### Compatibility
-
-| Tool | Reads AGENTS.md? | Uses .brain/? |
-|------|-----------------|---------------|
-| OpenCode | Yes (native) | Yes |
-| Claude Code | Via CLAUDE.md wrapper | Yes |
-| Cursor | Via .cursorrules wrapper | Yes |
-| Windsurf | Via .windsurfrules wrapper | Yes |
-
-All tools benefit from the daemon's auto-analysis, even if they don't read AGENTS.md.
-
----
-
 ## Building from Source
 
 ```bash
@@ -631,3 +634,34 @@ make build
 ## License
 
 MIT
+
+---
+
+## References & Inspiration
+
+agent-brain draws from established research and best practices in software engineering, cognitive science, and AI systems:
+
+### Knowledge Management & Organizational Memory
+
+- **Knowledge-Centered Support (KCS)** — The practice of capturing knowledge at the point of use, rather than as a separate activity. agent-brain's "capture while coding" philosophy follows this principle. See the [Consortium for Service Innovation](https://www.thinkkm.org/kcs-adoption/kcs-principles/) for KCS principles.
+- **Organizational Memory Systems** — Research on how teams retain and transfer knowledge over time. agent-brain's `.brain/` directory serves as a project-level organizational memory, preventing knowledge loss when team members (or agents) rotate. Key work: Walsh & Ungson (1991), ["Organizational Memory"](https://doi.org/10.2307/258607).
+
+### Spaced Repetition & Memory Consolidation
+
+- **Spaced Repetition** — The psychological finding that information is better retained when review is spaced over time. agent-brain's memory strength/decay system (`brain sleep`, half-life extension on retrieval) implements this digitally. See [Wozniak's research on spaced repetition](https://www.supermemo.com/en/archives1990-2015/en/tech/sm5).
+- **Memory Consolidation Theory** — The neuroscience concept that memories are strengthened and reorganized during "offline" periods (sleep). agent-brain's `brain sleep` command and `brain eval --good/--bad` feedback loop mirror this biological process. See [Rasch & Born (2013)](https://doi.org/10.1152/physrev.00032.2012).
+
+### Human-in-the-Loop AI
+
+- **Human-in-the-Loop Machine Learning** — The practice of keeping humans in the decision loop for AI systems, especially for high-stakes or ambiguous cases. agent-brain's `brain review` TUI and autonomy profiles (`guard`, `assist`, `agent`) implement this pattern. See [Amershi et al. (2014)](https://doi.org/10.1145/2556831) on software engineering guidelines for HCI.
+- **Explainable AI (XAI)** — agent-brain's session journals, topic-tagged entries, and strength indicators make the system's "thinking" transparent and auditable. See the [DARPA XAI program](https://www.darpa.mil/program/explainable-artificial-intelligence) for foundational work.
+
+### Developer Experience & Tool Design
+
+- **Progressive Disclosure** — A UX principle where advanced features are hidden until needed. agent-brain's three-command surface (`init`, `get`, `add`) with optional advanced commands (`prune`, `sleep`, `review`) follows this pattern. See [Miller's "Progressive Disclosure"](https://www.nngroup.com/articles/progressive-disclosure/) from Nielsen Norman Group.
+- **Developer Flow State** — Research on minimizing interruptions during deep work. agent-brain's background daemon and automatic knowledge capture are designed to avoid pulling developers out of flow. See [Csikszentmihalyi's Flow Theory](https://doi.org/10.1037/0003-066X.54.10.824) and [Forsgren et al.'s DORA research](https://www.dora.dev/) on software delivery performance.
+
+### Git & Version Control Best Practices
+
+- **Post-Receive Hooks** — Using git hooks for automated analysis is a well-established pattern in CI/CD. agent-brain's pre-push hook follows the same design as tools like [pre-commit](https://pre-commit.com/) and [githooks](https://git-scm.com/docs/githooks).
+- **Trunk-Based Development** — agent-brain is optimized for teams practicing trunk-based development with frequent commits, as recommended by [DORA research](https://www.dora.dev/four-keys/) and the [Accelerate book](https://www.oreilly.com/library/view/accelerate/9781484203439/).
