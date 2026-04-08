@@ -9,7 +9,7 @@ import (
 	"github.com/dominhduc/agent-brain/internal/otel"
 )
 
-var version = "v0.20.1"
+var version = "v0.20.2"
 
 var (
 	commit string
@@ -111,8 +111,16 @@ func hasFlag(flag string) bool {
 }
 
 func printUsage() {
-	fmt.Println(`+--------------------------------------------------------------+
-|  agent-brain  --  AI Agent Knowledge Hub CLI  (v0.20.0)      |
+	v := version
+	if v == "" {
+		v = "dev"
+	}
+	padding := 13 - len(v)
+	if padding < 0 {
+		padding = 0
+	}
+	fmt.Printf(`+--------------------------------------------------------------+
+|  agent-brain  --  AI Agent Knowledge Hub CLI  (%s)%s|
 |  https://github.com/dominhduc/agent-brain                    |
 +--------------------------------------------------------------+
 
@@ -171,5 +179,17 @@ EXAMPLES
   agent-brain get gotchas
   agent-brain search "auth" --topic "security"
   agent-brain add infrastructure gotcha "VPS uses Ubuntu 22.04"
-  agent-brain eval --good`)
+  agent-brain eval --good
+`, v, spaces(padding))
+}
+
+func spaces(n int) string {
+	if n < 0 {
+		n = 0
+	}
+	s := make([]byte, n)
+	for i := range s {
+		s[i] = ' '
+	}
+	return string(s)
 }
