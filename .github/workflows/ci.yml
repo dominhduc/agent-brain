@@ -22,7 +22,7 @@ jobs:
         run: go mod download
 
       - name: Run tests
-        run: go test ./... -count=1 -race -cover
+        run: go test ./... -count=1 -race
 
       - name: Build
         run: go build -buildvcs=false -o /dev/null ./cmd/brain
