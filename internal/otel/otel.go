@@ -21,7 +21,7 @@ import (
 var (
 	tracerProvider trace.TracerProvider
 	globalShutdown func(context.Context) error
-	version        = "v0.19.0"
+	version        = "v0.20.0"
 )
 
 func Init(ctx context.Context, cfg Config) error {
