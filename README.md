@@ -236,9 +236,12 @@ Manage the background analysis daemon.
 brain daemon start    # Start background daemon
 brain daemon stop     # Stop daemon
 brain daemon status   # Check health, queue depth
+brain daemon retry    # Requeue all failed items for retry
 ```
 
 The daemon watches for new commits, sends diffs to OpenRouter for analysis, and writes findings to a **pending queue** for human review via `brain review`.
+
+If the daemon fails to process a commit (e.g., LLM timeout, API error), the item moves to the failed queue. Use `brain daemon retry` to requeue all failed items for another attempt.
 
 #### `brain review [--all]`
 

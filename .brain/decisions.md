@@ -240,3 +240,69 @@
 
 ### [2026-04-06 16:02:42] Switched from manual error reporting to automatic mode switching
 
+
+### [2026-04-09 14:56:21] Implemented stdout exporter for debug visibility of emitted spans
+
+
+### [2026-04-09 14:56:21] Recorded attributes only after completion (deferring measurements)
+
+
+### [2026-04-09 14:56:21] Added fallback modes for TUI unavailability (auto, line-buffered)
+
+
+### [2026-04-09 14:56:21] Minor version increment designated for release tracking
+
+
+### [2026-04-09 14:56:21] Project renamed to `agent-brain` while keeping CLI command alias as `brain`.
+
+
+### [2026-04-09 14:56:21] Background daemon pushes insights to a pending queue rather than direct permanent storage.
+
+
+### [2026-04-09 14:56:21] OpenTelemetry tracing added to CLI commands and daemon pipeline for observability.
+
+
+### [2026-04-09 14:56:21] Renamed CLI tool identifier from 'brain' to 'agent-brain' across files.
+
+
+### [2026-04-09 14:56:21] Updated version string output to include 'v0.20.0' for tracking.
+
+
+### [2026-04-09 14:56:21] Incremented patch version from v0.20.0 to v0.20.1
+
+
+### [2026-04-09 14:56:21] Renamed tool identifier from 'agent-brain' to 'brain' for shorter display.
+
+
+### [2026-04-09 14:56:21] Updated version string in code and banners during release management.
+
+
+### [2026-04-09 14:56:21] CLI command name shortened from agent-brain to brain.
+
+
+### [2026-04-09 14:56:21] Version incremented from v0.20.2 to v0.20.3.
+
+
+### [2026-04-09 14:56:21] Add dedup command as maintenance tool similar to prune
+
+
+### [2026-04-09 14:56:21] Sorting by topic then line number provides deterministic duplicate removal
+
+
+### [2026-04-09 14:56:21] Keep entry from alphabetically first topic in cross-topic scenarios
+
+
+### [2026-04-09 14:56:21] Archive files with timestamp for audit trail
+
+
+### [2026-04-09 14:56:21] Exit codes are strict (1 on error, 0 on success)
+
+
+### [2026-04-09 14:56:21] Bumped version variable to reflect release v0.21.0
+
+
+### [2026-04-09 14:56:21] Remove duplicates while maintaining the first occurrence to preserve context.
+
+
+### [2026-04-09 14:56:21] Implement dry-run flags to preview changes before modifying the persistent store.
+

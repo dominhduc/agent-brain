@@ -252,3 +252,39 @@
 
 ### [2026-04-08 11:08:23] Deploy uses Docker containers on Ubuntu VPS
 
+
+### [2026-04-09 14:56:21] Error handling must record errors on spans via RecordError for proper telemetry
+
+
+### [2026-04-09 14:56:21] Deploy different exporters (gRPC vs HTTP) based on endpoint configuration
+
+
+### [2026-04-09 14:56:21] Graceful shutdown must call provider shutdown to flush pending spans
+
+
+### [2026-04-09 14:56:21] AI coding agents reset to a blank slate on every new session without external memory.
+
+
+### [2026-04-09 14:56:21] Direct LLM output requires human review to prevent noisy knowledge entries.
+
+
+### [2026-04-09 14:56:21] SHA256 fingerprint uses only first 8 bytes which may cause collisions
+
+
+### [2026-04-09 14:56:21] Entry normalization requires consistent case/format handling or different entries may be treated as duplicates
+
+
+### [2026-04-09 14:56:21] Cross-topic duplicates keep entry based on topic alphabet order, not content quality
+
+
+### [2026-04-09 14:56:21] File permissions set to 0600 may restrict access programmatically
+
+
+### [2026-04-09 14:56:21] Empty files handled but could cause edge cases with file existence
+
+
+### [2026-04-09 14:56:21] Duplicate entries across topic files can cause inconsistent knowledge retrieval.
+
+
+### [2026-04-09 14:56:21] Ignoring warnings about duplicates detected leads to redundant memory consumption.
+

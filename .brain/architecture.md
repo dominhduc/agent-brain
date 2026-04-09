@@ -213,3 +213,48 @@
 
 ### [2026-04-06 16:02:42] Review command supports multiple UI modes within same structure
 
+
+### [2026-04-09 14:56:21] Components now expose context.Context for span propagation
+
+
+### [2026-04-09 14:56:21] Daemon queue processing traces from start to LLM analysis
+
+
+### [2026-04-09 14:56:21] Review session traced through TUI, line-buffered, and auto modes
+
+
+### [2026-04-09 14:56:21] OTel configuration loaded from user brain config.yaml directory
+
+
+### [2026-04-09 14:56:21] Structured directory hierarchy organizes Git hooks, knowledge files, and pending queues.
+
+
+### [2026-04-09 14:56:21] Pipeline integrates CLI commands, background daemon, and LLM providers for ingestion.
+
+
+### [2026-04-09 14:56:21] Versioning implemented via static string variable accessible across CLI modules.
+
+
+### [2026-04-09 14:56:21] CLI tool structure with cmd_*.go command handlers
+
+
+### [2026-04-09 14:56:21] internal package abstraction for core logic
+
+
+### [2026-04-09 14:56:21] Multiple md topic files maintained (architecture, decisions, gotchas, memory, patterns)
+
+
+### [2026-04-09 14:56:21] Cross-topic deduplication by scanning all topics together
+
+
+### [2026-04-09 14:56:21] Archived storage in brainDir/archived/ with date suffix
+
+
+### [2026-04-09 14:56:21] Application entry point maintains version string globally
+
+
+### [2026-04-09 14:56:21] The tool uses a file-system based memory architecture with command-line interfaces.
+
+
+### [2026-04-09 14:56:21] A separate storage location handles archived entries specifically for deduplication logs.
+
