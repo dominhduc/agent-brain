@@ -72,7 +72,7 @@ AI coding agents are brilliant — but they **forget everything** between sessio
 | No institutional memory across sessions | Knowledge compounds and grows smarter |
 | Agent makes the same mistakes repeatedly | Past gotchas are flagged before they happen again |
 
-**v0.20.0** adds OpenTelemetry audit logging for full observability.
+**v0.21.0** adds `brain dedup` for finding and removing duplicate knowledge entries.
 
 ---
 
@@ -265,6 +265,19 @@ brain prune             # Actually prune
 ```
 
 Reads patterns from `.brainprune` (like `.gitignore` for knowledge). Moves matching entries to `.brain/archived/`.
+
+#### `brain dedup [--dry-run]`
+
+Find and remove duplicate entries across all topic files.
+
+```bash
+brain dedup --dry-run   # See what duplicates would be removed
+brain dedup             # Actually remove duplicates
+```
+
+Uses SHA-256 fingerprinting of normalized content to detect duplicates, including cross-topic duplicates (same entry in multiple files). Keeps the first occurrence, archives removed entries to `.brain/archived/dedup-YYYY-MM-DD.md`, and shows a detailed summary report.
+
+Run when `brain get --summary` shows `⚠️ duplicates detected`.
 
 #### `brain sleep [--dry-run]`
 
@@ -566,6 +579,15 @@ If the API key is invalid or the model is unavailable, items will pile up. Fix t
 brain prune --dry-run   # See what can be archived
 brain prune             # Archive stale entries
 ```
+
+### "Duplicates detected in topic files"
+
+```bash
+brain dedup --dry-run   # Preview duplicate cleanup
+brain dedup             # Remove duplicates
+```
+
+The `brain get --summary` command shows `⚠️ duplicates detected` when the same entry appears multiple times in a topic file or across files. `brain dedup` removes duplicates while keeping the first occurrence.
 
 ### "brain: command not found"
 
