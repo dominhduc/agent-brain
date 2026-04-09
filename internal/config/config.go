@@ -67,6 +67,29 @@ func ConfigPath() string {
 	return filepath.Join(ConfigDir(), "config.yaml")
 }
 
+func ProjectConfigPath(brainDir string) string {
+	return filepath.Join(brainDir, "config.yaml")
+}
+
+func ProjectConfigExists(brainDir string) bool {
+	path := ProjectConfigPath(brainDir)
+	_, err := os.Stat(path)
+	return err == nil
+}
+
+func GlobalConfigExists() bool {
+	_, err := os.Stat(ConfigPath())
+	return err == nil
+}
+
+type ConfigSource string
+
+const (
+	SourceProject ConfigSource = "project"
+	SourceGlobal  ConfigSource = "global"
+	SourceDefault ConfigSource = "default"
+)
+
 func DefaultConfig() Config {
 	return Config{
 		LLM: LLMConfig{
@@ -124,6 +147,35 @@ func Load() (Config, error) {
 	return cfg, nil
 }
 
+func LoadForProject(brainDir string) (Config, error) {
+	cfg := DefaultConfig()
+
+	if key := os.Getenv("BRAIN_API_KEY"); key != "" {
+		cfg.LLM.APIKey = key
+	}
+
+	path := ProjectConfigPath(brainDir)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return cfg, nil
+		}
+		fmt.Fprintf(os.Stderr, "Warning: could not read project config file: %v\n", err)
+		return cfg, nil
+	}
+
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: could not parse project config file: %v\n", err)
+		return cfg, nil
+	}
+
+	if key := os.Getenv("BRAIN_API_KEY"); key != "" {
+		cfg.LLM.APIKey = key
+	}
+
+	return cfg, nil
+}
+
 func Save(cfg Config) error {
 	dir := ConfigDir()
 	if err := os.MkdirAll(dir, 0700); err != nil {
@@ -138,6 +190,25 @@ func Save(cfg Config) error {
 	path := ConfigPath()
 	if err := os.WriteFile(path, data, 0600); err != nil {
 		return fmt.Errorf("failed to write config file: %w", err)
+	}
+
+	return nil
+}
+
+func SaveToProject(cfg Config, brainDir string) error {
+	dir := brainDir
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		return fmt.Errorf("failed to create .brain config directory: %w", err)
+	}
+
+	data, err := yaml.Marshal(&cfg)
+	if err != nil {
+		return fmt.Errorf("failed to marshal config: %w", err)
+	}
+
+	path := ProjectConfigPath(brainDir)
+	if err := os.WriteFile(path, data, 0600); err != nil {
+		return fmt.Errorf("failed to write project config file: %w", err)
 	}
 
 	return nil

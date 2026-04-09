@@ -9,7 +9,7 @@ import (
 	"github.com/dominhduc/agent-brain/internal/otel"
 )
 
-var version = "v0.21.0"
+var version = "v0.22.0"
 
 var (
 	commit string
@@ -166,6 +166,8 @@ FULL REFERENCE
     brain config set <key> <value>  Set a value
     brain config reset <key>   Reset to default
     brain config setup         Interactive setup wizard
+                               Note: config can be global (~/.config/brain/)
+                               or project-specific (.brain/config.yaml)
 
   ADVANCED
     brain daemon <action>      Actions: start, stop, restart, status, failed, retry, run

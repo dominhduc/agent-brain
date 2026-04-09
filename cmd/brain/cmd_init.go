@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -127,19 +128,34 @@ func cmdInit() {
 	}
 
 	apiKey := config.GetAPIKey()
+
 	if apiKey == "" {
 		fmt.Println("\nOpenRouter API key not configured.")
 		fmt.Println("What to do: run 'brain config set api-key <your-openrouter-key>'")
 		fmt.Println("The daemon is registered but won't process commits until you set a key.")
 	}
 
-	if _, err := os.Stat(config.ConfigPath()); os.IsNotExist(err) {
+	configChoice := promptConfigChoice(brainDir)
+	if configChoice == "project" {
 		cfg := config.DefaultConfig()
 		if apiKey != "" {
 			cfg.LLM.APIKey = apiKey
 		}
-		if err := config.Save(cfg); err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: Could not create config file: %v\nWhat to do: check permissions on ~/.config/brain/.\n", err)
+		if err := config.SaveToProject(cfg, brainDir); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: Could not create project config file: %v\nWhat to do: check permissions on .brain/.\n", err)
+		} else {
+			fmt.Printf("Project config created at %s\n", config.ProjectConfigPath(brainDir))
+			fmt.Println("This project will use its own isolated configuration.")
+		}
+	} else {
+		if !config.GlobalConfigExists() {
+			cfg := config.DefaultConfig()
+			if apiKey != "" {
+				cfg.LLM.APIKey = apiKey
+			}
+			if err := config.Save(cfg); err != nil {
+				fmt.Fprintf(os.Stderr, "Warning: Could not create config file: %v\nWhat to do: check permissions on ~/.config/brain/.\n", err)
+			}
 		}
 	}
 
@@ -264,4 +280,45 @@ const agentsTemplate = "# Project Instructions\n\n" +
 	"### Self-Evolution\n" +
 	"When corrected, add the learning: `brain add gotcha|pattern|decision \"<message>\"`\n\n" +
 	"### At Session End\n" +
-	"Run `brain eval` to write a self-evaluation and create a handoff for the next session.\n"
+		"Run `brain eval` to write a self-evaluation and create a handoff for the next session.\n"
+
+func promptConfigChoice(brainDir string) string {
+	reader := bufio.NewReader(os.Stdin)
+
+	hasGlobal := config.GlobalConfigExists()
+	hasProject := config.ProjectConfigExists(brainDir)
+
+	if hasProject {
+		return "project"
+	}
+
+	if !hasGlobal {
+		fmt.Println("\nNo global configuration found.")
+		fmt.Println("You can create a global config (shared across all projects) or a project-specific config.")
+		fmt.Println()
+	} else {
+		fmt.Println("\nGlobal configuration found.")
+		fmt.Println("You can use the global config (shared across all projects) or create a project-specific config.")
+		fmt.Println()
+	}
+
+	fmt.Println("Config scope options:")
+	fmt.Println("  1. Global config  - Share LLM settings across all projects (default)")
+	fmt.Println("  2. Project config - Isolate settings to this project only")
+	fmt.Println()
+	fmt.Print("Choose config scope (1-2, or press Enter for default): ")
+
+	choice, _ := reader.ReadString('\n')
+	choice = strings.TrimSpace(choice)
+
+	if choice == "2" {
+		fmt.Println("\nProject-specific config selected.")
+		fmt.Println("Config will be stored in .brain/config.yaml")
+		fmt.Println("You can change this later with 'brain config set ...'")
+		return "project"
+	}
+
+	fmt.Println("\nUsing global config.")
+	fmt.Println("You can change this later with 'brain config set ...'")
+	return "global"
+}

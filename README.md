@@ -72,7 +72,7 @@ AI coding agents are brilliant — but they **forget everything** between sessio
 | No institutional memory across sessions | Knowledge compounds and grows smarter |
 | Agent makes the same mistakes repeatedly | Past gotchas are flagged before they happen again |
 
-**v0.21.0** adds `brain dedup` for finding and removing duplicate knowledge entries.
+**v0.22.0** adds config scope choice during `brain init` — choose between global (shared) or project-specific (isolated) configuration.
 
 ---
 
@@ -467,7 +467,26 @@ Any OpenRouter model works. Choose based on your budget and accuracy needs.
 
 ### Config File Location
 
-All config lives in `~/.config/brain/config.yaml`:
+Configuration can be **global** (shared across all projects) or **project-specific** (isolated to one project).
+
+During `brain init`, you'll be prompted to choose:
+- **Global config** (`~/.config/brain/config.yaml`) — Share LLM settings (provider, model, API key) across all projects. Best if you use the same LLM setup everywhere.
+- **Project config** (`.brain/config.yaml`) — Isolate settings to this project only. Best if different projects need different providers, models, or API keys.
+
+You can mix and match: some projects with global config, others with project-specific config. When running `brain config` inside a project, the project config takes precedence over the global config if it exists.
+
+```bash
+# Check which config is active
+brain config
+
+# Set a project-specific value (uses project config if it exists, otherwise global)
+brain config set model anthropic/claude-3.5-haiku
+
+# Switch a project from global to project-specific config
+brain config set provider openai   # This creates .brain/config.yaml if it doesn't exist
+```
+
+Global config file (`~/.config/brain/config.yaml`):
 
 ```yaml
 llm:

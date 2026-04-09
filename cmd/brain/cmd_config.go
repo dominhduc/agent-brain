@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/dominhduc/agent-brain/internal/brain"
 	"github.com/dominhduc/agent-brain/internal/config"
 	providerPkg "github.com/dominhduc/agent-brain/internal/provider"
 	"github.com/dominhduc/agent-brain/internal/profile"
@@ -47,9 +48,24 @@ func cmdConfig() {
 }
 
 func cmdConfigShow() {
-	cfg, err := config.Load()
+	brainDir, brainErr := brain.FindBrainDir()
+	var cfg config.Config
+	var source config.ConfigSource
+	var err error
+
+	if brainErr == nil && config.ProjectConfigExists(brainDir) {
+		cfg, err = config.LoadForProject(brainDir)
+		source = config.SourceProject
+	} else {
+		cfg, err = config.Load()
+		if brainErr == nil {
+			source = config.SourceGlobal
+		} else {
+			source = config.SourceDefault
+		}
+	}
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error loading config: %v\nWhat to do: check ~/.config/brain/config.yaml\n", err)
+		fmt.Fprintf(os.Stderr, "Error loading config: %v\nWhat to do: check config file\n", err)
 		os.Exit(1)
 	}
 
@@ -97,7 +113,38 @@ func cmdConfigShow() {
 			}
 		}
 	}
-	fmt.Printf("\nConfig file: %s\n", config.ConfigPath())
+	fmt.Printf("\nConfig source: %s\n", source)
+	if source == config.SourceProject {
+		fmt.Printf("Config file: %s\n", config.ProjectConfigPath(brainDir))
+	} else {
+		fmt.Printf("Config file: %s\n", config.ConfigPath())
+	}
+}
+
+func resolveConfig() (config.Config, string) {
+	brainDir, brainErr := brain.FindBrainDir()
+	if brainErr == nil && config.ProjectConfigExists(brainDir) {
+		cfg, err := config.LoadForProject(brainDir)
+		if err != nil {
+			return cfg, config.ProjectConfigPath(brainDir)
+		}
+		return cfg, config.ProjectConfigPath(brainDir)
+	}
+	cfg, _ := config.Load()
+	return cfg, config.ConfigPath()
+}
+
+func resolveConfigForWrite() (config.Config, string, error) {
+	brainDir, brainErr := brain.FindBrainDir()
+	if brainErr == nil && config.ProjectConfigExists(brainDir) {
+		cfg, err := config.LoadForProject(brainDir)
+		if err != nil {
+			return cfg, config.ProjectConfigPath(brainDir), err
+		}
+		return cfg, config.ProjectConfigPath(brainDir), nil
+	}
+	cfg, err := config.Load()
+	return cfg, config.ConfigPath(), err
 }
 
 func cmdConfigGet() {
@@ -113,11 +160,7 @@ func cmdConfigGet() {
 		os.Exit(1)
 	}
 
-	cfg, err := config.Load()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
-		os.Exit(1)
-	}
+	cfg, _ := resolveConfig()
 
 	value := key.GetValue(&cfg)
 	if key.Friendly == "api-key" {
@@ -147,7 +190,7 @@ func cmdConfigSet() {
 		os.Exit(1)
 	}
 
-	cfg, err := config.Load()
+	cfg, _, err := resolveConfigForWrite()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
 		os.Exit(1)
@@ -158,9 +201,17 @@ func cmdConfigSet() {
 		os.Exit(1)
 	}
 
-	if err := config.Save(cfg); err != nil {
-		fmt.Fprintf(os.Stderr, "Error saving config: %v\n", err)
-		os.Exit(1)
+	brainDir, brainErr := brain.FindBrainDir()
+	if brainErr == nil && config.ProjectConfigExists(brainDir) {
+		if err := config.SaveToProject(cfg, brainDir); err != nil {
+			fmt.Fprintf(os.Stderr, "Error saving config: %v\n", err)
+			os.Exit(1)
+		}
+	} else {
+		if err := config.Save(cfg); err != nil {
+			fmt.Fprintf(os.Stderr, "Error saving config: %v\n", err)
+			os.Exit(1)
+		}
 	}
 
 	displayValue := value
@@ -171,11 +222,7 @@ func cmdConfigSet() {
 }
 
 func cmdConfigList() {
-	cfg, err := config.Load()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
-		os.Exit(1)
-	}
+	cfg, _ := resolveConfig()
 
 	fmt.Println("Configuration Keys")
 	fmt.Println("==================")
@@ -198,7 +245,7 @@ func cmdConfigList() {
 }
 
 func cmdConfigReset() {
-	cfg, err := config.Load()
+	cfg, _, err := resolveConfigForWrite()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
 		os.Exit(1)
@@ -207,9 +254,17 @@ func cmdConfigReset() {
 	defaultCfg := config.DefaultConfig()
 
 	if len(os.Args) < 4 {
-		if err := config.Save(defaultCfg); err != nil {
-			fmt.Fprintf(os.Stderr, "Error saving config: %v\n", err)
-			os.Exit(1)
+		brainDir, brainErr := brain.FindBrainDir()
+		if brainErr == nil && config.ProjectConfigExists(brainDir) {
+			if err := config.SaveToProject(defaultCfg, brainDir); err != nil {
+				fmt.Fprintf(os.Stderr, "Error saving config: %v\n", err)
+				os.Exit(1)
+			}
+		} else {
+			if err := config.Save(defaultCfg); err != nil {
+				fmt.Fprintf(os.Stderr, "Error saving config: %v\n", err)
+				os.Exit(1)
+			}
 		}
 		fmt.Println("All configuration values reset to defaults.")
 		return
@@ -233,9 +288,17 @@ func cmdConfigReset() {
 		os.Exit(1)
 	}
 
-	if err := config.Save(cfg); err != nil {
-		fmt.Fprintf(os.Stderr, "Error saving config: %v\n", err)
-		os.Exit(1)
+	brainDir, brainErr := brain.FindBrainDir()
+	if brainErr == nil && config.ProjectConfigExists(brainDir) {
+		if err := config.SaveToProject(cfg, brainDir); err != nil {
+			fmt.Fprintf(os.Stderr, "Error saving config: %v\n", err)
+			os.Exit(1)
+		}
+	} else {
+		if err := config.Save(cfg); err != nil {
+			fmt.Fprintf(os.Stderr, "Error saving config: %v\n", err)
+			os.Exit(1)
+		}
 	}
 	fmt.Printf("Reset %s to default: %s\n", key.Friendly, defaultKey.Default)
 }
@@ -427,7 +490,7 @@ func cmdConfigSetup() {
 		prof = "agent"
 	}
 
-	cfg, err := config.Load()
+	cfg, _, err := resolveConfigForWrite()
 	if err != nil {
 		cfg = config.DefaultConfig()
 	}
@@ -451,9 +514,19 @@ func cmdConfigSetup() {
 	}
 	cfg.Review.Profile = prof
 
-	if err := config.Save(cfg); err != nil {
-		fmt.Fprintf(os.Stderr, "Error saving config: %v\n", err)
-		os.Exit(1)
+	brainDir, brainErr := brain.FindBrainDir()
+	if brainErr == nil && config.ProjectConfigExists(brainDir) {
+		if err := config.SaveToProject(cfg, brainDir); err != nil {
+			fmt.Fprintf(os.Stderr, "Error saving config: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("\nConfig source: project (%s)\n", config.ProjectConfigPath(brainDir))
+	} else {
+		if err := config.Save(cfg); err != nil {
+			fmt.Fprintf(os.Stderr, "Error saving config: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("\nConfig source: global (%s)\n", config.ConfigPath())
 	}
 
 	fmt.Println("Configuration saved!")

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Config scope choice during `brain init`: choose between global config (shared across projects) or project-specific config (isolated in `.brain/config.yaml`)
+- `brain config` now shows which config source is active (global or project)
+- Project config takes precedence over global config when both exist
+
+### Changed
+- `brain config set/get/list/reset` now check for project config first, fall back to global
+
 ## [v0.17.3] - 2026-04-06
 
 ### Added
