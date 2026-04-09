@@ -22,11 +22,15 @@ When I correct you, express frustration about a repeated mistake, or point out a
 2. Run `brain status` to check MEMORY.md line count.
    If over 200 lines, run `brain prune --dry-run` to preview stale entries.
    Ask the user before pruning. Only prune with approval.
+3. If `brain get --summary` shows duplicate warnings, run `brain dedup --dry-run`.
+   Review the summary. Run `brain dedup` to clean up if approved.
 
 ### Maintenance
 Run periodically (or when MEMORY.md exceeds 200 lines):
 
 - `brain status` — check health, queue state, and line counts
+- `brain dedup --dry-run` — preview duplicate cleanup
+- `brain dedup` — remove duplicate entries (with approval)
 - `brain prune --dry-run` — preview what would be removed from topic files
 - `brain prune` — archive matching entries to `.brain/archived/`
 - `brain review` — approve/reject pending daemon-analyzed entries

@@ -65,6 +65,8 @@ func main() {
 		cmdEval()
 	case "prune":
 		cmdPrune(dryRun)
+	case "dedup":
+		cmdDedup(dryRun)
 	case "sleep":
 		cmdSleep(dryRun)
 	case "status":
@@ -154,8 +156,9 @@ FULL REFERENCE
   MAINTENANCE
     brain status               Hub statistics & health
     brain review               Review pending daemon entries
-    brain prune                Archive stale entries (--dry-run to preview)
-    brain sleep                Consolidate memory (decay + archive)
+  brain prune                Archive stale entries (--dry-run to preview)
+  brain dedup                Find and remove duplicate entries (--dry-run to preview)
+  brain sleep                Consolidate memory (decay + archive)
 
   CONFIG
     brain config list          List all settings
