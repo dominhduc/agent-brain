@@ -18,6 +18,7 @@
   - [Core Commands](#core-commands)
   - [Knowledge Commands](#knowledge-commands)
   - [Daemon Commands](#daemon-commands)
+  - [Skill Commands](#skill-commands)
   - [Maintenance Commands](#maintenance-commands)
   - [Configuration Commands](#configuration-commands)
 - [The 8-Topic Taxonomy](#the-8-topic-taxonomy)
@@ -37,25 +38,25 @@
 
 > **Tell your AI coding agent to install and set up agent-brain for you.** It's the fastest way to get started.
 
-When `brain init` creates `AGENTS.md`, it includes instructions for your coding agent:
+When `brain init` runs, it creates `AGENTS.md` and installs **Agent Skills** — skill files that teach coding agents how to use `brain` automatically.
 
 1. **At session start:** Run `brain get all` to load accumulated knowledge
 2. **During work:** Run `brain search "<topic>"` before unfamiliar code, `brain get gotchas` before debugging
 3. **When corrected:** Run `brain add <topic> "<...>"` or use topic prefix: `brain add infrastructure gotcha "..."`
 4. **At session end:** Run `brain eval` (or `brain eval --good` / `brain eval --bad` for feedback)
 
-The agent doesn't need to remember anything — the instructions are in AGENTS.md, which loads every session.
+The agent doesn't need to remember anything — the instructions are in AGENTS.md and the Agent Skill, which load every session.
 
 ### Compatibility
 
-| Tool | Reads AGENTS.md? | Uses .brain/? |
-|------|-----------------|---------------|
-| OpenCode | Yes (native) | Yes |
-| Claude Code | Via CLAUDE.md wrapper | Yes |
-| Cursor | Via .cursorrules wrapper | Yes |
-| Windsurf | Via .windsurfrules wrapper | Yes |
+| Tool | Reads AGENTS.md? | Uses Agent Skill? | Uses .brain/? |
+|------|-----------------|-------------------|---------------|
+| OpenCode | Yes (native) | Yes (`.opencode/skills/`) | Yes |
+| Claude Code | Via CLAUDE.md wrapper | Yes (`.claude/skills/`) | Yes |
+| Cursor | Via .cursorrules wrapper | Yes (`.agents/skills/`) | Yes |
+| Windsurf | Via .windsurfrules wrapper | Yes (`.agents/skills/`) | Yes |
 
-All tools benefit from the daemon's auto-analysis, even if they don't read AGENTS.md.
+All tools benefit from the daemon's auto-analysis, even if they don't read AGENTS.md or the Agent Skill.
 
 ---
 
@@ -72,7 +73,7 @@ AI coding agents are brilliant — but they **forget everything** between sessio
 | No institutional memory across sessions | Knowledge compounds and grows smarter |
 | Agent makes the same mistakes repeatedly | Past gotchas are flagged before they happen again |
 
-**v0.22.0** adds config scope choice during `brain init` — choose between global (shared) or project-specific (isolated) configuration.
+**v0.23.0** adds Agent Skills — bundled skill files that teach coding agents how to use `brain` automatically. Skills are installed to `.claude/skills/`, `.opencode/skills/`, and `.agents/skills/` during `brain init`.
 
 ---
 
@@ -253,6 +254,45 @@ brain review --all     # Import existing topic entries for re-review
 ```
 
 The TUI shows entries grouped by topic. Navigate with arrows, accept with `a`, reject with `r`, press `q` to quit. Only entries you approve become permanent.
+
+---
+
+### Skill Commands
+
+Agent Skills teach coding agents (Claude Code, OpenCode, Cursor, etc.) how to use `brain` automatically. Skills are installed during `brain init` and live in `.claude/skills/agent-brain/`, `.opencode/skills/agent-brain/`, and `.agents/skills/agent-brain/`.
+
+#### `brain skill list`
+
+Show installed skill locations and their status.
+
+```bash
+brain skill list
+```
+
+#### `brain skill diff`
+
+Compare installed skill files against the latest embedded templates.
+
+```bash
+brain skill diff
+```
+
+#### `brain skill update`
+
+Update skill files to the latest version. Warns about uncommitted git changes.
+
+```bash
+brain skill update
+```
+
+#### `brain skill install [--global]`
+
+Install skill files to project directories (or global with `--global`).
+
+```bash
+brain skill install           # Project-local
+brain skill install --global  # Global (~/.claude/skills/, etc.)
+```
 
 ---
 

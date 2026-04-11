@@ -17,3 +17,6 @@ EXECUTION_PLAN.md
 REPO_AGENTS.md
 docs/plans/
 .worktrees/
+.opencode/skills/
+.claude/skills/
+.agents/skills/
