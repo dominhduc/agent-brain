@@ -124,43 +124,74 @@ func printUsage() {
 		padding = 0
 	}
 	fmt.Printf(`+--------------------------------------------------------------+
-|  brain  --  AI Agent Knowledge Hub CLI  (%s)%s|
-|  https://github.com/dominhduc/agent-brain                    |
+|  agent-brain  --  Persistent Memory for AI Coding Agents  (%s)%s|
+|  https://github.com/dominhduc/agent-brain                        |
 +--------------------------------------------------------------+
 
+WHAT IS AGENT-BRAIN?
+
+  agent-brain gives your AI coding agent (Claude Code, OpenCode, Cursor, etc.)
+  a persistent memory. It creates a .brain/ knowledge hub that:
+
+  - Remembers project conventions, gotchas, and decisions across sessions
+  - Auto-analyzes every git commit via LLM to discover patterns
+  - Feeds accumulated knowledge back into every new agent session
+  - Lets agents record learnings so the next session starts smarter
+
 QUICK START
-  brain init                 Initialize knowledge hub in current project
-  brain get <topic>          Retrieve knowledge (memory, gotchas, patterns, etc.)
-  brain add <topic> "<msg>"  Record a new learning or decision
-  brain search <query>       Search across all knowledge
+
+  brain init                    Initialize knowledge hub in current project
+  brain get all                 Load all accumulated knowledge
+  brain add <topic> "<msg>"     Record a new learning or decision
+  brain search <query>          Search across all knowledge
+  brain eval                    End session with self-evaluation + handoff
 
 COMMON WORKFLOWS
-  Session start    brain get all
-  Debugging        brain get gotchas
-  Session end      brain eval
-  Record learning  brain add gotcha "The fix"
+
+  Session start     brain get all
+  Before debugging  brain get gotchas
+  When corrected    brain add gotcha "The fix"
+  Session end       brain eval
 
 FULL REFERENCE
 
+  INIT & UPDATE
+    brain init                 Create .brain/ hub, AGENTS.md, git hooks, daemon
+    brain skill install        Install Agent Skills for coding agents
+    brain skill update         Update Agent Skills to latest version
+    brain update               Update agent-brain to latest version
+
   GET & SEARCH
-    brain get <topic>          Topics: memory, gotchas, patterns, decisions, architecture, all
-                               Flags: --summary (compact), --json, --focus "<topic>"
+    brain get <topic>          Topics: all, gotchas, patterns, decisions, architecture
+                               Flags: --summary, --json, --focus "<topic>"
     brain search <query>       Search all knowledge
                                Flags: --json, --topic "<topic>"
 
   ADD & EVAL
     brain add <topic> "<msg>"         Add entry to a topic
     brain add <area> <topic> "<msg>"  Add entry with area tag
-    brain add --wm "<msg>"            Add to working memory
+    brain add --wm "<msg>"            Add to working memory (temporary)
     brain eval                        Session evaluation + handoff
                                       Flags: --good, --bad
 
+  SKILLS (for coding agents)
+    brain skill list           Show installed Agent Skill locations
+    brain skill diff           Compare installed vs latest templates
+    brain skill update         Update Agent Skills (overwrites with confirmation)
+    brain skill install        Install to project directories
+    brain skill install --global   Install to global directories
+
+  DAEMON
+    brain daemon <action>      Actions: start, stop, restart, status, failed, retry, run
+    brain review               Interactive TUI to approve/reject pending entries
+
   MAINTENANCE
     brain status               Hub statistics & health
-    brain review               Review pending daemon entries
-  brain prune                Archive stale entries (--dry-run to preview)
-  brain dedup                Find and remove duplicate entries (--dry-run to preview)
-  brain sleep                Consolidate memory (decay + archive)
+    brain prune [--dry-run]    Archive stale entries
+    brain dedup [--dry-run]    Remove duplicate entries
+    brain sleep [--dry-run]    Consolidate memory (decay + archive)
+    brain index rebuild        Rebuild metadata index
+    brain doctor               Full health check & diagnostics
 
   CONFIG
     brain config list          List all settings
@@ -168,28 +199,31 @@ FULL REFERENCE
     brain config set <key> <value>  Set a value
     brain config reset <key>   Reset to default
     brain config setup         Interactive setup wizard
-                               Note: config can be global (~/.config/brain/)
+                               Config can be global (~/.config/brain/)
                                or project-specific (.brain/config.yaml)
 
-  ADVANCED
-    brain daemon <action>      Actions: start, stop, restart, status, failed, retry, run
-    brain doctor               Health check & diagnostics
-    brain index rebuild        Rebuild metadata index
-    brain update               Update to latest version
-    brain skill list           List installed skill locations
-    brain skill diff           Show skill updates vs templates
-    brain skill update         Update skill files
-    brain version              Show version info
+AREA TAXONOMY (8 topics)
 
-AREA TAXONOMY
-  ui, backend, infrastructure, database, security, testing, architecture, general
+  ui            Frontend, styling, components, accessibility
+  backend       API, services, middleware, business logic
+  infrastructure Deploy, CI/CD, Docker, cloud, monitoring
+  database      Schemas, migrations, queries, indexes
+  security      Auth, secrets, permissions, encryption
+  testing       Unit/integration/e2e tests, mocks, fixtures
+  architecture  Module structure, design patterns, data flow
+  general       Cross-cutting conventions, tooling, guidelines
 
 EXAMPLES
+
   brain init
   brain get gotchas
+  brain get all --focus "security"
   brain search "auth" --topic "security"
   brain add infrastructure gotcha "VPS uses Ubuntu 22.04"
+  brain add pattern "All handlers use middleware chain: logging -> auth -> rate-limit"
   brain eval --good
+  brain skill diff
+  brain skill update
 `, v, spaces(padding))
 }
 
