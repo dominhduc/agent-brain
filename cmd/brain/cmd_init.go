@@ -12,6 +12,7 @@ import (
 	"github.com/dominhduc/agent-brain/internal/hook"
 	"github.com/dominhduc/agent-brain/internal/preflight"
 	"github.com/dominhduc/agent-brain/internal/service"
+	"github.com/dominhduc/agent-brain/internal/skill"
 )
 
 func cmdInit() {
@@ -86,6 +87,18 @@ func cmdInit() {
 				fmt.Fprintf(os.Stderr, "Error creating %s: %v\nWhat to do: check file permissions.\n", name, err)
 				os.Exit(1)
 			}
+		}
+	}
+
+	fmt.Println("\nInstalling agent skills...")
+	skillResults := skill.InstallProject(cwd)
+	for _, r := range skillResults {
+		if r.Skipped {
+			fmt.Printf("  ✓ %s (already exists, skipped)\n", r.Path)
+		} else if r.Written {
+			fmt.Printf("  ✓ %s\n", r.Path)
+		} else if r.Error != nil {
+			fmt.Printf("  ⚠ %s: %v\n", r.Path, r.Error)
 		}
 	}
 

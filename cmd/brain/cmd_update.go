@@ -68,6 +68,8 @@ func cmdUpdate() {
 
 	fmt.Printf("Updated to %s successfully!\n", release.TagName)
 
+	fmt.Println("\nSkill updates available. Run 'brain skill diff' to preview changes.")
+
 	service.StopCurrentProject()
 	fmt.Println("Restart the daemon with: brain daemon start")
 }

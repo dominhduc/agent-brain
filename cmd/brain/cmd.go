@@ -84,6 +84,8 @@ func main() {
 		cmdReview(allFlag, yesFlag, ttyFlag)
 	case "update":
 		cmdUpdate()
+	case "skill":
+		cmdSkill(os.Args[1:])
 	case "doctor":
 		cmdDoctor()
 	case "index":
@@ -174,6 +176,9 @@ FULL REFERENCE
     brain doctor               Health check & diagnostics
     brain index rebuild        Rebuild metadata index
     brain update               Update to latest version
+    brain skill list           List installed skill locations
+    brain skill diff           Show skill updates vs templates
+    brain skill update         Update skill files
     brain version              Show version info
 
 AREA TAXONOMY
