@@ -11,6 +11,7 @@ import (
 
 	"github.com/dominhduc/agent-brain/internal/brain"
 	"github.com/dominhduc/agent-brain/internal/index"
+	"github.com/dominhduc/agent-brain/internal/knowledge"
 	"github.com/dominhduc/agent-brain/internal/outcome"
 )
 
@@ -36,6 +37,15 @@ func cmdGet(jsonFlag, summaryFlag bool) {
 			if os.Args[i] == "--focus" && i+1 < len(os.Args) {
 				focusTopic = os.Args[i+1]
 				break
+			}
+		}
+	}
+
+	if brainDir, err := brain.FindBrainDir(); err == nil {
+		if hub, err := knowledge.Open(brainDir); err == nil {
+			_ = hub.TrackCommand("get")
+			if topic != "all" {
+				_ = hub.TrackTopicAccess(topic)
 			}
 		}
 	}

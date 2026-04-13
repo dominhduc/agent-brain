@@ -328,3 +328,6 @@
 
 ### [2026-04-12 06:20:41] --tty flag previously forced TUI even when stdin was not a terminal
 
+
+### [2026-04-14 01:32:14] AdaptSkill in knowledge/adapt.go uses os.ReadFile directly to extract entry messages — this should use hub.Get() for consistency
+

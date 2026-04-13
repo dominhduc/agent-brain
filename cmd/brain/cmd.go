@@ -9,7 +9,7 @@ import (
 	"github.com/dominhduc/agent-brain/internal/otel"
 )
 
-var version = "v0.23.1"
+var version = "v1.0.0"
 
 var (
 	commit string
@@ -178,6 +178,7 @@ FULL REFERENCE
     brain skill list           Show installed Agent Skill locations
     brain skill diff           Compare installed vs latest templates
     brain skill update         Update Agent Skills (overwrites with confirmation)
+    brain skill reflect [--dry-run]  Generate skill adaptations from usage data
     brain skill install        Install to project directories
     brain skill install --global   Install to global directories
 

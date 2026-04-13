@@ -7,6 +7,7 @@ import (
 
 	"github.com/dominhduc/agent-brain/internal/brain"
 	"github.com/dominhduc/agent-brain/internal/index"
+	"github.com/dominhduc/agent-brain/internal/knowledge"
 	"github.com/dominhduc/agent-brain/internal/secrets"
 	"github.com/dominhduc/agent-brain/internal/wm"
 )
@@ -97,6 +98,13 @@ func cmdAdd() {
 	if err := brain.AddEntry(normalized, message); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: make sure you are in a project with .brain/ initialized.\n", err)
 		os.Exit(1)
+	}
+
+	if brainDir, err := brain.FindBrainDir(); err == nil {
+		if hub, err := knowledge.Open(brainDir); err == nil {
+			_ = hub.TrackCommand("add")
+			_ = hub.TrackTopicAccess(normalized)
+		}
 	}
 
 	if messageTopic != "" {

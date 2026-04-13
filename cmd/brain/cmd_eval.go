@@ -11,6 +11,7 @@ import (
 	"github.com/dominhduc/agent-brain/internal/brain"
 	"github.com/dominhduc/agent-brain/internal/handoff"
 	"github.com/dominhduc/agent-brain/internal/index"
+	"github.com/dominhduc/agent-brain/internal/knowledge"
 	"github.com/dominhduc/agent-brain/internal/outcome"
 	"github.com/dominhduc/agent-brain/internal/wm"
 )
@@ -132,6 +133,13 @@ func cmdEval() {
 				fmt.Printf("Applied %s outcome to %d entries\n", map[bool]string{true: "positive", false: "negative"}[good], adjusted)
 			}
 			outcome.Clear(brainDir)
+		}
+	}
+
+	if hub, err := knowledge.Open(brainDir); err == nil {
+		_ = hub.TrackCommand("eval")
+		if good || bad {
+			_ = hub.TrackEvalOutcome(good)
 		}
 	}
 

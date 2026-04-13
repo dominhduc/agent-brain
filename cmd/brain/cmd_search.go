@@ -12,6 +12,7 @@ import (
 
 	"github.com/dominhduc/agent-brain/internal/brain"
 	"github.com/dominhduc/agent-brain/internal/index"
+	"github.com/dominhduc/agent-brain/internal/knowledge"
 )
 
 func cmdSearch(jsonFlag bool) {
@@ -37,6 +38,11 @@ func cmdSearch(jsonFlag bool) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: run 'brain init' in your project directory first.\n", err)
 		os.Exit(1)
+	}
+
+	if hub, err := knowledge.Open(brainDir); err == nil {
+		_ = hub.TrackCommand("search")
+		_ = hub.TrackSearch(query)
 	}
 
 	files := []string{"MEMORY.md", "gotchas.md", "patterns.md", "decisions.md", "architecture.md"}

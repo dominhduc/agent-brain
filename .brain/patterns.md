@@ -407,3 +407,6 @@
 
 ### [2026-04-12 06:20:41] Queue-based daemon processing includes backoff retry logic and error tracking
 
+
+### [2026-04-14 01:32:14] Self-learning uses behavior signals (.brain/behavior/signals.json) + index strength data to generate skill adaptations via brain skill reflect
+

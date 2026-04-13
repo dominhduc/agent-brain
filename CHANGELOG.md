@@ -5,15 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [v1.0.0] - 2026-04-14
 
 ### Added
+- **Self-learning skill adaptation**: `brain skill reflect` generates usage-based adaptations from behavior signals, search queries, and eval outcomes. Adaptations are appended to Agent Skills and preserved across `brain skill update`
+- **Unified knowledge core**: `internal/knowledge/` package consolidates brain, index, review, outcome, and working memory into a single Hub struct
+- **Session lifecycle package**: `internal/session/` for handoff and eval management
+- **Behavior signal tracking**: `internal/knowledge/behavior.go` tracks command counts, topic access, search queries, and eval outcomes in `.brain/behavior/signals.json`
+- **Collapsed daemon ecosystem**: LLM analysis and secret scanning moved into `internal/daemon/` — eliminates deep dependency chains across analyzer/secrets/review packages
 - Config scope choice during `brain init`: choose between global config (shared across projects) or project-specific config (isolated in `.brain/config.yaml`)
 - `brain config` now shows which config source is active (global or project)
 - Project config takes precedence over global config when both exist
 
 ### Changed
+- `brain skill update` now uses merge-based updates that preserve adaptation markers during template updates
 - `brain config set/get/list/reset` now check for project config first, fall back to global
+- Daemon uses local `Analyze()`, `Finding`, and `AnalyzeRequest` types instead of importing from separate packages
 
 ## [v0.17.3] - 2026-04-06
 

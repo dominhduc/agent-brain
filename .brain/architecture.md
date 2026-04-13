@@ -333,3 +333,6 @@
 
 ### [2026-04-12 06:20:41] Line-buffered fallback default for non-TTY sessions
 
+
+### [2026-04-14 01:32:14] knowledge.Hub is the unified core — all state operations go through it. New packages: knowledge/ (topics+index+pending+wm+retrieval+behavior+adapt), session/ (handoffs+git stats). Daemon now has local analyze.go + secrets.go instead of importing external packages.
+
