@@ -253,14 +253,26 @@ func generateDiff(old, new string) string {
 	return output.String()
 }
 
+var AdaptationStartMarker = adaptationStartMarker
+var AdaptationEndMarker = adaptationEndMarker
+
+const adaptationStartMarker = "<!-- brain:adaptations start -->"
+const adaptationEndMarker = "<!-- brain:adaptations end -->"
+
 func UpdateSkills(cwd string) error {
 	dirs := platformDirs(cwd)
 
 	for _, dir := range dirs {
 		skillPath := filepath.Join(dir, "SKILL.md")
-		if _, err := os.Stat(skillPath); os.IsNotExist(err) {
-			continue
+		installedData, err := os.ReadFile(skillPath)
+		if err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+			return fmt.Errorf("cannot read %s: %w", skillPath, err)
 		}
+
+		adaptations := extractAdaptations(string(installedData))
 
 		if err := os.RemoveAll(dir); err != nil {
 			return fmt.Errorf("cannot remove %s: %w", dir, err)
@@ -270,9 +282,28 @@ func UpdateSkills(cwd string) error {
 		if result.Error != nil {
 			return fmt.Errorf("cannot install to %s: %w", dir, result.Error)
 		}
+
+		if adaptations != "" {
+			newSkillPath := filepath.Join(dir, "SKILL.md")
+			templateData, err := os.ReadFile(newSkillPath)
+			if err != nil {
+				continue
+			}
+			merged := string(templateData) + "\n" + adaptations + "\n"
+			os.WriteFile(newSkillPath, []byte(merged), 0644)
+		}
 	}
 
 	return nil
+}
+
+func extractAdaptations(content string) string {
+	start := strings.Index(content, adaptationStartMarker)
+	end := strings.Index(content, adaptationEndMarker)
+	if start == -1 || end == -1 || end <= start {
+		return ""
+	}
+	return content[start : end+len(adaptationEndMarker)]
 }
 
 func HasUncommittedChanges(cwd string) bool {
