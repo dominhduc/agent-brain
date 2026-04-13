@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dominhduc/agent-brain/internal/analyzer"
 	"github.com/dominhduc/agent-brain/internal/brain"
 	"github.com/dominhduc/agent-brain/internal/config"
 	"github.com/dominhduc/agent-brain/internal/daemon"
@@ -433,8 +432,8 @@ func runDaemon() {
 			return string(out), nil
 		}
 
-			analyzeFn := func(req analyzer.AnalyzeRequest) (analyzer.Finding, error) {
-				return analyzer.Analyze(analyzer.AnalyzeRequest{
+			analyzeFn := func(req daemon.AnalyzeRequest) (daemon.Finding, error) {
+				return daemon.Analyze(daemon.AnalyzeRequest{
 					Diff:     req.Diff,
 					APIKey:   apiKey,
 					Model:    cfg.LLM.Model,

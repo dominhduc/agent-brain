@@ -82,16 +82,13 @@
 ### [2026-04-05 10:39:47] Config setup wizard prioritizes provider selection over base URL setup
 
 
-### [2026-04-06 11:46:28] Auto-accept flag implemented to replace interactive TUI in CI/automated workflows.
 
 
 ### [2026-04-06 11:46:28] Unified API key configuration renamed from nested structure to flat api-key.
 
 
-### [2026-04-06 11:46:28] Named custom providers replaced single custom option to improve configurability.
 
 
-### [2026-04-06 11:46:28] Project-specific daemon service names generated via unique hash lookup.
 
 
 ### [2026-04-06 11:46:28] Added gitleaks allowlist for scanner/config test files
@@ -124,7 +121,6 @@
 ### [2026-04-06 11:46:28] Integrated topic statistics into the main list view.
 
 
-### [2026-04-06 13:43:38] Implementation strictly limits external dependencies to Go standard library only
 
 
 ### [2026-04-06 13:43:38] CLI command logic isolated in cmd/brain/cmd.go
@@ -136,7 +132,6 @@
 ### [2026-04-06 13:43:38] TopicSummary struct separates metadata from actual content
 
 
-### [2026-04-06 13:43:38] Duplicate detection adds entries to a set before committing to prevent redundancy
 
 
 ### [2026-04-06 13:43:38] Unified API key configuration renamed to flat api-key structure
@@ -145,7 +140,6 @@
 ### [2026-04-06 13:43:38] Named custom providers replace single custom option for better configurability
 
 
-### [2026-04-06 13:43:38] Added --summary flag for compact view with entry counts and duplicate warnings
 
 
 ### [2026-04-06 13:43:38] Version variable consistent with CHANGELOG release version
@@ -175,13 +169,10 @@
 ### [2026-04-06 15:41:55] Prefer auto-accepting pending entries to avoid treating silent closure as fatal.
 
 
-### [2026-04-06 15:47:20] Adopted golang.org/x/term for reliable TTY detection
 
 
-### [2026-04-06 15:47:20] Terminal state managed within internal/tui module
 
 
-### [2026-04-06 15:47:20] Prefer auto-accepting pending entries to avoid treating silent closure as fatal
 
 
 ### [2026-04-06 15:47:20] Line-buffered fallback is now default for non-TTY sessions (no --tty needed)
@@ -196,13 +187,11 @@
 ### [2026-04-06 15:47:20] Adopt auto-accepting pending entries to avoid treating silent closure as fatal
 
 
-### [2026-04-06 15:47:20] Adopted golang.org/x/term for reliable TTY detection
 
 
 ### [2026-04-06 15:47:20] TUI mode now only activates when !ttyFlag && canUseTTY
 
 
-### [2026-04-06 15:47:20] Prefer auto-accepting pending entries to avoid treating silent closure as fatal
 
 
 ### [2026-04-06 15:47:20] Test comments removed from binary source code
@@ -226,10 +215,8 @@
 ### [2026-04-06 16:02:42] Adopted auto-accepting pending entries to avoid treating silent closure as fatal
 
 
-### [2026-04-06 16:02:42] Line-buffered fallback is now default for non-TTY sessions
 
 
-### [2026-04-06 16:02:42] Changed TUI condition to remove ttyFlag forcing TUI mode when stdin is not terminal
 
 
 ### [2026-04-06 16:02:42] Adopted standard library packages for reliable TTY detection
@@ -305,4 +292,88 @@
 
 
 ### [2026-04-09 14:56:21] Implement dry-run flags to preview changes before modifying the persistent store.
+
+
+### [2026-04-12 06:20:41] Config scope choice during brain init: choose between global config (shared across projects) or project-specific config (isolated)
+
+
+### [2026-04-12 06:20:41] Unified API key configuration renamed from nested structure to flat api-key
+
+
+### [2026-04-12 06:20:41] Named custom providers replaced single custom option to improve configurability
+
+
+### [2026-04-12 06:20:41] Project-specific daemon service names generated via unique hash lookup
+
+
+### [2026-04-12 06:20:41] Implemented strictly limits external dependencies to Go standard library only
+
+
+### [2026-04-12 06:20:41] TopicSummary struct separates metadata from actual content
+
+
+### [2026-04-12 06:20:41] Duplicate detection adds entries to a set before committing to prevent redundancy
+
+
+### [2026-04-12 06:20:41] TUI logic differentiates initial vs mid-loop stdin closure
+
+
+### [2026-04-12 06:20:41] Review command handles TTY/auto-accept affinity logic
+
+
+### [2026-04-12 06:20:41] Line-buffered fallback is now default for non-TTY sessions
+
+
+### [2026-04-12 06:20:41] Adopted golang.org/x/term for reliable TTY detection
+
+
+### [2026-04-12 06:20:41] Prefer auto-accepting pending entries to avoid treating silent closure as fatal
+
+
+### [2026-04-12 06:20:41] Brain initialize now checks for project config first before global config
+
+
+### [2026-04-12 06:20:41] Config values can be mixed - some projects with global config, others with project-specific
+
+
+### [2026-04-12 06:20:41] Test comments removed from binary source code
+
+
+### [2026-04-12 06:20:41] Auto-accepting pending entries to avoid treating silent closure as fatal
+
+
+### [2026-04-12 06:20:41] Adopted golang.org/x/term for reliable TTY detection instead of custom wrappers
+
+
+### [2026-04-12 06:20:41] Config setup wizard prioritizes provider selection over base URL setup
+
+
+### [2026-04-12 06:20:41] Version variable consistent with CHANGELOG release version
+
+
+### [2026-04-12 06:20:41] Prior behavior of --tty flag forcing TUI is removed on non-terminals
+
+
+### [2026-04-12 06:20:41] Automated config scope choice during brain init - global vs project
+
+
+### [2026-04-12 06:20:41] Lazy config loading with resolveConfig() and resolveConfigForWrite() patterns
+
+
+### [2026-04-12 06:20:41] Config source indication added to CLI output for clarity
+
+
+### [2026-04-12 06:20:41] Added --summary flag for compact view with entry counts and duplicate warnings
+
+
+### [2026-04-12 06:20:41] Coqustruments cannot be overridden by ldflags — use var instead
+
+
+### [2026-04-12 06:20:41] Unified API key configuration renamed from nested to flat structure
+
+
+### [2026-04-12 06:20:41] Implemented gitleaks allowlist for scanner/config test files
+
+
+### [2026-04-12 06:20:41] TUI mode activation conditional (!ttyFlag && canUseTTY)
 

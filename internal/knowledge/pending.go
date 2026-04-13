@@ -37,11 +37,11 @@ func (h *Hub) AddPending(entry PendingEntry) error {
 	if err := os.MkdirAll(pendingDir, 0755); err != nil {
 		return fmt.Errorf("creating pending directory: %w", err)
 	}
-	return savePendingEntry(pendingDir, entry)
+	return SavePendingEntry(pendingDir, entry)
 }
 
 func (h *Hub) LoadPending() ([]PendingEntry, error) {
-	return loadPendingEntries(h.PendingDir())
+	return LoadPendingEntries(h.PendingDir())
 }
 
 func (h *Hub) RemovePending(id string) error {
@@ -52,7 +52,7 @@ func (h *Hub) RemovePending(id string) error {
 	return nil
 }
 
-func loadPendingEntries(pendingDir string) ([]PendingEntry, error) {
+func LoadPendingEntries(pendingDir string) ([]PendingEntry, error) {
 	entries, err := os.ReadDir(pendingDir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -86,7 +86,7 @@ func loadPendingEntries(pendingDir string) ([]PendingEntry, error) {
 	return result, nil
 }
 
-func savePendingEntry(pendingDir string, entry PendingEntry) error {
+func SavePendingEntry(pendingDir string, entry PendingEntry) error {
 	if err := os.MkdirAll(pendingDir, 0755); err != nil {
 		return fmt.Errorf("creating pending directory: %w", err)
 	}

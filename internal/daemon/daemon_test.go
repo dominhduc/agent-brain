@@ -8,8 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dominhduc/agent-brain/internal/analyzer"
-	"github.com/dominhduc/agent-brain/internal/review"
+	"github.com/dominhduc/agent-brain/internal/knowledge"
 )
 
 func TestProcessItem_ValidItem(t *testing.T) {
@@ -43,8 +42,8 @@ func TestProcessItem_ValidItem(t *testing.T) {
 	mockDiff := func(repo string) (string, error) {
 		return "diff --git a/main.go b/main.go\n+func main() {}", nil
 	}
-	mockAnalyze := func(req analyzer.AnalyzeRequest) (analyzer.Finding, error) {
-		return analyzer.Finding{
+	mockAnalyze := func(req AnalyzeRequest) (Finding, error) {
+		return Finding{
 			Gotchas:    []string{"test gotcha"},
 			Confidence: "HIGH",
 		}, nil
@@ -62,7 +61,7 @@ func TestProcessItem_ValidItem(t *testing.T) {
 	}
 
 	pendingDir := filepath.Join(brainDir, "pending")
-	entries, err := review.LoadPendingEntries(pendingDir)
+	entries, err := knowledge.LoadPendingEntries(pendingDir)
 	if err != nil {
 		t.Fatalf("loading pending entries: %v", err)
 	}

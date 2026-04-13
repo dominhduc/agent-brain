@@ -139,13 +139,11 @@
 ### [2026-04-06 10:30:47] brain add now automatically deduplicates entries - checks normalized message content before adding, skips if duplicate exists
 
 
-### [2026-04-06 11:46:28] Modular CLI structure splits monolithic main.go into per-command files.
 
 
 ### [2026-04-06 11:46:28] Queue-based daemon processing includes backoff retry logic and error reason tracking.
 
 
-### [2026-04-06 11:46:28] LLM prompts utilize explicit JSON schema for better structured output compliance.
 
 
 ### [2026-04-06 11:46:28] Platform-specific terminal capability checks prevent issues with raw mode usage.
@@ -187,25 +185,21 @@
 ### [2026-04-06 12:07:42] brain review now handles EOF gracefully - stdin closed during review exits cleanly instead of erroring
 
 
-### [2026-04-06 13:43:38] Modular CLI structure splits monolithic main.go into per-command files
 
 
 ### [2026-04-06 13:43:38] Queue-based daemon processing includes backoff retry logic and error reason tracking
 
 
-### [2026-04-06 13:43:38] LLM prompts utilize explicit JSON schema for better structured output compliance
 
 
 ### [2026-04-06 13:43:38] Entry deduplication via normalizeEntry() with whitespace collapsing
 
 
-### [2026-04-06 13:43:38] Machine-reasonable code: pure functions with explicit data flow and side effects at boundaries
 
 
 ### [2026-04-06 13:43:38] SUPER principles: Side Effects at Edge, Uncoupled Logic, Pure Functions, Explicit Data Flow, Replaceable by Value
 
 
-### [2026-04-06 13:43:38] SPIRALS loop: Sense, Plan, Inquire, Refine, Act, Learn, Scan for agent collaboration
 
 
 ### [2026-04-06 13:43:38] Auto-accept flag replaces interactive TUI in CI/automated workflows
@@ -235,13 +229,10 @@
 ### [2026-04-06 15:41:55] Version bump in code matches entry in CHANGELOG.md.
 
 
-### [2026-04-06 15:47:20] Use standard library packages like golang.org/x/term instead of custom syscall wrappers
 
 
-### [2026-04-06 15:47:20] Test comments removed from binary source code
 
 
-### [2026-04-06 15:47:20] Decisions documented with timestamps in separate log
 
 
 ### [2026-04-06 15:47:20] Version bump in code matches entry in CHANGELOG.md
@@ -256,10 +247,8 @@
 ### [2026-04-06 15:47:20] Use standard library pkg like golang.org/x/term instead of custom syscall wrappers
 
 
-### [2026-04-06 15:47:20] Use standard library packages like golang.org/x/term instead of custom syscall wrappers
 
 
-### [2026-04-06 15:47:20] Decisions documented with timestamps in separate log
 
 
 ### [2026-04-06 15:47:20] Version bump matches entry in CHANGELOG.md
@@ -280,19 +269,14 @@
 ### [2026-04-06 15:48:51] Removes test comments from binary source code.
 
 
-### [2026-04-06 16:02:42] Use standard library packages like golang.org/x/term instead of custom syscall wrappers
 
 
-### [2026-04-06 16:02:42] Default fallback to auto-accept entries when interaction fails
 
 
-### [2026-04-06 16:02:42] Decisions documented with timestamps in separate log
 
 
-### [2026-04-06 16:02:42] Simplified conditional logic for TUI vs line-buffered review selection
 
 
-### [2026-04-06 16:02:42] Version bump in code matches entry in CHANGELOG.md
 
 
 ### [2026-04-06 16:02:42] UI failure triggers fallback to line-buffered mode
@@ -362,4 +346,64 @@
 
 
 ### [2026-04-09 14:56:21] Entry archival follows a specific directory structure with date-based filenames.
+
+
+### [2026-04-12 06:20:41] Modular CLI structure splits monolithic main.go into per-command files
+
+
+### [2026-04-12 06:20:41] Queue-based daemon processing includes backoff retry logic and error reason tracking
+
+
+### [2026-04-12 06:20:41] LLM prompts utilize explicit JSON schema for better structured output compliance
+
+
+### [2026-04-12 06:20:41] Platform-specific terminal capability checks prevent issues with raw mode usage
+
+
+### [2026-04-12 06:20:41] Entry deduplication via normalizeEntry() with whitespace collapsing
+
+
+### [2026-04-12 06:20:41] Machine-reasonable code: pure functions with explicit data flow and side effects at boundaries
+
+
+### [2026-04-12 06:20:41] SUPER principles: Side Effects at Edge, Uncoupled Logic, Pure Functions, Explicit Data Flow, Replaceable by Value
+
+
+### [2026-04-12 06:20:41] SPIRALS loop: Sense, Plan, Inquire, Refine, Act, Learn, Scan for agent collaboration
+
+
+### [2026-04-12 06:20:41] UI failure triggers fallback to line-buffered mode
+
+
+### [2026-04-12 06:20:41] Auto-accept flag replaces interactive TUI in CI/automated workflows
+
+
+### [2026-04-12 06:20:41] Use standard library packages like golang.org/x/term instead of custom syscall wrappers
+
+
+### [2026-04-12 06:20:41] Version bump in code matches entry in CHANGELOG.md
+
+
+### [2026-04-12 06:20:41] Limited external dependencies to Go standard library (golang.org/x/term)
+
+
+### [2026-04-12 06:20:41] Terminal state managed within internal/tui module via stdin file descriptors
+
+
+### [2026-04-12 06:20:41] Line-buffered fallback is now default for non-TTY sessions
+
+
+### [2026-04-12 06:20:41] TUI gracefully handles EOF - stdin closed during review exits cleanly
+
+
+### [2026-04-12 06:20:41] Use standard library packages like golang.org/x/term for reliable TTY detection
+
+
+### [2026-04-12 06:20:41] Config resolves to project-local if exists, falling back to global
+
+
+### [2026-04-12 06:20:41] API key can be set via environment variable as fallback
+
+
+### [2026-04-12 06:20:41] Queue-based daemon processing includes backoff retry logic and error tracking
 

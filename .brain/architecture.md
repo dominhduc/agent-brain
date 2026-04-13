@@ -34,7 +34,6 @@
 ### [2026-04-05 07:57:51] HTTP client design accommodates various data formats.
 
 
-### [2026-04-05 07:57:51] Flexible HTTP client design accommodating various data formats
 
 
 ### [2026-04-05 07:57:51] Config.Load() returns defaults with warnings instead of errors
@@ -88,10 +87,8 @@
 ### [2026-04-05 10:39:47] Human-in-the-loop review integrates directly with git hooks
 
 
-### [2026-04-06 11:46:28] Human-in-the-loop review system integrates directly with git hooks.
 
 
-### [2026-04-06 11:46:28] Multi-project daemon support isolates service names per project hash.
 
 
 ### [2026-04-06 11:46:28] Environment isolation uses XDG_CONFIG_HOME to prevent test pollution.
@@ -127,13 +124,11 @@
 ### [2026-04-06 11:46:28] CLI command logic isolated in cmd/brain/cmd.go.
 
 
-### [2026-04-06 13:43:38] Stratified knowledge hub with separate topic files under .brain/
 
 
 ### [2026-04-06 13:43:38] Human-in-the-loop review integrates with git hooks
 
 
-### [2026-04-06 13:43:38] Multi-project daemon support isolates service names per project hash
 
 
 ### [2026-04-06 13:43:38] Environment isolation uses XDG_CONFIG_HOME to prevent test pollution
@@ -142,10 +137,8 @@
 ### [2026-04-06 13:43:38] Cross-platform file handling avoids OS string concatenation
 
 
-### [2026-04-06 13:43:38] Gitleaks integration with path-based exclusions for test fixtures
 
 
-### [2026-04-06 13:43:38] Centralized GetTopicSummary() generates TopicSummary structs per file
 
 
 ### [2026-04-06 13:43:38] Content deduplication via map[string]bool tracking
@@ -193,22 +186,17 @@
 ### [2026-04-06 15:47:20] Review command handles TTY/auto-accept affinity logic
 
 
-### [2026-04-06 15:48:51] Terminal state is managed within the internal/tui module.
 
 
-### [2026-04-06 15:48:51] Terminals are identified via stdin file descriptors using wrapper functions.
 
 
-### [2026-04-06 16:02:42] Terminal state managed within internal/tui module via stdin file descriptors
 
 
 ### [2026-04-06 16:02:42] Pending entries counting unified across cmd_status.go and cmd_review.go using review.LoadPendingEntries()
 
 
-### [2026-04-06 16:02:42] Terminals identified via stdin file descriptors using wrapper functions
 
 
-### [2026-04-06 16:02:42] TUI logic differentiates initial vs mid-loop stdin closure
 
 
 ### [2026-04-06 16:02:42] Review command supports multiple UI modes within same structure
@@ -257,4 +245,91 @@
 
 
 ### [2026-04-09 14:56:21] A separate storage location handles archived entries specifically for deduplication logs.
+
+
+### [2026-04-12 06:20:41] Brain architecture uses stratified knowledge hub with separate topic files under .brain/
+
+
+### [2026-04-12 06:20:41] Environment isolation uses XDG_CONFIG_HOME to prevent test pollution
+
+
+### [2026-04-12 06:20:41] Content deduplication via map[string]bool tracking
+
+
+### [2026-04-12 06:20:41] CLI command logic isolated in cmd/brain/cmd.go
+
+
+### [2026-04-12 06:20:41] Human-in-the-loop review integrates directly with git hooks
+
+
+### [2026-04-12 06:20:41] Config scope system allows global (~/.config/brain/) or project-specific (.brain/config.yaml) configuration
+
+
+### [2026-04-12 06:20:41] Project config takes precedence over global config when both exist
+
+
+### [2026-04-12 06:20:41] Internal config layer resolves config sources and handles reading/writing to appropriate locations
+
+
+### [2026-04-12 06:20:41] Modular CLI structure with per-command files like cmd_config.go and cmd_init.go
+
+
+### [2026-04-12 06:20:41] Terminal state managed within internal/tui module using XDG-based paths
+
+
+### [2026-04-12 06:20:41] Project-specific daemon service names isolated per project hash
+
+
+### [2026-04-12 06:20:41] Multi-project daemon support with project isolation
+
+
+### [2026-04-12 06:20:41] Config scope choice: global shared or project-specific isolated in .brain/config.yaml
+
+
+### [2026-04-12 06:20:41] Static TTY state checked at startup and maintained via stdin file descriptors
+
+
+### [2026-04-12 06:20:41] Content deduplication via map[string]bool tracking across topics
+
+
+### [2026-04-12 06:20:41] Unified entry statistics tracked via review.LoadPendingEntries()
+
+
+### [2026-04-12 06:20:41] Two-tier config system with global (~/.config/brain/) and project-specific (.brain/) sources
+
+
+### [2026-04-12 06:20:41] Terminal state detected via stdin file descriptors using wrapper functions
+
+
+### [2026-04-12 06:20:41] CLI command logic isolated in cmd/brain/cmd.go with per-command files
+
+
+### [2026-04-12 06:20:41] Version variable consistent with CHANGELOG release version
+
+
+### [2026-04-12 06:20:41] TUI logic differentiates initial vs mid-loop stdin closure
+
+
+### [2026-04-12 06:20:41] Config dual-source resolver checks project first, falls back to global
+
+
+### [2026-04-12 06:20:41] Knowledge hub uses separate topic files under .brain/
+
+
+### [2026-04-12 06:20:41] Multi-project daemon support isolates service names per project hash
+
+
+### [2026-04-12 06:20:41] Stratified knowledge hub with separate topic files
+
+
+### [2026-04-12 06:20:41] Terminal state managed within internal/tui module via stdin file descriptors
+
+
+### [2026-04-12 06:20:41] Embedded skill templates managed via fs/embed for version control
+
+
+### [2026-04-12 06:20:41] Skill system supports platform-specific directory locations (.opencode/.claude/.agents)
+
+
+### [2026-04-12 06:20:41] Line-buffered fallback default for non-TTY sessions
 

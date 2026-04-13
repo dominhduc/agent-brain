@@ -10,10 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dominhduc/agent-brain/internal/analyzer"
+	"github.com/dominhduc/agent-brain/internal/knowledge"
 	"github.com/dominhduc/agent-brain/internal/otel"
-	"github.com/dominhduc/agent-brain/internal/review"
-	"github.com/dominhduc/agent-brain/internal/secrets"
 )
 
 const maxDiffSize = 2000 * 100
@@ -29,7 +27,7 @@ type QueueItem struct {
 
 type DiffGetter func(repo string) (string, error)
 
-type AnalyzeFunc func(req analyzer.AnalyzeRequest) (analyzer.Finding, error)
+type AnalyzeFunc func(req AnalyzeRequest) (Finding, error)
 
 func ProcessItemWithDeps(ctx context.Context, processingPath, queueDir, brainDir, projectRoot string, maxRetries int, getDiff DiffGetter, analyzeFn AnalyzeFunc) (bool, error) {
 	ctx, processSpan := otel.StartSpan(ctx, "brain.daemon.process")
@@ -105,7 +103,7 @@ func ProcessItemWithDeps(ctx context.Context, processingPath, queueDir, brainDir
 	}
 
 	_, secretsSpan := otel.StartSpan(ctx, "brain.daemon.secrets")
-	if findings := secrets.ScanDiff(diff); len(findings) > 0 {
+	if findings := ScanDiffSecrets(diff); len(findings) > 0 {
 		secretTypes := make([]string, len(findings))
 		for i, f := range findings {
 			secretTypes[i] = f.Type
@@ -122,10 +120,10 @@ func ProcessItemWithDeps(ctx context.Context, processingPath, queueDir, brainDir
 	otel.EndSpan(secretsSpan, nil)
 
 	_, analyzeSpan := otel.StartSpan(ctx, "brain.analyze")
-	var finding analyzer.Finding
+	var finding Finding
 	if analyzeFn != nil {
 	analyzeStart := time.Now()
-		finding, err = analyzeFn(analyzer.AnalyzeRequest{Diff: diff})
+		finding, err = analyzeFn(AnalyzeRequest{Diff: diff})
 		latencyMs := time.Since(analyzeStart).Milliseconds()
 		otel.SetAttributes(analyzeSpan, otel.BrainLLMLatencyMs.Int64(latencyMs), otel.BrainLLMConfidence.String(finding.Confidence), otel.BrainFindingsGotchas.Int(len(finding.Gotchas)), otel.BrainFindingsPatterns.Int(len(finding.Patterns)), otel.BrainFindingsDecisions.Int(len(finding.Decisions)), otel.BrainFindingsArchitecture.Int(len(finding.Architecture)))
 	} else {
@@ -154,7 +152,7 @@ func ProcessItemWithDeps(ctx context.Context, processingPath, queueDir, brainDir
 			return
 		}
 		entryCount++
-		entry := review.PendingEntry{
+		entry := knowledge.PendingEntry{
 			ID:         fmt.Sprintf("%s-%s-%d", item.Timestamp, topic, entryCount),
 			Topic:      topic,
 			Content:    content,
@@ -164,7 +162,7 @@ func ProcessItemWithDeps(ctx context.Context, processingPath, queueDir, brainDir
 			Source:     "daemon",
 			Topics:     topics,
 		}
-		review.SavePendingEntry(pendingDir, entry)
+		knowledge.SavePendingEntry(pendingDir, entry)
 	}
 
 	for _, g := range finding.Gotchas {
