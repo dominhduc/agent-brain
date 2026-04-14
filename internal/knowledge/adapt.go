@@ -178,7 +178,7 @@ func (h *Hub) adjustmentsFromData(signals *BehaviorSignals, idx *Index, now time
 		}
 	}
 	if weakCount > strongCount && weakCount > 5 {
-		adjustments = append(adjustments, fmt.Sprintf("%d weak entries vs %d strong — run 'brain prune' to clean up", weakCount, strongCount))
+		adjustments = append(adjustments, fmt.Sprintf("%d weak entries vs %d strong — run 'brain clean --decay' to clean up", weakCount, strongCount))
 	}
 
 	return adjustments

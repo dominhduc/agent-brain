@@ -190,7 +190,7 @@ func cmdInit() {
 
 	fmt.Println("\nKnowledge hub initialized successfully!")
 	fmt.Println("First commit will auto-populate knowledge via the daemon.")
-	fmt.Println("Run 'brain status' to see hub statistics.")
+	fmt.Println("Run 'brain doctor' to see hub statistics.")
 
 	for _, w := range warnings {
 		fmt.Printf("\nWarning: %s\n", w)
@@ -270,9 +270,9 @@ const agentsTemplate = "# Project Instructions\n\n" +
 	"This project uses a `.brain/` knowledge hub managed by the `brain` CLI.\n\n" +
 	"### Session Workflow\n\n" +
 	"1. **Start:** Run `brain get all` to load accumulated knowledge\n" +
-	"2. **Work:** Run `brain search \"<topic>\"` before writing unfamiliar code\n" +
+	"2. **Work:** Run `brain get \"<topic>\"` before writing unfamiliar code\n" +
 	"3. **Learn:** Run `brain add <topic> \"<insight>\"` when you discover something\n" +
-	"4. **End:** Run `brain eval` to save your work and create a handoff\n\n" +
+	"4. **End:** Run `brain add --eval` to save your work and create a handoff\n\n" +
 	"That's it. Working memory, handoffs, and outcome feedback happen automatically.\n\n" +
 	"### Topics\n" +
 	"Use these topic names when adding entries:\n" +
@@ -288,12 +288,12 @@ const agentsTemplate = "# Project Instructions\n\n" +
 	"- `brain get all --focus \"<topic>\"` — Load knowledge filtered by topic\n" +
 	"- `brain add <topic> \"<message>\"` — Add entry with topic tag\n" +
 	"- `brain add --wm \"<message>\"` — Add to working memory\n" +
-	"- `brain eval [--good|--bad]` — End session, create handoff, apply feedback\n" +
-	"- `brain search \"<query>\" --topic \"<topic>\"` — Search within a topic\n\n" +
+	"- `brain add --eval [--good|--bad]` — End session, create handoff, apply feedback\n" +
+	"- `brain get \"<query>\"` — Search within topics\n\n" +
 	"### Self-Evolution\n" +
 	"When corrected, add the learning: `brain add gotcha|pattern|decision \"<message>\"`\n\n" +
 	"### At Session End\n" +
-		"Run `brain eval` to write a self-evaluation and create a handoff for the next session.\n"
+		"Run `brain add --eval` to write a self-evaluation and create a handoff for the next session.\n"
 
 func promptConfigChoice(brainDir string) string {
 	reader := bufio.NewReader(os.Stdin)

@@ -28,7 +28,6 @@
 ### [2026-04-05 07:57:51] Users must name custom providers explicitly instead of using a generic 'custom' value.
 
 
-### [2026-04-05 07:57:51] Support non-JSON and pre-encoded byte slices in HTTP POST requests
 
 
 ### [2026-04-05 07:57:51] Require named custom providers instead of generic 'custom' value
@@ -52,39 +51,28 @@
 ### [2026-04-05 08:34:34] Per-project daemon locks include project hashes for parallelization.
 
 
-### [2026-04-05 08:34:34] XDG_CONFIG_HOME is used to isolate test config writes from production.
-
-
-### [2026-04-05 10:39:47] Unified API key configuration key renamed from nested llm.api_key to flat api-key
-
-
-### [2026-04-05 10:39:47] Auto-accept flag implemented to replace interactive TUI in CI/automated workflows
-
-
-### [2026-04-05 10:39:47] XDG_CONFIG_HOME is used to isolate test config writes from production configuration
-
-
-### [2026-04-05 10:39:47] Named custom providers replaced single custom option to improve configurability
-
-
-### [2026-04-05 10:39:47] Unified API key configuration key renamed to flat api-key structure
-
-
-### [2026-04-05 10:39:47] Named custom providers replaced single custom option for better configurability
-
-
-### [2026-04-05 10:39:47] Project-specific daemon service names generated via unique hash lookup
-
-
-### [2026-04-05 10:39:47] Per-project daemon locks include project hashes for parallelization support
-
-
-### [2026-04-05 10:39:47] Config setup wizard prioritizes provider selection over base URL setup
 
 
 
 
-### [2026-04-06 11:46:28] Unified API key configuration renamed from nested structure to flat api-key.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -94,7 +82,6 @@
 ### [2026-04-06 11:46:28] Added gitleaks allowlist for scanner/config test files
 
 
-### [2026-04-06 11:46:28] Added --summary flag for compact view with entry counts and duplicate warnings
 
 
 ### [2026-04-06 11:46:28] Duplicate detection adds entries to a set before committing to prevent redundancy
@@ -128,22 +115,18 @@
 ### [2026-04-06 13:43:38] Knowledge base uses separate MEMORY.md and PATTERNS.md files within .brain/
 
 
-### [2026-04-06 13:43:38] TopicSummary struct separates metadata from actual content
-
-
-
-
-### [2026-04-06 13:43:38] Unified API key configuration renamed to flat api-key structure
-
-
-### [2026-04-06 13:43:38] Named custom providers replace single custom option for better configurability
 
 
 
 
 
 
-### [2026-04-06 13:43:38] Architecture decisions documented in dedicated decisions.md file
+
+
+
+
+
+
 
 
 ### [2026-04-06 13:43:38] Silent exit on EOF instead of printing error messages for cleaner UX
@@ -152,7 +135,6 @@
 ### [2026-04-06 13:43:38] Removed 'exited cleanly' console output to reduce noise when review completes without actions
 
 
-### [2026-04-06 13:43:38] Prefer auto-accepting pending entries rather than treating silent closure as fatal error.
 
 
 ### [2026-04-06 14:06:58] Developer inserted test comment before variable block
@@ -164,7 +146,6 @@
 ### [2026-04-06 15:41:55] Adopted golang.org/x/term for reliable TTY detection.
 
 
-### [2026-04-06 15:41:55] Prefer auto-accepting pending entries to avoid treating silent closure as fatal.
 
 
 
@@ -176,13 +157,11 @@
 ### [2026-04-06 15:47:20] Line-buffered fallback is now default for non-TTY sessions (no --tty needed)
 
 
-### [2026-04-06 15:47:20] Test comment insertion event logged by developer
 
 
 ### [2026-04-06 15:47:20] Changed TUI condition to remove ttyFlag forcing TUI mode when stdin is not terminal
 
 
-### [2026-04-06 15:47:20] Adopt auto-accepting pending entries to avoid treating silent closure as fatal
 
 
 
@@ -192,35 +171,28 @@
 
 
 
-### [2026-04-06 15:47:20] Test comments removed from binary source code
 
 
-### [2026-04-06 15:47:20] Line-buffered fallback is now default for non-TTY sessions
 
 
 ### [2026-04-06 15:47:20] --tty flag no longer forces TUI when stdin is not terminal
 
 
-### [2026-04-06 15:48:51] Adopted standard library packages for reliable TTY detection.
 
 
-### [2026-04-06 15:48:51] Prefer auto-accepting entries to avoid treating silent closure as fatal.
 
 
 ### [2026-04-06 15:48:51] Modified useTUI logic to disable forced TUI via flag.
 
 
-### [2026-04-06 16:02:42] Adopted auto-accepting pending entries to avoid treating silent closure as fatal
 
 
 
 
 
 
-### [2026-04-06 16:02:42] Adopted standard library packages for reliable TTY detection
 
 
-### [2026-04-06 16:02:42] TUI mode now only activates when !ttyFlag and canUseTTY
 
 
 ### [2026-04-06 16:02:42] Switched from manual error reporting to automatic mode switching
@@ -265,7 +237,6 @@
 ### [2026-04-09 14:56:21] CLI command name shortened from agent-brain to brain.
 
 
-### [2026-04-09 14:56:21] Version incremented from v0.20.2 to v0.20.3.
 
 
 ### [2026-04-09 14:56:21] Add dedup command as maintenance tool similar to prune
@@ -295,14 +266,6 @@
 ### [2026-04-12 06:20:41] Config scope choice during brain init: choose between global config (shared across projects) or project-specific config (isolated)
 
 
-### [2026-04-12 06:20:41] Unified API key configuration renamed from nested structure to flat api-key
-
-
-
-
-
-
-### [2026-04-12 06:20:41] Implemented strictly limits external dependencies to Go standard library only
 
 
 
@@ -315,10 +278,14 @@
 
 
 
-### [2026-04-12 06:20:41] Adopted golang.org/x/term for reliable TTY detection
 
 
-### [2026-04-12 06:20:41] Prefer auto-accepting pending entries to avoid treating silent closure as fatal
+
+
+
+
+
+
 
 
 ### [2026-04-12 06:20:41] Brain initialize now checks for project config first before global config
@@ -329,17 +296,14 @@
 
 
 
-### [2026-04-12 06:20:41] Auto-accepting pending entries to avoid treating silent closure as fatal
-
-
-### [2026-04-12 06:20:41] Adopted golang.org/x/term for reliable TTY detection instead of custom wrappers
 
 
 
 
 
 
-### [2026-04-12 06:20:41] Prior behavior of --tty flag forcing TUI is removed on non-terminals
+
+
 
 
 ### [2026-04-12 06:20:41] Automated config scope choice during brain init - global vs project
@@ -353,13 +317,10 @@
 
 
 
-### [2026-04-12 06:20:41] Coqustruments cannot be overridden by ldflags — use var instead
 
 
-### [2026-04-12 06:20:41] Unified API key configuration renamed from nested to flat structure
 
 
-### [2026-04-12 06:20:41] Implemented gitleaks allowlist for scanner/config test files
 
 
 ### [2026-04-12 06:20:41] TUI mode activation conditional (!ttyFlag && canUseTTY)
@@ -370,13 +331,10 @@
 
 
 
-### [2026-04-14 06:46:30] Auto-accept flag replaces interactive TUI in CI/automated workflows
 
 
-### [2026-04-14 06:46:30] TUI mode activates only when !ttyFlag && canUseTTY
 
 
-### [2026-04-14 06:46:30] API key configured via environment variable as fallback
 
 
 ### [2026-04-14 06:46:30] Config resolves project-local first, then falls back to global
@@ -389,7 +347,6 @@
 ### [2026-04-14 06:46:30] Config scope is resolved during initialize: global shared or project-specific isolated.
 
 
-### [2026-04-14 06:46:30] Named custom providers replace single custom option for better configurability.
 
 
 ### [2026-04-14 06:46:30] TUI mode activates only when explicit TTY flag is unset and stdin is a terminal.
@@ -401,16 +358,6 @@
 ### [2026-04-14 06:46:30] Version variable consistent with CHANGELOG release version.
 
 
-### [2026-04-14 06:46:30] Auto-accepting pending entries to avoid treating silent closure as fatal.
-
-
-
-
-
-
-
-
-### [2026-04-14 06:46:30] Train model logic: prefer auto-accepting pending entries to avoid treating silent closure as fatal
 
 
 
@@ -421,10 +368,16 @@
 
 
 
-### [2026-04-14 06:46:30] Preferred using golang.org/x/term for reliable TTY detection
 
 
-### [2026-04-14 06:46:30] Decided to remove --tty flag forcing TUI on non-terminals
+
+
+
+
+
+
+
+
 
 
 ### [2026-04-14 06:46:30] Internal config layer resolves config sources and handles reading/writing appropriately
@@ -432,21 +385,17 @@
 
 
 
-### [2026-04-14 06:46:30] Brain initialize checks for project config first before global config
 
 
 ### [2026-04-14 06:46:30] Config scope choice during init: users can choose global or project-specific configuration
 
 
-### [2026-04-14 06:46:30] Line-buffered fallback is now default for non-TTY sessions instead of forcing TUI mode
-
-
-### [2026-04-14 06:46:30] Auto-accepting pending entries prevents treating silent closure as fatal in automated workflows
 
 
 
 
-### [2026-04-14 06:46:30] Version variable consistent with CHANGELOG release version for proper tracking
+
+
 
 
 ### [2026-04-14 06:46:30] Use JSON format for persisting behavioral signals
@@ -477,4 +426,44 @@
 
 
 ### [2026-04-14 06:46:30] Skill adaptations are preserved using merge-based updates during versioning.
+
+
+
+
+
+
+
+
+### [2026-04-14 19:13:33] Added confirmation step for skill updates to prevent data loss
+
+
+### [2026-04-14 19:13:33] Chose Semantic Versioning for project release tracking
+
+
+### [2026-04-14 19:13:33] Consoildlated architecture by eliminating duplicate packages
+
+
+### [2026-04-14 19:13:33] Reserve 64 chars for help banner truncation to keep UI consistent
+
+
+
+
+
+
+
+
+
+
+### [2026-04-14 20:59:17] Structured JSON output format for machine-readable retrieval
+
+
+
+
+
+
+
+
+### [2026-04-14 22:53:12] Tiered view display strategy for organized information presentation
+
+
 

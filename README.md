@@ -41,9 +41,9 @@
 When `brain init` runs, it creates `AGENTS.md` and installs **Agent Skills** — skill files that teach coding agents how to use `brain` automatically.
 
 1. **At session start:** Run `brain get all` to load accumulated knowledge
-2. **During work:** Run `brain search "<topic>"` before unfamiliar code, `brain get gotchas` before debugging
+2. **During work:** Run `brain get "<topic>"` before unfamiliar code, `brain get gotchas` before debugging
 3. **When corrected:** Run `brain add <topic> "<...>"` or use topic prefix: `brain add infrastructure gotcha "..."`
-4. **At session end:** Run `brain eval` (or `brain eval --good` / `brain eval --bad` for feedback)
+4. **At session end:** Run `brain add --eval` (or `brain add --eval --good` / `brain add --eval --bad` for feedback)
 
 The agent doesn't need to remember anything — the instructions are in AGENTS.md and the Agent Skill, which load every session.
 
@@ -73,7 +73,7 @@ AI coding agents are brilliant — but they **forget everything** between sessio
 | No institutional memory across sessions | Knowledge compounds and grows smarter |
 | Agent makes the same mistakes repeatedly | Past gotchas are flagged before they happen again |
 
-**v1.3.0** adds fuzzy deduplication (`brain dedup --fuzzy`) using trigram Jaccard similarity to catch near-duplicate entries that paraphrase the same concept. Removes 50%+ of redundant entries in active projects. v1.2.0 improvements: clean output formatting with `--compact`, `--message-only`, and structured JSON modes; tiered `brain get all` view; search results grouped by topic; TTY-aware color in status. All tests pass with race detector.
+**v1.3.0** adds fuzzy deduplication (`brain clean --duplicates --fuzzy`) using trigram Jaccard similarity to catch near-duplicate entries that paraphrase the same concept. Removes 50%+ of redundant entries in active projects. v1.2.0 improvements: clean output formatting with `--compact`, `--message-only`, and structured JSON modes; tiered `brain get all` view; search results grouped by topic; TTY-aware color in `brain doctor`. All tests pass with race detector.
 
 ---
 
@@ -121,7 +121,7 @@ That's it. Every commit is analyzed automatically. Every agent session loads acc
                                        │  (review queue)     │
                                        └──────────┬──────────┘
                                                   │
-                                      brain review (human approves)
+                                       brain daemon review (human approves)
                                                   │
                                        ┌──────────▼──────────┐
                                        │  .brain/ knowledge  │
@@ -139,9 +139,9 @@ That's it. Every commit is analyzed automatically. Every agent session loads acc
 |-------|-------------|------------|
 | **Git Hook** | Captures pushed commits and queues them | Yes — fires on every push |
 | **Daemon** | Analyzes queued commits via LLM, writes to pending | Yes — runs in background |
-| **Review Gate** | Human approves/rejects findings before they become permanent | Via `brain review` |
+| **Review Gate** | Human approves/rejects findings before they become permanent | Via `brain daemon review` |
 | **Agent Instructions** | Tells the agent to load knowledge, add learnings, self-evaluate | Yes — loaded every session via AGENTS.md |
-| **Self-Learning** | `brain skill reflect` adapts agent instructions based on usage patterns | On-demand — run periodically |
+| **Self-Learning** | `brain update --skills --reflect` adapts agent instructions based on usage patterns | On-demand — run periodically |
 
 ### What Gets Tracked
 
@@ -199,14 +199,15 @@ brain get gotchas --json                   # Structured JSON output
 
 Retrieval automatically strengthens memories (extends their half-life).
 
-#### `brain search <query>`
+#### `brain get <query>` (search mode)
 
-Search across all knowledge files. Results are grouped by topic with markdown stripped.
+When the argument is not a known topic name, `brain get` auto-searches across all knowledge files. Results are grouped by topic with markdown stripped.
 
 ```bash
-brain search "auth"
-brain search "argon2" --topic "security"   # Filter by topic
-brain search "database" --json
+brain get "auth"
+brain get "argon2" --topic "security"   # Filter by topic
+brain get "database" --json
+brain get "auth" --search               # Force search mode explicitly
 ```
 
 #### `brain add <topic> "<message>"`
@@ -223,14 +224,14 @@ brain add --wm "investigating auth bug"                    # Working memory
 
 Use an 8-topic prefix (`ui`, `backend`, `infrastructure`, `database`, `security`, `testing`, `architecture`, `general`) before the entry type to tag entries.
 
-#### `brain eval`
+#### `brain add --eval`
 
 Create a session evaluation file and handoff.
 
 ```bash
-brain eval
-brain eval --good    # Apply positive outcome + flush working memory
-brain eval --bad     # Apply negative outcome + flush working memory
+brain add --eval
+brain add --eval --good    # Apply positive outcome + flush working memory
+brain add --eval --bad     # Apply negative outcome + flush working memory
 ```
 
 Creates a session journal with git summary, recent commits, and auto-created handoff with topic detection. Use `--good` or `--bad` to provide feedback on retrieved memories.
@@ -250,17 +251,17 @@ brain daemon status   # Check health, queue depth
 brain daemon retry    # Requeue all failed items for retry
 ```
 
-The daemon watches for new commits, sends diffs to OpenRouter for analysis, and writes findings to a **pending queue** for human review via `brain review`.
+The daemon watches for new commits, sends diffs to OpenRouter for analysis, and writes findings to a **pending queue** for human review via `brain daemon review`.
 
 If the daemon fails to process a commit (e.g., LLM timeout, API error), the item moves to the failed queue. Use `brain daemon retry` to requeue all failed items for another attempt.
 
-#### `brain review [--all]`
+#### `brain daemon review [--all]`
 
 Review and approve knowledge entries found by the daemon.
 
 ```bash
-brain review           # Interactive TUI to approve/reject entries
-brain review --all     # Import existing topic entries for re-review
+brain daemon review           # Interactive TUI to approve/reject entries
+brain daemon review --all     # Import existing topic entries for re-review
 ```
 
 The TUI shows entries grouped by topic. Navigate with arrows, accept with `a`, reject with `r`, press `q` to quit. Only entries you approve become permanent.
@@ -271,71 +272,71 @@ The TUI shows entries grouped by topic. Navigate with arrows, accept with `a`, r
 
 Agent Skills teach coding agents (Claude Code, OpenCode, Cursor, etc.) how to use `brain` automatically. Skills are installed during `brain init` and live in `.claude/skills/agent-brain/`, `.opencode/skills/agent-brain/`, and `.agents/skills/agent-brain/`.
 
-#### `brain skill list`
+#### `brain update --skills --list`
 
 Show installed skill locations and their status.
 
 ```bash
-brain skill list
+brain update --skills --list
 ```
 
-#### `brain skill diff`
+#### `brain update --skills --diff`
 
 Compare installed skill files against the latest embedded templates.
 
 ```bash
-brain skill diff
+brain update --skills --diff
 ```
 
-#### `brain skill update`
+#### `brain update --skills`
 
-Update skill files to the latest version. Warns about uncommitted git changes. Preserves adaptation markers generated by `brain skill reflect`.
+Update skill files to the latest version. Warns about uncommitted git changes. Preserves adaptation markers generated by `brain update --skills --reflect`.
 
 ```bash
-brain skill update
+brain update --skills
 ```
 
-#### `brain skill reflect [--dry-run]`
+#### `brain update --skills --reflect [--dry-run]`
 
 Generate skill adaptations from accumulated behavior data (command usage, search queries, eval outcomes). Adaptations are appended to installed skill files and preserved across updates.
 
 ```bash
-brain skill reflect           # Generate and apply adaptations
-brain skill reflect --dry-run # Preview what would be added
+brain update --skills --reflect           # Generate and apply adaptations
+brain update --skills --reflect --dry-run # Preview what would be added
 ```
 
-#### `brain skill install [--global]`
+#### `brain update --skills --install [--global]`
 
 Install skill files to project directories (or global with `--global`).
 
 ```bash
-brain skill install           # Project-local
-brain skill install --global  # Global (~/.claude/skills/, etc.)
+brain update --skills --install           # Project-local
+brain update --skills --install --global  # Global (~/.claude/skills/, etc.)
 ```
 
 ---
 
 ### Maintenance Commands
 
-#### `brain prune [--dry-run]`
+#### `brain clean --patterns [--dry-run]`
 
 Archive stale knowledge entries.
 
 ```bash
-brain prune --dry-run   # See what would be pruned
-brain prune             # Actually prune
+brain clean --patterns --dry-run   # See what would be pruned
+brain clean --patterns             # Actually prune
 ```
 
 Reads patterns from `.brainprune` (like `.gitignore` for knowledge). Moves matching entries to `.brain/archived/`.
 
-#### `brain dedup [--dry-run]`
+#### `brain clean --duplicates [--dry-run]`
 
 Find and remove duplicate entries across all topic files.
 
 ```bash
-brain dedup --dry-run   # See what duplicates would be removed
-brain dedup             # Actually remove duplicates
-brain dedup --fuzzy     # Also catch near-duplicates (trigram Jaccard, threshold 0.55)
+brain clean --duplicates --dry-run   # See what duplicates would be removed
+brain clean --duplicates             # Actually remove duplicates
+brain clean --duplicates --fuzzy     # Also catch near-duplicates (trigram Jaccard, threshold 0.55)
 ```
 
 **Exact mode** (default): Uses SHA-256 fingerprinting of normalized content to detect duplicates, including cross-topic duplicates (same entry in multiple files). Keeps the first occurrence, archives removed entries to `.brain/archived/dedup-YYYY-MM-DD.md`, and shows a detailed summary report.
@@ -344,23 +345,23 @@ brain dedup --fuzzy     # Also catch near-duplicates (trigram Jaccard, threshold
 
 Run when `brain get --summary` shows `⚠️ duplicates detected`.
 
-#### `brain sleep [--dry-run]`
+#### `brain clean --decay [--dry-run]`
 
 Run memory consolidation — the biological "sleep" cycle.
 
 ```bash
-brain sleep           # Archive decayed entries, merge related patterns
-brain sleep --dry-run # Preview what would change
+brain clean --decay           # Archive decayed entries, merge related patterns
+brain clean --decay --dry-run # Preview what would change
 ```
 
 Entries with strength below threshold (from disuse) are archived. Related patterns are merged into consolidated insights.
 
-#### `brain index rebuild`
+#### `brain clean --rebuild`
 
 Rebuild the metadata index from topic files.
 
 ```bash
-brain index rebuild
+brain clean --rebuild
 ```
 
 Useful if the index gets out of sync. Safe to run anytime.
@@ -386,7 +387,7 @@ brain config setup                        # Interactive setup wizard
 
 **Available keys:** `api-key`, `model`, `provider`, `profile`, `poll-interval`, `max-retries`, `retry-backoff`, `max-diff-lines`
 
-#### `brain status [--json]`
+#### `brain doctor [--json]`
 
 Show knowledge hub statistics with TTY-aware color indicators.
 
@@ -669,18 +670,18 @@ If the API key is invalid or the model is unavailable, items will pile up. Fix t
 ### "MEMORY.md is too large"
 
 ```bash
-brain prune --dry-run   # See what can be archived
-brain prune             # Archive stale entries
+brain clean --patterns --dry-run   # See what can be archived
+brain clean --patterns             # Archive stale entries
 ```
 
 ### "Duplicates detected in topic files"
 
 ```bash
-brain dedup --dry-run   # Preview duplicate cleanup
-brain dedup             # Remove duplicates
+brain clean --duplicates --dry-run   # Preview duplicate cleanup
+brain clean --duplicates             # Remove duplicates
 ```
 
-The `brain get --summary` command shows `⚠️ duplicates detected` when the same entry appears multiple times in a topic file or across files. `brain dedup` removes duplicates while keeping the first occurrence.
+The `brain get --summary` command shows `⚠️ duplicates detected` when the same entry appears multiple times in a topic file or across files. `brain clean --duplicates` removes duplicates while keeping the first occurrence.
 
 ### "brain: command not found"
 
@@ -742,7 +743,7 @@ make build
 - [ ] **Choose your preferred model** in `~/.config/brain/config.yaml` (default: `anthropic/claude-3.5-haiku`)
 - [ ] **Review daemon configuration:** `brain daemon status`
 - [ ] **Run `brain init`** in your first project
-- [ ] **Optional:** After working, run `brain eval --good` to strengthen helpful memories
+- [ ] **Optional:** After working, run `brain add --eval --good` to strengthen helpful memories
 
 ---
 
@@ -763,17 +764,17 @@ agent-brain draws from established research and best practices in software engin
 
 ### Spaced Repetition & Memory Consolidation
 
-- **Spaced Repetition** — The psychological finding that information is better retained when review is spaced over time. agent-brain's memory strength/decay system (`brain sleep`, half-life extension on retrieval) implements this digitally. See [Wozniak's research on spaced repetition](https://www.supermemo.com/en/archives1990-2015/en/tech/sm5).
-- **Memory Consolidation Theory** — The neuroscience concept that memories are strengthened and reorganized during "offline" periods (sleep). agent-brain's `brain sleep` command and `brain eval --good/--bad` feedback loop mirror this biological process. See [Rasch & Born (2013)](https://doi.org/10.1152/physrev.00032.2012).
+- **Spaced Repetition** — The psychological finding that information is better retained when review is spaced over time. agent-brain's memory strength/decay system (`brain clean --decay`, half-life extension on retrieval) implements this digitally. See [Wozniak's research on spaced repetition](https://www.supermemo.com/en/archives1990-2015/en/tech/sm5).
+- **Memory Consolidation Theory** — The neuroscience concept that memories are strengthened and reorganized during "offline" periods (sleep). agent-brain's `brain clean --decay` command and `brain add --eval --good/--bad` feedback loop mirror this biological process. See [Rasch & Born (2013)](https://doi.org/10.1152/physrev.00032.2012).
 
 ### Human-in-the-Loop AI
 
-- **Human-in-the-Loop Machine Learning** — The practice of keeping humans in the decision loop for AI systems, especially for high-stakes or ambiguous cases. agent-brain's `brain review` TUI and autonomy profiles (`guard`, `assist`, `agent`) implement this pattern. See [Amershi et al. (2014)](https://doi.org/10.1145/2556831) on software engineering guidelines for HCI.
+- **Human-in-the-Loop Machine Learning** — The practice of keeping humans in the decision loop for AI systems, especially for high-stakes or ambiguous cases. agent-brain's `brain daemon review` TUI and autonomy profiles (`guard`, `assist`, `agent`) implement this pattern. See [Amershi et al. (2014)](https://doi.org/10.1145/2556831) on software engineering guidelines for HCI.
 - **Explainable AI (XAI)** — agent-brain's session journals, topic-tagged entries, and strength indicators make the system's "thinking" transparent and auditable. See the [DARPA XAI program](https://www.darpa.mil/program/explainable-artificial-intelligence) for foundational work.
 
 ### Developer Experience & Tool Design
 
-- **Progressive Disclosure** — A UX principle where advanced features are hidden until needed. agent-brain's three-command surface (`init`, `get`, `add`) with optional advanced commands (`prune`, `sleep`, `review`) follows this pattern. See [Miller's "Progressive Disclosure"](https://www.nngroup.com/articles/progressive-disclosure/) from Nielsen Norman Group.
+- **Progressive Disclosure** — A UX principle where advanced features are hidden until needed. agent-brain's three-command surface (`init`, `get`, `add`) with optional advanced commands (`clean`, `daemon review`) follows this pattern. See [Miller's "Progressive Disclosure"](https://www.nngroup.com/articles/progressive-disclosure/) from Nielsen Norman Group.
 - **Developer Flow State** — Research on minimizing interruptions during deep work. agent-brain's background daemon and automatic knowledge capture are designed to avoid pulling developers out of flow. See [Csikszentmihalyi's Flow Theory](https://doi.org/10.1037/0003-066X.54.10.824) and [Forsgren et al.'s DORA research](https://www.dora.dev/) on software delivery performance.
 
 ### Git & Version Control Best Practices

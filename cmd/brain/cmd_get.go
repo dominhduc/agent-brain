@@ -2,9 +2,11 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -56,6 +58,12 @@ func cmdGet(jsonFlag, summaryFlag, compactFlag, messageOnlyFlag, fullFlag bool) 
 	}
 
 	topic := os.Args[2]
+
+	if hasFlag("--search") {
+		cmdGetSearch(topic, jsonFlag)
+		return
+	}
+
 	focusFlag := hasFlag("--focus")
 	var focusTopic string
 	if focusFlag {
@@ -150,15 +158,30 @@ func cmdGet(jsonFlag, summaryFlag, compactFlag, messageOnlyFlag, fullFlag bool) 
 		return
 	}
 
-	path, err := knowledge.TopicFilePath(topic)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
+	var knownTopics = []string{"memory", "gotchas", "patterns", "decisions", "architecture", "all"}
+
+	isKnown := false
+	for _, t := range knownTopics {
+		if strings.EqualFold(t, topic) {
+			isKnown = true
+			break
+		}
 	}
+
+	if !isKnown {
+		cmdGetSearch(topic, jsonFlag)
+		return
+	}
+
+	path, err := knowledge.TopicFilePath(topic)
 
 	data, err := os.ReadFile(path)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error reading %s: %v\n", topic, err)
+		if os.IsNotExist(err) {
+			fmt.Fprintf(os.Stderr, "Error: topic '%s' not found. Did you mean to search? Use 'brain get --search %s'.\n", topic, topic)
+		} else {
+			fmt.Fprintf(os.Stderr, "Error reading %s: %v\n", topic, err)
+		}
 		os.Exit(1)
 	}
 
@@ -362,6 +385,120 @@ func getRetrievedKeys(topic string, data []byte, idx *knowledge.Index, now time.
 		}
 	}
 	return keys
+}
+
+func cmdGetSearch(query string, jsonFlag bool) {
+	topicFilter := ""
+	for i := 3; i < len(os.Args); i++ {
+		if os.Args[i] == "--topic" && i+1 < len(os.Args) {
+			topicFilter = os.Args[i+1]
+			break
+		}
+		if os.Args[i] == "--search" && i+1 < len(os.Args) {
+			query = os.Args[i+1]
+		}
+	}
+
+	brainDir, err := knowledge.FindBrainDir()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: run 'brain init' in your project directory first.\n", err)
+		os.Exit(1)
+	}
+
+	if hub, err := knowledge.Open(brainDir); err == nil {
+		_ = hub.TrackCommand("get")
+		_ = hub.TrackSearch(query)
+	}
+
+	files := []string{"MEMORY.md", "gotchas.md", "patterns.md", "decisions.md", "architecture.md"}
+	fileToTopic := map[string]string{
+		"MEMORY.md":      "memory",
+		"gotchas.md":     "gotchas",
+		"patterns.md":    "patterns",
+		"decisions.md":   "decisions",
+		"architecture.md": "architecture",
+	}
+
+	results := make(map[string][]string)
+	var totalMatches int
+
+	for _, file := range files {
+		filePath := filepath.Join(brainDir, file)
+		content, err := os.ReadFile(filePath)
+		if err != nil {
+			continue
+		}
+
+		topic := fileToTopic[file]
+		if topicFilter != "" && topic != topicFilter {
+			continue
+		}
+
+		re, err := regexp.Compile("(?i)" + regexp.QuoteMeta(query))
+		if err != nil {
+			continue
+		}
+
+		var matches []string
+		var currentEntry strings.Builder
+		var inEntry bool
+
+		scanner := bufio.NewScanner(bytes.NewReader(content))
+		for scanner.Scan() {
+			line := scanner.Text()
+			if strings.HasPrefix(line, "### [") {
+				if inEntry && currentEntry.Len() > 0 {
+					entryText := currentEntry.String()
+					if re.MatchString(entryText) {
+						matches = append(matches, strings.TrimSpace(entryText))
+					}
+				}
+				currentEntry.Reset()
+				currentEntry.WriteString(line + "\n")
+				inEntry = true
+			} else if inEntry {
+				currentEntry.WriteString(line + "\n")
+			}
+		}
+		if inEntry && currentEntry.Len() > 0 {
+			entryText := currentEntry.String()
+			if re.MatchString(entryText) {
+				matches = append(matches, strings.TrimSpace(entryText))
+			}
+		}
+
+		if len(matches) > 0 {
+			results[topic] = matches
+			totalMatches += len(matches)
+		}
+	}
+
+	if jsonFlag {
+		data, _ := json.MarshalIndent(map[string]interface{}{
+			"query":       query,
+			"total":       totalMatches,
+			"by_topic":    results,
+		}, "", "  ")
+		fmt.Println(string(data))
+		return
+	}
+
+	if totalMatches == 0 {
+		fmt.Printf("No results for \"%s\"\n", query)
+		return
+	}
+
+	fmt.Printf("Search results for \"%s\" (%d matches)\n\n", query, totalMatches)
+	for topic, matches := range results {
+		fmt.Printf("## %s (%d)\n\n", topic, len(matches))
+		for _, m := range matches {
+			lines := strings.Split(m, "\n")
+			for _, l := range lines {
+				fmt.Println(l)
+			}
+			fmt.Println()
+		}
+	}
 }
 
 func getFocusedTopics(focusTopic string, idx *knowledge.Index, now time.Time, jsonFlag bool) (string, error) {

@@ -76,13 +76,11 @@
 ### [2026-04-05 07:57:51] Tests set XDG_CONFIG_HOME for configuration isolation.
 
 
-### [2026-04-05 07:57:51] Type switch statement used to handle different HTTP request body types
 
 
 ### [2026-04-05 07:57:51] XDG_CONFIG_HOME setperfor test config directory isolation
 
 
-### [2026-04-05 08:34:34] Graceful error handling returns defaults instead of crashing on corrupted config files.
 
 
 ### [2026-04-05 08:34:34] LLM prompts utilize explicit JSON schema for better structured output compliance.
@@ -103,19 +101,14 @@
 ### [2026-04-05 08:34:34] Semantic Versioning requirements are documented in the header.
 
 
-### [2026-04-05 10:39:47] Modular CLI structure splits monolithic main.go into per-command files
 
 
-### [2026-04-05 10:39:47] Queue-based daemon processing includes retry logic and error reasoning
 
 
-### [2026-04-05 10:39:47] LLM prompts utilize explicit JSON schema for better structured output compliance
 
 
-### [2026-04-05 10:39:47] Graceful error handling returns defaults instead of crashing on corrupted config files
 
 
-### [2026-04-05 10:39:47] Queue-based daemon processing includes retry logic and error reason tracking
 
 
 ### [2026-04-05 10:39:47] Platform-specific CanUseRawMode checks for terminal capabilities
@@ -141,7 +134,6 @@
 
 
 
-### [2026-04-06 11:46:28] Queue-based daemon processing includes backoff retry logic and error reason tracking.
 
 
 
@@ -186,17 +178,14 @@
 
 
 
-### [2026-04-06 13:43:38] Queue-based daemon processing includes backoff retry logic and error reason tracking
 
 
 
 
-### [2026-04-06 13:43:38] Entry deduplication via normalizeEntry() with whitespace collapsing
 
 
 
 
-### [2026-04-06 13:43:38] SUPER principles: Side Effects at Edge, Uncoupled Logic, Pure Functions, Explicit Data Flow, Replaceable by Value
 
 
 
@@ -233,26 +222,21 @@
 
 
 
-### [2026-04-06 15:47:20] Version bump in code matches entry in CHANGELOG.md
 
 
 ### [2026-04-06 15:47:20] Simplified conditional logic for TUI vs line-buffered review selection
 
 
-### [2026-04-06 15:47:20] Use standard library packages like golang.org/x/term instead of syscall wrappers
-
-
-### [2026-04-06 15:47:20] Use standard library pkg like golang.org/x/term instead of custom syscall wrappers
 
 
 
 
 
 
-### [2026-04-06 15:47:20] Version bump matches entry in CHANGELOG.md
 
 
-### [2026-04-06 15:47:20] Default fallback to auto-accept entries when interaction fails
+
+
 
 
 ### [2026-04-06 15:48:51] Adopts external packages like golang.org/x/term over custom syscalls.
@@ -261,10 +245,8 @@
 ### [2026-04-06 15:48:51] Auto-accept pending entries to avoid fatal silent closure treatment.
 
 
-### [2026-04-06 15:48:51] Decisions documented with timestamps in separate logs.
 
 
-### [2026-04-06 15:48:51] Removes test comments from binary source code.
 
 
 
@@ -352,7 +334,6 @@
 
 
 
-### [2026-04-12 06:20:41] Platform-specific terminal capability checks prevent issues with raw mode usage
 
 
 
@@ -367,7 +348,6 @@
 
 
 
-### [2026-04-12 06:20:41] Use standard library packages like golang.org/x/term instead of custom syscall wrappers
 
 
 
@@ -379,7 +359,6 @@
 
 
 
-### [2026-04-12 06:20:41] TUI gracefully handles EOF - stdin closed during review exits cleanly
 
 
 ### [2026-04-12 06:20:41] Use standard library packages like golang.org/x/term for reliable TTY detection
@@ -391,7 +370,6 @@
 ### [2026-04-12 06:20:41] API key can be set via environment variable as fallback
 
 
-### [2026-04-12 06:20:41] Queue-based daemon processing includes backoff retry logic and error tracking
 
 
 ### [2026-04-14 01:32:14] Self-learning uses behavior signals (.brain/behavior/signals.json) + index strength data to generate skill adaptations via brain skill reflect
@@ -399,23 +377,18 @@
 
 
 
-### [2026-04-14 06:46:30] Queue-based daemon processing includes backoff retry logic
 
 
 
 
-### [2026-04-14 06:46:30] SUPER principles: Side Effects at Edge, Uncoupled Logic, Pure Functions, Explicit Data Flow
-
-
-### [2026-04-14 06:46:30] SPIRALS loop for agent collaboration: Sense, Plan, Inquire, Refine, Act, Learn, Scan
 
 
 
 
-### [2026-04-14 06:46:30] Version bump in code matches CHANGELOG.md
 
 
-### [2026-04-14 06:46:30] Modular CLI splits monolithic code into per-command files.
+
+
 
 
 ### [2026-04-14 06:46:30] Duplicate detection normalizes content before committing to a set.
@@ -424,18 +397,14 @@
 ### [2026-04-14 06:46:30] Terminal introspection favors standard library packages over native syscalls.
 
 
-### [2026-04-14 06:46:30] Auto-accepting pending entries prevents treating silent stdin closure as fatal.
-
-
-### [2026-04-14 06:46:30] Queue-based daemon processing includes backoff retry logic and error tracking.
-
-
-### [2026-04-14 06:46:30] Config resolves to project-local if exists, falling back to global.
 
 
 
 
-### [2026-04-14 06:46:30] Limited external dependencies to Go standard library
+
+
+
+
 
 
 
@@ -456,12 +425,10 @@
 
 
 
-### [2026-04-14 06:46:30] Layered configuration system with project-local and global sources
 
 
 
 
-### [2026-04-14 06:46:30] Queue-based daemon processing with backoff retry logic and error tracking
 
 
 
@@ -484,7 +451,6 @@
 ### [2026-04-14 06:46:30] Topic access metrics for identifying knowledge gaps
 
 
-### [2026-04-14 06:46:30] Self-learning uses behavior signals and index strength to generate skill adaptations
 
 
 ### [2026-04-14 06:46:30] Unified knowledge Hub consolidates state operations to eliminate deep dependencies
@@ -492,11 +458,60 @@
 
 
 
-### [2026-04-14 06:46:30] Self-learning generates skill adaptations from behavior signals and usage data.
 
 
 ### [2026-04-14 06:46:30] Unified knowledge.Hub acts as the single core for all state operations.
 
 
 ### [2026-04-14 13:05:03] v1.1.0 consolidated 8 duplicate packages into unified knowledge/ and session/ packages
+
+
+
+
+
+
+
+
+
+
+### [2026-04-14 19:13:33] Use Makefile ldflags with git describe for automated version injection
+
+
+### [2026-04-14 19:13:33] Store version at build-time via compiler flags, not compile-time
+
+
+### [2026-04-14 19:13:33] Show all modified files in confirmation prompt before overwriting
+
+
+
+
+
+
+
+
+### [2026-04-14 20:59:17] Safe overwrite confirmation for skill updates
+
+
+### [2026-04-14 20:59:17] TTY-aware output with color indicators
+
+
+### [2026-04-14 20:59:17] Tiered view display strategy
+
+
+### [2026-04-14 20:59:17] Modular CLI structure with per-command files
+
+
+### [2026-04-14 22:53:12] Trigram Jaccard similarity for near-duplicate detection (threshold 0.55)
+
+
+### [2026-04-14 22:53:12] Union-Find clustering for grouping similar entries
+
+
+### [2026-04-14 22:53:12] Character normalization before trigram extraction
+
+
+### [2026-04-14 22:53:12] Dry-run mode for safe duplicate removal operations
+
+
+### [2026-04-14 22:53:12] Global threshold fallback when provided invalid values
 

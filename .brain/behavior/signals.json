@@ -1,21 +1,47 @@
 {
   "command_counts": {
     "add": 1,
-    "search": 1
+    "eval": 1,
+    "get": 44,
+    "search": 4
   },
   "topic_access": {
-    "--summary": {
+    "--help": {
       "retrievals": 1,
-      "last_access": "2026-04-14T13:04:52.97546269+07:00"
+      "last_access": "2026-04-14T20:55:00.350770495+07:00"
     },
-    "patterns": {
+    "architecture": {
       "retrievals": 1,
-      "last_access": "2026-04-14T13:05:03.774611895+07:00"
+      "last_access": "2026-04-14T19:19:50.097948744+07:00"
+    },
+    "auth": {
+      "retrievals": 2,
+      "last_access": "2026-04-15T03:56:38.539428876+07:00"
+    },
+    "daemon": {
+      "retrievals": 1,
+      "last_access": "2026-04-15T03:57:49.71434153+07:00"
+    },
+    "gotchas": {
+      "retrievals": 25,
+      "last_access": "2026-04-14T22:54:18.306830631+07:00"
     }
   },
   "search_queries": [
     {
-      "query": "package",
+      "query": "config",
+      "count": 4
+    },
+    {
+      "query": "test",
+      "count": 1
+    },
+    {
+      "query": "auth",
+      "count": 2
+    },
+    {
+      "query": "daemon",
       "count": 1
     }
   ],
@@ -25,5 +51,5 @@
     "total_sessions": 0,
     "last_eval": "0001-01-01T00:00:00Z"
   },
-  "last_updated": "2026-04-14T13:05:03.774612069+07:00"
+  "last_updated": "2026-04-15T03:57:49.71567603+07:00"
 }

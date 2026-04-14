@@ -9,7 +9,7 @@ import (
 	"github.com/dominhduc/agent-brain/internal/otel"
 )
 
-var version = "v1.3.0"
+var version = "v1.4.0"
 
 var (
 	commit string
@@ -57,47 +57,64 @@ func main() {
 		cmdInit()
 	case "get":
 		cmdGet(jsonFlag, summaryFlag, hasFlag("--compact"), hasFlag("--message-only"), hasFlag("--full"))
-	case "search":
-		cmdSearch(jsonFlag)
 	case "add":
 		cmdAdd()
-	case "eval":
-		cmdEval()
-	case "prune":
-		cmdPrune(dryRun)
-	case "dedup":
-		cmdDedup(dryRun, hasFlag("--fuzzy"), hasFlag("--threshold"))
-	case "sleep":
-		cmdSleep(dryRun)
-	case "status":
-		cmdStatus(jsonFlag)
+	case "clean":
+		cmdClean(dryRun, hasFlag("--fuzzy"), hasFlag("--patterns"), hasFlag("--duplicates"), hasFlag("--decay"), hasFlag("--rebuild"))
+	case "doctor":
+		cmdDoctor(jsonFlag, hasFlag("--fix"))
 	case "daemon":
 		cmdDaemon()
 	case "config":
 		cmdConfig()
 	case "version", "--version", "-v":
 		cmdVersion()
-	case "review":
-		allFlag := hasFlag("--all")
-		yesFlag := hasFlag("--yes") || hasFlag("-y")
-		ttyFlag := hasFlag("--tty")
-		cmdReview(allFlag, yesFlag, ttyFlag)
 	case "update":
 		cmdUpdate()
-	case "skill":
-		cmdSkill(os.Args[1:])
-	case "doctor":
-		cmdDoctor()
-	case "index":
-		cmdIndex()
-	case "wm":
-		cmdWM()
-	case "handoff":
-		cmdHandoff()
-	case "outcome":
-		cmdOutcome()
 	case "--help", "-h", "help":
 		printUsage()
+
+	// Backward compatibility aliases
+	case "search":
+		fmt.Fprintln(os.Stderr, "Note: 'brain search' merged into 'brain get'. Use: brain get <query>")
+		cmdGetSearch(os.Args[2], jsonFlag)
+	case "eval":
+		fmt.Fprintln(os.Stderr, "Note: 'brain eval' merged into 'brain add --eval'. Use: brain add --eval")
+		os.Args = append([]string{"brain", "add", "--eval"}, os.Args[2:]...)
+		cmdAdd()
+	case "prune":
+		fmt.Fprintln(os.Stderr, "Note: 'brain prune' merged into 'brain clean'. Use: brain clean --patterns")
+		os.Args = append([]string{"brain", "clean", "--patterns"}, os.Args[2:]...)
+		cmdClean(dryRun, false, true, false, false, false)
+	case "dedup":
+		fmt.Fprintln(os.Stderr, "Note: 'brain dedup' merged into 'brain clean'. Use: brain clean --duplicates")
+		os.Args = append([]string{"brain", "clean", "--duplicates"}, os.Args[2:]...)
+		cmdClean(dryRun, hasFlag("--fuzzy"), false, true, false, false)
+	case "sleep":
+		fmt.Fprintln(os.Stderr, "Note: 'brain sleep' merged into 'brain clean'. Use: brain clean --decay")
+		os.Args = append([]string{"brain", "clean", "--decay"}, os.Args[2:]...)
+		cmdClean(dryRun, false, false, false, true, false)
+	case "status":
+		fmt.Fprintln(os.Stderr, "Note: 'brain status' merged into 'brain doctor'. Use: brain doctor")
+		cmdDoctor(jsonFlag, false)
+	case "review":
+		fmt.Fprintln(os.Stderr, "Note: 'brain review' merged into 'brain daemon review'. Use: brain daemon review")
+		os.Args = append([]string{"brain", "daemon", "review"}, os.Args[2:]...)
+		cmdDaemon()
+	case "index":
+		fmt.Fprintln(os.Stderr, "Note: 'brain index rebuild' merged into 'brain clean'. Use: brain clean --rebuild")
+		os.Args = append([]string{"brain", "clean", "--rebuild"}, os.Args[2:]...)
+		cmdClean(false, false, false, false, false, true)
+	case "wm":
+		fmt.Fprintln(os.Stderr, "Note: 'brain wm' is deprecated. Use 'brain add --wm'.")
+		os.Args = append([]string{"brain", "add", "--wm"}, os.Args[2:]...)
+		cmdAdd()
+	case "handoff":
+		fmt.Fprintln(os.Stderr, "Note: 'brain handoff' is deprecated. Use 'brain add --eval'.")
+		os.Exit(1)
+	case "outcome":
+		fmt.Fprintln(os.Stderr, "Note: 'brain outcome' is deprecated. Use 'brain add --eval --good/--bad'.")
+		os.Exit(1)
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n\n", os.Args[1])
 		printUsage()
@@ -142,57 +159,40 @@ QUICK START
   brain init                    Initialize knowledge hub in current project
   brain get all                 Load all accumulated knowledge
   brain add <topic> "<msg>"     Record a new learning or decision
-  brain search <query>          Search across all knowledge
-  brain eval                    End session with self-evaluation + handoff
+  brain add --eval              End session with self-evaluation + handoff
+  brain get <query>             Search if not a known topic
 
 COMMON WORKFLOWS
 
   Session start     brain get all
   Before debugging  brain get gotchas
   When corrected    brain add gotcha "The fix"
-  Session end       brain eval
+  Session end       brain add --eval
 
 FULL REFERENCE
 
-  INIT & UPDATE
+  CORE
     brain init                 Create .brain/ hub, AGENTS.md, git hooks, daemon
-    brain skill install        Install Agent Skills for coding agents
-    brain skill update         Update Agent Skills to latest version
-    brain update               Update agent-brain to latest version
-
-   GET & SEARCH
-     brain get <topic>          Topics: all, gotchas, patterns, decisions, architecture
-                                Flags: --summary, --json, --compact, --message-only, --full, --focus "<topic>"
-     brain search <query>       Search all knowledge
-                                Flags: --json, --topic "<topic>"
-
-  ADD & EVAL
-    brain add <topic> "<msg>"         Add entry to a topic
+    brain get <topic>          Topics: all, gotchas, patterns, decisions, architecture, memory
+                               Or search if not a known topic
+                               Flags: --search (force search), --json, --summary, --compact,
+                                      --message-only, --full, --focus "<topic>"
+    brain add <topic> "<msg>"  Add entry to a topic
     brain add <area> <topic> "<msg>"  Add entry with area tag
-    brain add --wm "<msg>"            Add to working memory (temporary)
-    brain eval                        Session evaluation + handoff
-                                      Flags: --good, --bad
-
-  SKILLS (for coding agents)
-    brain skill list           Show installed Agent Skill locations
-    brain skill diff           Compare installed vs latest templates
-    brain skill update         Update Agent Skills (overwrites with confirmation)
-    brain skill reflect [--dry-run]  Generate skill adaptations from usage data
-    brain skill install        Install to project directories
-    brain skill install --global   Install to global directories
-
-  DAEMON
-    brain daemon <action>      Actions: start, stop, restart, status, failed, retry, run
-    brain review               Interactive TUI to approve/reject pending entries
+    brain add --wm "<msg>"     Add to working memory (temporary)
+    brain add --eval           Session evaluation + handoff
+                               Flags: --good, --bad
 
   MAINTENANCE
-    brain status               Hub statistics & health
-    brain prune [--dry-run]    Archive stale entries
-    brain dedup [--dry-run]    Remove duplicate entries
-    brain dedup --fuzzy [--dry-run]  Remove near-duplicate entries (trigram Jaccard)
-    brain sleep [--dry-run]    Consolidate memory (decay + archive)
-    brain index rebuild        Rebuild metadata index
-    brain doctor               Full health check & diagnostics
+    brain clean                Run all cleanup (prune + dedup + decay + rebuild)
+                               Flags: --dry-run, --patterns, --duplicates, --decay, --rebuild, --fuzzy
+    brain doctor               Hub statistics, health check & diagnostics
+                               Flags: --json, --fix
+
+  DAEMON
+    brain daemon <action>      Actions: start, stop, restart, status, failed, retry, run, review
+    brain daemon review        Interactive TUI to approve/reject pending entries
+                               Flags: --all, --yes/-y, --tty
 
   CONFIG
     brain config list          List all settings
@@ -202,6 +202,15 @@ FULL REFERENCE
     brain config setup         Interactive setup wizard
                                Config can be global (~/.config/brain/)
                                or project-specific (.brain/config.yaml)
+
+  SKILLS & UPDATE
+    brain update               Update agent-brain to latest version
+    brain update --skills      Update skill files (preserves adaptations)
+    brain update --skills --list   Show installed skill locations
+    brain update --skills --diff   Compare installed vs latest templates
+    brain update --skills --install  Install skill files to project directories
+    brain update --skills --install --global  Install to global directories
+    brain update --skills --reflect [--dry-run]  Generate skill adaptations from usage data
 
 AREA TAXONOMY (8 topics)
 
@@ -219,11 +228,12 @@ EXAMPLES
   brain init
   brain get gotchas
   brain get all --focus "security"
-  brain search "auth" --topic "security"
+  brain get "auth error"           # Auto-searches
   brain add infrastructure gotcha "VPS uses Ubuntu 22.04"
   brain add pattern "All handlers use middleware chain: logging -> auth -> rate-limit"
-  brain eval --good
-  brain skill diff
-  brain skill update
+  brain add --eval --good
+  brain clean --dry-run
+  brain doctor
+  brain daemon review
 `)
 }

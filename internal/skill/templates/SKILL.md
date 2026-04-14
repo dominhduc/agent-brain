@@ -3,7 +3,7 @@ name: agent-brain
 description: |
   Load project knowledge, record learnings, and manage AI agent memory.
   Use at session start (brain get all), before debugging (brain get gotchas),
-  when corrected (brain add gotcha "..."), and at session end (brain eval).
+  when corrected (brain add gotcha "..."), and at session end (brain add --eval).
 license: MIT
 compatibility: Requires the brain CLI. Works with OpenCode, Claude Code, Cursor, and other Agent Skills-compatible tools.
 allowed-tools: Bash Read Grep Glob Edit Write
@@ -34,8 +34,8 @@ brain get patterns
 
 Before writing code against unfamiliar patterns:
 ```bash
-brain search "auth" --topic "security"
-brain search "database migration"
+brain get "auth" --topic "security"
+brain get "database migration"
 ```
 
 When you discover something new, record it immediately:
@@ -58,15 +58,15 @@ This ensures the next agent session won't repeat the same mistake.
 ### 4. Session End — Evaluate and Handoff
 
 ```bash
-brain eval
+brain add --eval
 ```
 
 This writes a self-evaluation to the current session file, records what you did, what worked, what failed, and creates a handoff for the next session.
 
 With outcome feedback:
 ```bash
-brain eval --good    # Recommendation was successful
-brain eval --bad     # Recommendation caused issues
+brain add --eval --good    # Recommendation was successful
+brain add --eval --bad     # Recommendation caused issues
 ```
 
 ## Topic Taxonomy
@@ -86,31 +86,44 @@ Use these 8 topics when adding entries:
 
 ## Commands
 
-### Get & Search
+### Core
 ```bash
-brain get <topic>              # Topics: memory, gotchas, patterns, decisions, architecture, all
+brain get <topic>              # Topics: all, gotchas, patterns, decisions, architecture, memory
+                               # Auto-searches if not a known topic
 brain get all --focus "<topic>" # Load knowledge filtered by topic
-brain search "<query>"          # Search all knowledge
-brain search "<query>" --topic "<topic>"  # Search within a topic
-```
-
-### Add & Eval
-```bash
-brain add <topic> "<message>"         # Add entry to a topic
-brain add <area> <topic> "<message>"  # Add entry with area tag (ui/backend/infrastructure/etc.)
-brain add --wm "<message>"            # Add to working memory (temporary, decays)
-brain eval                            # Session evaluation + handoff
-brain eval --good                     # Mark recommendation as successful
-brain eval --bad                      # Mark recommendation as problematic
+brain get "<query>"            # Search if not a known topic
+brain add <topic> "<message>"  # Add entry to a topic
+brain add <area> <topic> "<message>"  # Add entry with area tag
+brain add --wm "<message>"     # Add to working memory (temporary)
+brain add --eval               # Session evaluation + handoff
+brain add --eval --good        # Mark recommendation as successful
+brain add --eval --bad         # Mark recommendation as problematic
 ```
 
 ### Maintenance
 ```bash
-brain status               # Hub statistics & health
-brain review               # Review pending daemon entries
-brain prune [--dry-run]    # Archive stale entries
-brain dedup [--dry-run]    # Find and remove duplicate entries
-brain sleep                # Consolidate memory (decay + archive)
+brain clean                # Run all cleanup (prune + dedup + decay + rebuild)
+brain clean --dry-run      # Preview all cleanup actions
+brain clean --patterns     # Archive entries matching .brainprune patterns
+brain clean --duplicates   # Remove exact duplicate entries
+brain clean --duplicates --fuzzy  # Also catch near-duplicates
+brain clean --decay        # Archive strength-decayed entries
+brain clean --rebuild      # Rebuild metadata index
+brain doctor               # Hub statistics, health check & diagnostics
+brain doctor --json        # Machine-readable output
+brain doctor --fix         # Auto-repair (rebuild index, requeue failed items)
+```
+
+### Daemon
+```bash
+brain daemon start         # Register and start the background daemon
+brain daemon stop          # Stop the daemon
+brain daemon status        # Show daemon state and queue counts
+brain daemon review        # Interactive review of pending entries
+brain daemon review --yes  # Auto-accept all pending entries
+brain daemon failed        # List failed queue items
+brain daemon retry         # Requeue all failed items
+brain daemon run           # Run daemon in foreground
 ```
 
 ### Config
@@ -122,15 +135,15 @@ brain config reset <key>   # Reset to default
 brain config setup         # Interactive setup wizard
 ```
 
-### Advanced
+### Update
 ```bash
-brain daemon <action>      # Actions: start, stop, restart, status, failed, retry, run
-brain doctor               # Health check & diagnostics
-brain index rebuild        # Rebuild metadata index
-brain update               # Update to latest version
-brain version              # Show version info
-brain skill diff           # Show skill updates vs templates
-brain skill update         # Update skill files to latest version
+brain update               # Update brain binary to latest version
+brain update --skills      # Update skill files (preserves adaptations)
+brain update --skills --list   # Show installed skill locations
+brain update --skills --diff   # Compare installed vs latest templates
+brain update --skills --install  # Install skill files to project directories
+brain update --skills --install --global  # Install to global directories
+brain update --skills --reflect [--dry-run]  # Generate skill adaptations
 ```
 
 ## Autonomy Profiles
@@ -144,10 +157,10 @@ The skill supports different autonomy levels, configured via `brain config set p
 ## Skill Management
 
 ```bash
-brain skill list           # Show installed skill locations and versions
-brain skill diff           # Compare installed files vs latest templates
-brain skill update         # Update skill files (overwrites with confirmation)
-brain skill install --global  # Install to global directories
+brain update --skills --list    # Show installed skill locations
+brain update --skills --diff    # Compare installed files vs latest templates
+brain update --skills           # Update skill files to latest version
+brain update --skills --install --global  # Install to global directories
 ```
 
 ## Supporting Files
@@ -163,6 +176,6 @@ For detailed reference material, see the bundled files:
 1. **Always start with `brain get all`** — Never skip this. The accumulated knowledge prevents repeated mistakes.
 2. **Record learnings immediately** — Don't wait until session end. Add gotchas and patterns as you discover them.
 3. **Use specific topic tags** — `brain add security "JWT expires in 15min"` is better than `brain add general "auth stuff"`.
-4. **Run `brain eval` every session** — Even for small sessions. The handoff is invaluable for continuity.
-5. **Search before writing** — `brain search "pagination"` before implementing pagination from scratch.
-6. **Review pending entries** — Run `brain review` periodically to approve/reject daemon-analyzed entries.
+4. **Run `brain add --eval` every session** — Even for small sessions. The handoff is invaluable for continuity.
+5. **Search before writing** — `brain get "pagination"` before implementing pagination from scratch.
+6. **Review pending entries** — Run `brain daemon review` periodically to approve/reject daemon-analyzed entries.

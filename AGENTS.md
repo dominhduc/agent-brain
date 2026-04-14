@@ -7,7 +7,7 @@ This project uses a `.brain/` knowledge hub managed by the `brain` CLI.
 Run `brain get all` to load accumulated project knowledge before starting work.
 
 ### During Work
-- Run `brain search <topic>` before writing code against unfamiliar patterns
+- Run `brain get "<topic>"` before writing code against unfamiliar patterns
 - Run `brain get gotchas` before debugging to avoid known pitfalls
 
 ### Self-Evolution
@@ -17,23 +17,23 @@ When I correct you, express frustration about a repeated mistake, or point out a
 3. Treat every correction as permanent — don't repeat mistakes
 
 ### At Session End
-1. Run `brain eval` to write a self-evaluation to the current session file.
+1. Run `brain add --eval` to write a self-evaluation to the current session file.
    Include: what you did, what worked, what failed, confidence scores, knowledge persisted.
-2. Run `brain status` to check MEMORY.md line count.
-   If over 200 lines, run `brain prune --dry-run` to preview stale entries.
+2. Run `brain doctor` to check MEMORY.md line count.
+   If over 200 lines, run `brain clean --dry-run` to preview stale entries.
    Ask the user before pruning. Only prune with approval.
-3. If `brain get --summary` shows duplicate warnings, run `brain dedup --dry-run`.
-   Review the summary. Run `brain dedup` to clean up if approved.
+3. If `brain get --summary` shows duplicate warnings, run `brain clean --duplicates --dry-run`.
+   Review the summary. Run `brain clean --duplicates` to clean up if approved.
 
 ### Maintenance
 Run periodically (or when MEMORY.md exceeds 200 lines):
 
-- `brain status` — check health, queue state, and line counts
-- `brain dedup --dry-run` — preview duplicate cleanup
-- `brain dedup` — remove duplicate entries (with approval)
-- `brain prune --dry-run` — preview what would be removed from topic files
-- `brain prune` — archive matching entries to `.brain/archived/`
-- `brain review` — approve/reject pending daemon-analyzed entries
+- `brain doctor` — check health, queue state, and line counts
+- `brain clean --duplicates --dry-run` — preview duplicate cleanup
+- `brain clean --duplicates` — remove duplicate entries (with approval)
+- `brain clean --patterns --dry-run` — preview what would be removed from topic files
+- `brain clean --patterns` — archive matching entries to `.brain/archived/`
+- `brain daemon review` — approve/reject pending daemon-analyzed entries
 
 **Prune patterns (.brainprune):** Create a `.brainprune` file at project root
 with one pattern per line. Topic file lines matching any pattern get archived.

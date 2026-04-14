@@ -28,10 +28,8 @@
 ### [2026-04-05 07:12:27] Flexible HTTP client design accommodating various data formats
 
 
-### [2026-04-05 07:57:51] Response parsing utilizes conditional field checks.
 
 
-### [2026-04-05 07:57:51] HTTP client design accommodates various data formats.
 
 
 
@@ -60,31 +58,22 @@
 ### [2026-04-05 08:34:34] Human-in-the-loop review system integrates directly with git hooks.
 
 
-### [2026-04-05 10:39:47] Human-in-the-loop review system supports distinct autonomy profiles for approvals
 
 
-### [2026-04-05 10:39:47] Multi-project daemon support isolates service names per project hash
 
 
-### [2026-04-05 10:39:47] Cross-platform file handling uses filepath.Join instead of OS string concatenation
 
 
-### [2026-04-05 10:39:47] Multiple LLM providers are supported via unified config section
 
 
-### [2026-04-05 10:39:47] Human-in-the-loop review system supports distinct autonomy profiles for automated approvals
 
 
-### [2026-04-05 10:39:47] Daemon processes queue items with backoff retry logic
 
 
-### [2026-04-05 10:39:47] Multiple LLM providers supported via unified config section
 
 
-### [2026-04-05 10:39:47] Environment isolation ensures tests do not pollute production configuration files
 
 
-### [2026-04-05 10:39:47] Human-in-the-loop review integrates directly with git hooks
 
 
 
@@ -94,7 +83,6 @@
 ### [2026-04-06 11:46:28] Environment isolation uses XDG_CONFIG_HOME to prevent test pollution.
 
 
-### [2026-04-06 11:46:28] Cross-platform file handling avoids OS string concatenation.
 
 
 ### [2026-04-06 11:46:28] Gitleaks integration with path-based exclusions for test fixtures
@@ -106,7 +94,6 @@
 ### [2026-04-06 11:46:28] Centralized GetTopicSummary() generates TopicSummary structs per file
 
 
-### [2026-04-06 11:46:28] Content deduplication performed via deduplicateContent() with map[string]bool tracking
 
 
 ### [2026-04-06 11:46:28] summaryFlag conditional redirect to brain.GetAllSummaries() before main logic
@@ -115,10 +102,8 @@
 ### [2026-04-06 11:46:28] Test coverage includes cross-file entry types (gotchas, patterns, memory) for deduplication
 
 
-### [2026-04-06 11:46:28] Knowledge base structure uses separate MEMORY.md and PATTERNS.md files within the .brain directory
 
 
-### [2026-04-06 11:46:28] Implementation strictly limits external dependencies to Go standard library only
 
 
 ### [2026-04-06 11:46:28] CLI command logic isolated in cmd/brain/cmd.go.
@@ -126,25 +111,20 @@
 
 
 
-### [2026-04-06 13:43:38] Human-in-the-loop review integrates with git hooks
-
-
-
-
-### [2026-04-06 13:43:38] Environment isolation uses XDG_CONFIG_HOME to prevent test pollution
-
-
-### [2026-04-06 13:43:38] Cross-platform file handling avoids OS string concatenation
 
 
 
 
 
 
-### [2026-04-06 13:43:38] Content deduplication via map[string]bool tracking
 
 
-### [2026-04-06 13:43:38] CLI tool interface supports JSON output for machine-readable parsing
+
+
+
+
+
+
 
 
 ### [2026-04-06 13:43:38] Simplified term_posix.go by replacing manual syscall with standard library term.IsTerminal() for cross-platform compatibility
@@ -159,25 +139,19 @@
 ### [2026-04-06 15:41:55] Terminals are identified via stdin file descriptors using wrapper functions.
 
 
-### [2026-04-06 15:47:20] Terminal identification via stdin file descriptors using wrapper functions
 
 
-### [2026-04-06 15:47:20] Differentiation between initial and mid-loop stdin closure in TUI input handling
 
 
 ### [2026-04-06 15:47:20] cmd_review.go: Auto-accept for non-TTY when !yesFlag and !prof.AutoAccept
 
 
-### [2026-04-06 15:47:20] Terminal state managed within internal/tui module via stdin file descriptors
 
 
-### [2026-04-06 15:47:20] Terminal state managed within internal/tui module using stdin file descriptors
 
 
-### [2026-04-06 15:47:20] Terminal state managed within internal/tui module
 
 
-### [2026-04-06 15:47:20] Terminals identified via stdin file descriptors using wrapper functions
 
 
 ### [2026-04-06 15:47:20] TUI logic differentiates initial vs mid-loop stdin closure
@@ -247,34 +221,26 @@
 ### [2026-04-09 14:56:21] A separate storage location handles archived entries specifically for deduplication logs.
 
 
-### [2026-04-12 06:20:41] Brain architecture uses stratified knowledge hub with separate topic files under .brain/
 
 
 
 
 
 
-### [2026-04-12 06:20:41] CLI command logic isolated in cmd/brain/cmd.go
 
 
 
 
-### [2026-04-12 06:20:41] Config scope system allows global (~/.config/brain/) or project-specific (.brain/config.yaml) configuration
 
 
-### [2026-04-12 06:20:41] Project config takes precedence over global config when both exist
 
 
-### [2026-04-12 06:20:41] Internal config layer resolves config sources and handles reading/writing to appropriate locations
 
 
-### [2026-04-12 06:20:41] Modular CLI structure with per-command files like cmd_config.go and cmd_init.go
 
 
-### [2026-04-12 06:20:41] Terminal state managed within internal/tui module using XDG-based paths
 
 
-### [2026-04-12 06:20:41] Project-specific daemon service names isolated per project hash
 
 
 ### [2026-04-12 06:20:41] Multi-project daemon support with project isolation
@@ -286,22 +252,17 @@
 ### [2026-04-12 06:20:41] Static TTY state checked at startup and maintained via stdin file descriptors
 
 
-### [2026-04-12 06:20:41] Content deduplication via map[string]bool tracking across topics
 
 
 ### [2026-04-12 06:20:41] Unified entry statistics tracked via review.LoadPendingEntries()
 
 
-### [2026-04-12 06:20:41] Two-tier config system with global (~/.config/brain/) and project-specific (.brain/) sources
 
 
-### [2026-04-12 06:20:41] Terminal state detected via stdin file descriptors using wrapper functions
 
 
-### [2026-04-12 06:20:41] CLI command logic isolated in cmd/brain/cmd.go with per-command files
 
 
-### [2026-04-12 06:20:41] Version variable consistent with CHANGELOG release version
 
 
 
@@ -309,12 +270,10 @@
 ### [2026-04-12 06:20:41] Config dual-source resolver checks project first, falls back to global
 
 
-### [2026-04-12 06:20:41] Knowledge hub uses separate topic files under .brain/
 
 
 
 
-### [2026-04-12 06:20:41] Stratified knowledge hub with separate topic files
 
 
 
@@ -325,7 +284,6 @@
 ### [2026-04-12 06:20:41] Skill system supports platform-specific directory locations (.opencode/.claude/.agents)
 
 
-### [2026-04-12 06:20:41] Line-buffered fallback default for non-TTY sessions
 
 
 ### [2026-04-14 01:32:14] knowledge.Hub is the unified core — all state operations go through it. New packages: knowledge/ (topics+index+pending+wm+retrieval+behavior+adapt), session/ (handoffs+git stats). Daemon now has local analyze.go + secrets.go instead of importing external packages.
@@ -343,28 +301,17 @@
 ### [2026-04-14 06:46:30] Agent skill files installed to .claude/, .opencode/, .agents/ directories
 
 
-### [2026-04-14 06:46:30] Knowledge deduplication via map[string]bool tracking
 
 
-### [2026-04-14 06:46:30] Embedded skill templates managed via fs/embed
 
 
-### [2026-04-14 06:46:30] Stratified knowledge hub uses separate topic files stored under .brain/.
 
 
-### [2026-04-14 06:46:30] Multi-project daemon support isolates service names via project hash lookup.
 
 
 ### [2026-04-14 06:46:30] Dual-source config system allows fallback from project-local to global settings.
 
 
-### [2026-04-14 06:46:30] Terminal state is managed within the internal/tui module using XDG paths.
-
-
-### [2026-04-14 06:46:30] Embedded skill templates managed via fs/embed for version control.
-
-
-### [2026-04-14 06:46:30] CLI command logic isolated in cmd/brain/cmd.go with per-command files.
 
 
 
@@ -381,7 +328,10 @@
 
 
 
-### [2026-04-14 06:46:30] Two-tier config system with global and project-specific sources
+
+
+
+
 
 
 ### [2026-04-14 06:46:30] Working memory with importance-based scoring and size limits
@@ -398,7 +348,6 @@
 
 
 
-### [2026-04-14 06:46:30] Project-specific daemon service names isolated per project hash for multi-project support
 
 
 
@@ -418,7 +367,6 @@
 ### [2026-04-14 06:46:30] Command-driven reflection workflow for project integration
 
 
-### [2026-04-14 06:46:30] New internal/knowledge/Hub acts as unified core for all state operations
 
 
 ### [2026-04-14 06:46:30] Behavior signals tracked in .brain/behavior/signals.json for self-learning
@@ -428,4 +376,52 @@
 
 
 ### [2026-04-14 06:46:30] Directory layout expanded to include behavior/ signals for self-learning tracking.
+
+
+
+
+### [2026-04-14 19:13:33] Unified knowledge.Hub is the core all state operations go through it centrally.
+
+
+
+
+### [2026-04-14 19:13:33] Version injection pattern uses git describe --tags with ldflags
+
+
+### [2026-04-14 19:13:33] Makefile builds version from source control timestamps
+
+
+
+
+### [2026-04-14 19:13:33] Duplicate package consolidation improved codebase maintainability
+
+
+### [2026-04-14 20:59:17] Centralized Knowledge.Hub for all state operations
+
+
+
+
+
+
+### [2026-04-14 20:59:17] Two-tier config system architecture
+
+
+### [2026-04-14 20:59:17] Tiered view display architecture
+
+
+### [2026-04-14 20:59:17] Isolated daemon service naming convention
+
+
+### [2026-04-14 20:59:17] Automated version injection via build flags
+
+
+
+
+
+
+
+
+
+
+### [2026-04-14 22:53:12] Fuzzy deduplication integrated alongside existing exact dedup workflow
 

@@ -53,7 +53,7 @@ func captureStdout(fn func()) string {
 	return buf.String()
 }
 
-func TestCmdStatus_WithPendingEntries(t *testing.T) {
+func TestCmdDoctor_WithPendingEntries(t *testing.T) {
 	setupTestProject(t)
 
 	for i := 0; i < 3; i++ {
@@ -71,10 +71,10 @@ func TestCmdStatus_WithPendingEntries(t *testing.T) {
 	}
 
 	oldArgs := os.Args
-	os.Args = []string{"brain", "status", "--json"}
+	os.Args = []string{"brain", "doctor", "--json"}
 	defer func() { os.Args = oldArgs }()
 
-	output := captureStdout(func() { cmdStatus(true) })
+	output := captureStdout(func() { cmdDoctor(true, false) })
 
 	var status map[string]interface{}
 	if err := json.Unmarshal([]byte(output), &status); err != nil {
@@ -86,14 +86,14 @@ func TestCmdStatus_WithPendingEntries(t *testing.T) {
 	}
 }
 
-func TestCmdStatus_NoPendingEntries(t *testing.T) {
+func TestCmdDoctor_NoPendingEntries(t *testing.T) {
 	setupTestProject(t)
 
 	oldArgs := os.Args
-	os.Args = []string{"brain", "status", "--json"}
+	os.Args = []string{"brain", "doctor", "--json"}
 	defer func() { os.Args = oldArgs }()
 
-	output := captureStdout(func() { cmdStatus(true) })
+	output := captureStdout(func() { cmdDoctor(true, false) })
 
 	var status map[string]interface{}
 	if err := json.Unmarshal([]byte(output), &status); err != nil {

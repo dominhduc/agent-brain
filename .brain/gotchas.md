@@ -73,10 +73,8 @@
 ### [2026-04-05 07:57:51] Config.Load returns defaults with warnings to prevent file corruption on parse errors.
 
 
-### [2026-04-05 07:57:51] Debug output may be enabled in production accidentally.
 
 
-### [2026-04-05 07:57:51] Debug output may be enabled in production by accident
 
 
 ### [2026-04-05 08:34:34] PostJSON double-marshaling sends base64-encoded garbage to LLM APIs instead of raw JSON.
@@ -91,7 +89,6 @@
 ### [2026-04-05 08:34:34] String-based path concatenation breaks on cross-platform environments.
 
 
-### [2026-04-05 08:34:34] Double-marshaling PostJSON returned base64 garbage to LLM APIs.
 
 
 ### [2026-04-05 08:34:34] Non-TTY inputs initially caused TCGETS errors in review commands.
@@ -103,22 +100,16 @@
 ### [2026-04-05 10:33:34] Test entry 1
 
 
-### [2026-04-05 10:39:47] PostJSON double-marshaling sends base64-encoded garbage to LLM APIs instead of raw JSON
 
 
-### [2026-04-05 10:39:47] String-based path concatenation breaks on cross-platform environments
 
 
-### [2026-04-05 10:39:47] Direct TTY operations cause TCGETS errors when not in interactive terminal
 
 
-### [2026-04-05 10:39:47] Testing config writes can corrupt live settings without proper isolation
 
 
-### [2026-04-05 10:39:47] Direct TTY operations without TCGETS detection cause TCGETS errors in non-interactive mode
 
 
-### [2026-04-05 10:39:47] Non-TTY inputs cause TCGETS errors in review commands
 
 
 ### [2026-04-05 10:39:47] Corrupted config files require graceful defaults instead of crashes
@@ -127,13 +118,10 @@
 ### [2026-04-06 08:36:31] Hidden dependencies trap agents: functions that use GLOBAL_CONFIG, Database.get_instance(), or singletons look pure by signature but fail in production. Agents can't see implicit state. Every function dependency must be explicit in parameters. This is the #1 reason agent projects degrade in production — each iteration introduces subtle state corruption from invisible blast radius
 
 
-### [2026-04-06 11:46:28] Double-marshaling PostJSON sends base64 garbage instead of raw JSON to LLM APIs.
 
 
-### [2026-04-06 11:46:28] Direct TTY operations cause TCGETS errors when not in interactive terminal mode.
 
 
-### [2026-04-06 11:46:28] String-based path concatenation breaks on cross-platform environments without filepath utilities.
 
 
 
@@ -162,13 +150,10 @@
 ### [2026-04-06 12:07:46] brain review TCGETS ioctl can succeed on non-TTY stdin in some environments - check stdin is character device before raw mode
 
 
-### [2026-04-06 13:43:38] Double-marshaling POST JSON sends base64 garbage instead of raw JSON to LLM APIs
 
 
-### [2026-04-06 13:43:38] Direct TTY operations cause TCGETS errors when not in interactive terminal mode
 
 
-### [2026-04-06 13:43:38] String-based path concatenation breaks on cross-platform environments without filepath utilities
 
 
 ### [2026-04-06 13:43:38] Hidden dependencies trap agents: functions using GLOBAL_CONFIG or singletons look pure but fail in production
@@ -184,7 +169,6 @@
 ### [2026-04-06 13:43:38] stdin device checking required before TCGETS calls
 
 
-### [2026-04-06 13:43:38] TCGETS ioctl may succeed on non-TTY stdin in some environments - must verify stdin is character device before entering raw mode
 
 
 ### [2026-04-06 13:43:38] SSH sessions can close stdin without explicit user interaction, triggering unintended errors.
@@ -208,17 +192,14 @@
 
 
 
-### [2026-04-06 15:47:20] Non-blocking reads fail when no input is pending
 
 
 
 
 
 
-### [2026-04-06 15:48:51] Non-blocking reads fail when no input is pending.
 
 
-### [2026-04-06 15:48:51] Manual syscalls are error-prone under varying terminal states.
 
 
 ### [2026-04-06 15:48:51] Prior behavior of --tty flag forcing TUI is removed on non-terminals.
@@ -277,12 +258,6 @@
 ### [2026-04-09 14:56:21] Ignoring warnings about duplicates detected leads to redundant memory consumption.
 
 
-### [2026-04-12 06:20:41] Manual file descriptor syscalls are error-prone under varying terminal states
-
-
-
-
-### [2026-04-12 06:20:41] Go constants cannot be overridden by ldflags - use var instead
 
 
 
@@ -291,32 +266,28 @@
 
 
 
-### [2026-04-12 06:20:41] Non-blocking reads for terminal detection fail when no input is pending
-
-
-### [2026-04-12 06:20:41] --tty flag previously forced TUI even when stdin was not terminal
-
-
-### [2026-04-12 06:20:41] Hidden dependencies trap agents: functions using GLOBAL_CONFIG look pure but fail in production
 
 
 
 
-### [2026-04-12 06:20:41] Test fixture secrets cause false positives without path-based exclusions
 
 
 
 
-### [2026-04-12 06:20:41] Terminal state managed via stdin file descriptors can be error-prone under varying terminal states
 
 
-### [2026-04-12 06:20:41] Manual terminal syscalls are error-prone under varying terminal states
 
 
-### [2026-04-12 06:20:41] Go constants cannot be overridden by ldflags—use variables instead
 
 
-### [2026-04-12 06:20:41] Non-blocking terminal detection fails when no input is pending
+
+
+
+
+
+
+
+
 
 
 
@@ -328,7 +299,6 @@
 
 
 
-### [2026-04-14 06:46:30] Go constants cannot be overridden by ldflags—use var instead
 
 
 
@@ -363,16 +333,12 @@
 
 
 
-### [2026-04-14 06:46:30] Hidden dependencies using GLOBAL_CONFIG or singletons cause failures in production environments
 
 
-### [2026-04-14 06:46:30] Test fixture secrets trigger false positives without proper Gitleaks allowlist exclusions
 
 
-### [2026-04-14 06:46:30] Non-blocking terminal detection fails when no input is pending in stdin
 
 
-### [2026-04-14 06:46:30] Go constants cannot be overridden by ldflags - must use variables instead
 
 
 ### [2026-04-14 06:46:30] Empty SKILL.md triggers early return skipping adaptation writing
@@ -387,8 +353,35 @@
 ### [2026-04-14 06:46:30] 0600 file permissions for behavior data may restrict read access for analysis
 
 
-### [2026-04-14 06:46:30] AdaptSkill uses os.ReadFile directly for messages; should use hub.Get() for consistency
 
 
-### [2026-04-14 06:46:30] AdaptSkill uses os.ReadFile directly for messages which should use hub.Get() for consistency.
+
+
+
+
+
+
+
+
+### [2026-04-14 19:13:33] Always confirm overwrites to modified skill files before updating
+
+
+### [2026-04-14 19:13:33] Format strings for help banners must account for truncation limits
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### [2026-04-14 22:53:12] Duplicate entries require safe overwrite confirmation before updating
 

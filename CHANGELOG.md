@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed — Command Consolidation (21 → 8 commands)
+
+**Core commands** (the only ones most users need):
+- `brain init` — Setup (unchanged)
+- `brain get <topic>` — Read knowledge (absorbs `search`: auto-detects non-topic args as search queries)
+- `brain add <topic> "<msg>"` — Write knowledge (absorbs `eval`: use `brain add --eval`)
+- `brain clean` — All maintenance (absorbs `prune`, `dedup`, `sleep`, `index rebuild`)
+- `brain doctor` — Health check (absorbs `status`)
+- `brain daemon <action>` — Daemon management (absorbs `review` as `daemon review`)
+- `brain config <action>` — Configuration (unchanged)
+- `brain update` — Self-update (absorbs `skill` via `--skills` flags)
+
+**Backward compatibility**: All old commands still work via aliases that print migration notices.
+
+**Removed deprecated commands**: `brain wm`, `brain handoff`, `brain outcome` (were already deprecated)
+
+### Removed
+- `brain search` → use `brain get <query>` (auto-searches non-topic args)
+- `brain eval` → use `brain add --eval`
+- `brain prune` → use `brain clean --patterns`
+- `brain dedup` → use `brain clean --duplicates`
+- `brain sleep` → use `brain clean --decay`
+- `brain index rebuild` → use `brain clean --rebuild`
+- `brain status` → use `brain doctor`
+- `brain review` → use `brain daemon review`
+- `brain skill` → use `brain update --skills`
+
 ## [v1.3.0] - 2026-04-14
 
 ### Added
