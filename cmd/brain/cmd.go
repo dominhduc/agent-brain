@@ -9,7 +9,7 @@ import (
 	"github.com/dominhduc/agent-brain/internal/otel"
 )
 
-var version = "v1.1.1"
+var version = "v1.2.0"
 
 var (
 	commit string
@@ -56,7 +56,7 @@ func main() {
 	case "init":
 		cmdInit()
 	case "get":
-		cmdGet(jsonFlag, summaryFlag)
+		cmdGet(jsonFlag, summaryFlag, hasFlag("--compact"), hasFlag("--message-only"), hasFlag("--full"))
 	case "search":
 		cmdSearch(jsonFlag)
 	case "add":
@@ -160,11 +160,11 @@ FULL REFERENCE
     brain skill update         Update Agent Skills to latest version
     brain update               Update agent-brain to latest version
 
-  GET & SEARCH
-    brain get <topic>          Topics: all, gotchas, patterns, decisions, architecture
-                               Flags: --summary, --json, --focus "<topic>"
-    brain search <query>       Search all knowledge
-                               Flags: --json, --topic "<topic>"
+   GET & SEARCH
+     brain get <topic>          Topics: all, gotchas, patterns, decisions, architecture
+                                Flags: --summary, --json, --compact, --message-only, --full, --focus "<topic>"
+     brain search <query>       Search all knowledge
+                                Flags: --json, --topic "<topic>"
 
   ADD & EVAL
     brain add <topic> "<msg>"         Add entry to a topic

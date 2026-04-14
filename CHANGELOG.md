@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.2.0] - 2026-04-14
+
+### Added
+- `--compact` flag for `brain get`: one line per entry with relative timestamps, no blank lines (~70% output reduction)
+- `--message-only` flag for `brain get`: pure message text with no timestamps, scores, or metadata — ideal for AI agent context windows
+- `--full` flag for `brain get all`: complete dump (default is now tiered view)
+- Structured JSON output: `brain get <topic> --json` now returns `{topic, entry_count, entries: [{timestamp, message}]}` instead of raw file content
+- Tiered `brain get all` display: overview → recent entries (7-day window) → top entries, with total count
+- Search results grouped by topic with markdown syntax stripped
+- Strength score legend printed at top of default output
+- TTY-aware color indicators in `brain status` (green ✓, red ✗, yellow ●)
+
+### Changed
+- Stripped `●` prefix from strength scores in all output
+- Stripped `### [timestamp]` markdown prefix from search and focused output
+- `brain get all` default now shows scannable tiered view instead of full dump
+- Help text updated with all new flags
+
+### Fixed
+- JSON timestamp parsing: timestamps now correctly formatted as `YYYY-MM-DD HH:MM:SS` without bracket artifacts
+
 ## [v1.1.1] - 2026-04-14
 
 ### Added

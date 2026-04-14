@@ -14,14 +14,43 @@ import (
 
 var entryLineRe = regexp.MustCompile(`^### \[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]`)
 
-func cmdGet(jsonFlag, summaryFlag bool) {
+func stripMarkdownPrefix(line string) (timestamp, message string) {
+	matches := entryLineRe.FindStringSubmatch(line)
+	if matches != nil {
+		return matches[1], strings.TrimSpace(line[len(matches[0]):])
+	}
+	return "", line
+}
+
+func relativeTime(timestamp string, now time.Time) string {
+	t, err := time.Parse("2006-01-02 15:04:05", timestamp)
+	if err != nil {
+		return ""
+	}
+	d := now.Sub(t)
+	switch {
+	case d < time.Hour:
+		return fmt.Sprintf("%dm ago", int(d.Minutes()))
+	case d < 24*time.Hour:
+		return fmt.Sprintf("%dh ago", int(d.Hours()))
+	case d < 7*24*time.Hour:
+		return fmt.Sprintf("%dd ago", int(d.Hours()/24))
+	default:
+		return t.Format("Jan 06")
+	}
+}
+
+func cmdGet(jsonFlag, summaryFlag, compactFlag, messageOnlyFlag, fullFlag bool) {
 	if len(os.Args) < 3 {
 		fmt.Println("Usage: brain get <topic>")
 		fmt.Println("Topics: memory, gotchas, patterns, decisions, architecture, all")
 		fmt.Println("Flags:")
-		fmt.Println("  --summary    Show summary with entry counts and duplicate warnings")
-		fmt.Println("  --json       Output as JSON")
-		fmt.Println("  --focus      Filter by topic (e.g., --focus \"infrastructure\")")
+		fmt.Println("  --summary      Show summary with entry counts and duplicate warnings")
+		fmt.Println("  --json         Output as JSON (structured format)")
+		fmt.Println("  --compact      One-line-per-entry, no blank lines")
+		fmt.Println("  --message-only Output only the message text (no timestamps, no scores)")
+		fmt.Println("  --full         Show complete content (default: tiered view)")
+		fmt.Println("  --focus        Filter by topic (e.g., --focus \"infrastructure\")")
 		fmt.Println("What to do: specify a topic name to retrieve.")
 		os.Exit(1)
 	}
@@ -63,7 +92,7 @@ func cmdGet(jsonFlag, summaryFlag bool) {
 			for _, s := range summaries {
 				status := ""
 				if s.HasDuplicates {
-					status = " ⚠️ duplicates"
+					status = " ⚠ duplicates"
 				}
 				fmt.Printf("- %s: %d entries, %d lines%s\n", s.Name, s.EntryCount, s.LineCount, status)
 			}
@@ -89,19 +118,29 @@ func cmdGet(jsonFlag, summaryFlag bool) {
 		}
 
 		if jsonFlag {
-			topics := map[string]string{}
+			result := make(map[string]interface{})
 			for _, t := range knowledge.AvailableTopics() {
-				c, err := knowledge.GetTopic(t)
+				entries, err := knowledge.GetTopicEntries(t)
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "Error reading %s: %v\n", t, err)
 					os.Exit(1)
 				}
-				topics[t] = c
+				result[t] = map[string]interface{}{
+					"entry_count": len(entries),
+					"entries":     entries,
+				}
 			}
-			data, _ := json.MarshalIndent(topics, "", "  ")
+			data, _ := json.MarshalIndent(result, "", "  ")
 			fmt.Println(string(data))
-		} else {
+		} else if fullFlag {
 			content, err := knowledge.GetAllTopicsWithSummary()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: run 'brain init' first.\n", err)
+				os.Exit(1)
+			}
+			fmt.Println(content)
+		} else {
+			content, err := getTieredAll(idx, now)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: run 'brain init' first.\n", err)
 				os.Exit(1)
@@ -128,12 +167,69 @@ func cmdGet(jsonFlag, summaryFlag bool) {
 	now := time.Now()
 
 	if jsonFlag {
+		entries, err := knowledge.GetTopicEntries(topic)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+		type topicJSON struct {
+			Topic   string                  `json:"topic"`
+			Count   int                     `json:"entry_count"`
+			Entries []knowledge.TopicEntry `json:"entries"`
+		}
+		data, _ := json.MarshalIndent(topicJSON{
+			Topic:   topic,
+			Count:   len(entries),
+			Entries: entries,
+		}, "", "  ")
 		fmt.Println(string(data))
+		return
+	}
+
+	if messageOnlyFlag {
+		scanner := bufio.NewScanner(strings.NewReader(string(data)))
+		for scanner.Scan() {
+			line := scanner.Text()
+			_, msg := stripMarkdownPrefix(line)
+			if msg != "" && msg != line {
+				fmt.Println(msg)
+			}
+		}
+		return
+	}
+
+	if compactFlag {
+		scanner := bufio.NewScanner(strings.NewReader(string(data)))
+		for scanner.Scan() {
+			line := scanner.Text()
+			matches := entryLineRe.FindStringSubmatch(line)
+			if matches != nil {
+				timestamp := matches[1]
+				entry, found := idx.Get(topic, timestamp)
+				strength := ""
+				if found {
+					strength = fmt.Sprintf("%.2f  ", knowledge.CalculateStrength(entry, now))
+					entry.RetrievalCount++
+					entry.LastRetrieved = now
+					idx.Set(topic, timestamp, entry)
+				}
+				_, msg := stripMarkdownPrefix(line)
+				rel := relativeTime(timestamp, now)
+				if rel != "" {
+					rel = "  " + rel
+				}
+				fmt.Printf("%s%s%s\n", strength, msg, rel)
+			}
+		}
+		idx.Save(brainDir)
+		knowledge.RecordRetrieval(brainDir, getRetrievedKeys(topic, data, idx, now))
 		return
 	}
 
 	scanner := bufio.NewScanner(strings.NewReader(string(data)))
 	var retrievedKeys []string
+	fmt.Println("Strength: 1.00=high confidence  0.97=medium  <0.95=low")
+	fmt.Println()
 	for scanner.Scan() {
 		line := scanner.Text()
 		matches := entryLineRe.FindStringSubmatch(line)
@@ -142,7 +238,8 @@ func cmdGet(jsonFlag, summaryFlag bool) {
 			entry, found := idx.Get(topic, timestamp)
 			if found {
 				strength := knowledge.CalculateStrength(entry, now)
-				fmt.Printf("●%.2f  %s\n", strength, line)
+				_, msg := stripMarkdownPrefix(line)
+				fmt.Printf("%.2f  ### [%s] %s\n", strength, timestamp, msg)
 				entry.RetrievalCount++
 				entry.LastRetrieved = now
 				idx.Set(topic, timestamp, entry)
@@ -159,6 +256,112 @@ func cmdGet(jsonFlag, summaryFlag bool) {
 		idx.Save(brainDir)
 		knowledge.RecordRetrieval(brainDir, retrievedKeys)
 	}
+}
+
+func getTieredAll(idx *knowledge.Index, now time.Time) (string, error) {
+	summaries, err := knowledge.GetAllSummaries()
+	if err != nil {
+		return "", err
+	}
+
+	type scoredEntry struct {
+		timestamp string
+		message   string
+		strength  float64
+		topic     string
+		age       time.Duration
+	}
+
+	var allEntries []scoredEntry
+
+	for _, topicFile := range knowledge.AvailableTopics() {
+		entries, err := knowledge.GetTopicEntries(topicFile)
+		if err != nil {
+			continue
+		}
+		for _, e := range entries {
+			t, _ := time.Parse("2006-01-02 15:04:05", e.Timestamp)
+			var strength float64 = 1.0
+			if idx != nil {
+				idxEntry, found := idx.Get(topicFile, e.Timestamp)
+				if found {
+					strength = knowledge.CalculateStrength(idxEntry, now)
+				}
+			}
+			allEntries = append(allEntries, scoredEntry{
+				timestamp: e.Timestamp,
+				message:   e.Message,
+				strength:  strength,
+				topic:     topicFile,
+				age:       now.Sub(t),
+			})
+		}
+	}
+
+	var result strings.Builder
+
+	result.WriteString("PROJECT MEMORY OVERVIEW\n")
+	result.WriteString(strings.Repeat("─", 50) + "\n")
+	for _, s := range summaries {
+		status := ""
+		if s.HasDuplicates {
+			status = "  ⚠ duplicates"
+		}
+		result.WriteString(fmt.Sprintf("  %-15s %d entries  %d lines%s\n", s.Name, s.EntryCount, s.LineCount, status))
+	}
+	result.WriteString("\n")
+
+	var recentEntries []scoredEntry
+	for _, e := range allEntries {
+		if e.age <= 7*24*time.Hour {
+			recentEntries = append(recentEntries, e)
+		}
+	}
+
+	if len(recentEntries) > 0 {
+		result.WriteString(fmt.Sprintf("RECENT (last 7 days, %d entries)\n", len(recentEntries)))
+		result.WriteString(strings.Repeat("─", 50) + "\n")
+		for _, e := range recentEntries {
+			rel := relativeTime(e.timestamp, now)
+			result.WriteString(fmt.Sprintf("  %.2f  %s  %s\n", e.strength, e.message, rel))
+		}
+		result.WriteString("\n")
+	}
+
+	topCount := 15
+	if len(allEntries) < topCount {
+		topCount = len(allEntries)
+	}
+	if len(allEntries) > topCount {
+		result.WriteString(fmt.Sprintf("TOP %d BY RETRIEVAL\n", topCount))
+		result.WriteString(strings.Repeat("─", 50) + "\n")
+		for i := 0; i < topCount; i++ {
+			e := allEntries[i]
+			result.WriteString(fmt.Sprintf("  %.2f  %s\n", e.strength, e.message))
+		}
+		result.WriteString("\n")
+	}
+
+	result.WriteString(fmt.Sprintf("Total: %d entries across %d topics.\n", len(allEntries), len(knowledge.AvailableTopics())))
+	result.WriteString("Run 'brain get all --full' for complete content.\n")
+
+	return result.String(), nil
+}
+
+func getRetrievedKeys(topic string, data []byte, idx *knowledge.Index, now time.Time) []string {
+	var keys []string
+	scanner := bufio.NewScanner(strings.NewReader(string(data)))
+	for scanner.Scan() {
+		line := scanner.Text()
+		matches := entryLineRe.FindStringSubmatch(line)
+		if matches != nil {
+			timestamp := matches[1]
+			if _, found := idx.Get(topic, timestamp); found {
+				keys = append(keys, knowledge.MakeKey(topic, timestamp))
+			}
+		}
+	}
+	return keys
 }
 
 func getFocusedTopics(focusTopic string, idx *knowledge.Index, now time.Time, jsonFlag bool) (string, error) {
@@ -258,7 +461,11 @@ func getFocusedTopics(focusTopic string, idx *knowledge.Index, now time.Time, js
 	if len(highRelevance) > 0 {
 		result.WriteString(fmt.Sprintf("## High Relevance (%d entries)\n\n", len(highRelevance)))
 		for _, se := range highRelevance {
-			result.WriteString(fmt.Sprintf("●%.2f  ### [%s] %s\n", se.strength, se.timestamp, se.content))
+			rel := relativeTime(se.timestamp, now)
+			if rel != "" {
+				rel = "  " + rel
+			}
+			result.WriteString(fmt.Sprintf("%.2f  %s%s\n", se.strength, se.content, rel))
 		}
 		result.WriteString("\n")
 	}
@@ -266,7 +473,11 @@ func getFocusedTopics(focusTopic string, idx *knowledge.Index, now time.Time, js
 	if len(medRelevance) > 0 {
 		result.WriteString(fmt.Sprintf("## General (%d entries)\n\n", len(medRelevance)))
 		for _, se := range medRelevance {
-			result.WriteString(fmt.Sprintf("●%.2f  ### [%s] %s\n", se.strength, se.timestamp, se.content))
+			rel := relativeTime(se.timestamp, now)
+			if rel != "" {
+				rel = "  " + rel
+			}
+			result.WriteString(fmt.Sprintf("%.2f  %s%s\n", se.strength, se.content, rel))
 		}
 		result.WriteString("\n")
 	}
@@ -275,7 +486,11 @@ func getFocusedTopics(focusTopic string, idx *knowledge.Index, now time.Time, js
 		result.WriteString(fmt.Sprintf("## Other Topics (collapsed, %d entries)\n\n", len(otherEntries)))
 		result.WriteString("<details>\n")
 		for _, se := range otherEntries {
-			result.WriteString(fmt.Sprintf("●%.2f  ### [%s] %s\n", se.strength, se.timestamp, se.content))
+			rel := relativeTime(se.timestamp, now)
+			if rel != "" {
+				rel = "  " + rel
+			}
+			result.WriteString(fmt.Sprintf("%.2f  %s%s\n", se.strength, se.content, rel))
 		}
 		result.WriteString("</details>\n")
 	}

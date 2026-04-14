@@ -120,9 +120,33 @@ func cmdSearch(jsonFlag bool) {
 		data, _ := json.MarshalIndent(matches, "", "  ")
 		fmt.Println(string(data))
 	} else {
-		fmt.Printf("Found %d match(es) for '%s':\n\n", len(matches), query)
+		fmt.Printf("Search: \"%s\" — %d matches\n\n", query, len(matches))
+
+		type groupedMatch struct {
+			topic   string
+			matches []Match
+		}
+		groups := make(map[string][]Match)
 		for _, m := range matches {
-			fmt.Printf("  %s:%d  %s\n", m.File, m.Line, m.Content)
+			topic := fileToTopic[m.File]
+			groups[topic] = append(groups[topic], m)
+		}
+
+		topicOrder := []string{"gotchas", "patterns", "decisions", "architecture", "memory"}
+		for _, topic := range topicOrder {
+			ms, ok := groups[topic]
+			if !ok || len(ms) == 0 {
+				continue
+			}
+			fmt.Printf("%s (%d matches)\n", strings.ToUpper(topic), len(ms))
+			for _, m := range ms {
+				_, msg := stripMarkdownPrefix(m.Content)
+				if msg == "" {
+					msg = m.Content
+				}
+				fmt.Printf("  %s:%d  %s\n", m.File, m.Line, strings.TrimSpace(msg))
+			}
+			fmt.Println()
 		}
 	}
 }

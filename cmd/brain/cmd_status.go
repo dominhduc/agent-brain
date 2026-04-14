@@ -12,7 +12,27 @@ import (
 	"github.com/dominhduc/agent-brain/internal/config"
 	"github.com/dominhduc/agent-brain/internal/service"
 	"github.com/dominhduc/agent-brain/internal/updater"
+	"golang.org/x/term"
 )
+
+const (
+	colorReset  = "\033[0m"
+	colorGreen  = "\033[32m"
+	colorRed    = "\033[31m"
+	colorYellow = "\033[33m"
+	colorCyan   = "\033[36m"
+)
+
+func isTTY() bool {
+	return term.IsTerminal(int(os.Stdout.Fd()))
+}
+
+func colorize(condition bool, color, text string) string {
+	if condition {
+		return color + text + colorReset
+	}
+	return text
+}
 
 func cmdStatus(jsonFlag bool) {
 	brainDir, err := knowledge.FindBrainDir()
@@ -142,6 +162,8 @@ func cmdStatus(jsonFlag bool) {
 	}
 
 	// Text output
+	useColor := isTTY()
+
 	fmt.Printf("brain %s  %s/%s", version, runtime.GOOS, runtime.GOARCH)
 	if commit != "" {
 		short := commit
@@ -160,12 +182,16 @@ func cmdStatus(jsonFlag bool) {
 
 	fmt.Println("Hub")
 	if hubFound {
-		fmt.Printf("  .brain/      found\n")
+		fmt.Printf("  .brain/      %s\n", colorize(useColor, colorGreen, "found ✓"))
 		fmt.Printf("  Topics       %d files (%d KB)\n", topicCount, totalSize/1024)
 		fmt.Printf("  Sessions     %d\n", sessionCount)
-		fmt.Printf("  MEMORY.md    %d lines (%s)\n", lineCount, lineStatus)
+		lineColor := colorGreen
+		if lineStatus == "OVER LIMIT" {
+			lineColor = colorRed
+		}
+		fmt.Printf("  MEMORY.md    %d lines (%s)\n", lineCount, colorize(useColor, lineColor, lineStatus))
 	} else {
-		fmt.Println("  .brain/      not found")
+		fmt.Printf("  .brain/      %s\n", colorize(useColor, colorRed, "not found"))
 	}
 
 	fmt.Println()
@@ -182,17 +208,26 @@ func cmdStatus(jsonFlag bool) {
 		}
 		fmt.Printf("  Profile      %s\n", profile)
 	} else {
-		fmt.Println("  Error loading config")
+		fmt.Printf("  %s\n", colorize(useColor, colorRed, "Error loading config"))
 	}
 
 	fmt.Println()
 	fmt.Println("Daemon")
-	if daemonRunning {
-		fmt.Println("  Status       running")
-	} else {
-		fmt.Println("  Status       not running")
+	daemonColor := colorGreen
+	if !daemonRunning {
+		daemonColor = colorYellow
 	}
-	fmt.Printf("  Queue        %d pending, %d done, %d failed\n", queuePending, queueDone, queueFailed)
+	fmt.Printf("  Status       %s\n", colorize(useColor, daemonColor, func() string {
+		if daemonRunning {
+			return "running ●"
+		}
+		return "not running"
+	}()))
+	if queueFailed > 0 {
+		fmt.Printf("  Queue        %d pending, %d done, %d %s\n", queuePending, queueDone, queueFailed, colorize(useColor, colorRed, "failed"))
+	} else {
+		fmt.Printf("  Queue        %d pending, %d done, %d failed\n", queuePending, queueDone, queueFailed)
+	}
 	if pendingEntries > 0 {
 		fmt.Printf("  Review       %d pending entries\n", pendingEntries)
 	}

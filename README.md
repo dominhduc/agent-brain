@@ -73,7 +73,7 @@ AI coding agents are brilliant — but they **forget everything** between sessio
 | No institutional memory across sessions | Knowledge compounds and grows smarter |
 | Agent makes the same mistakes repeatedly | Past gotchas are flagged before they happen again |
 
-**v1.1.1** adds skill update confirmation prompt, aligned help banner, and Makefile ldflags version injection. Fixes from v1.1.0: consolidated 8 duplicate packages (22→14), ~1,800 lines of redundant code removed, behavior/skill tests added, documentation bugs fixed. All tests pass with race detector.
+**v1.2.0** adds clean output formatting with `--compact`, `--message-only`, and structured JSON modes; tiered `brain get all` view; search results grouped by topic; TTY-aware color in status. Fixes from v1.1.1: strength score legend, stripped markdown from display, AI-agent-friendly JSON output. All tests pass with race detector.
 
 ---
 
@@ -176,15 +176,24 @@ Creates `.brain/` directory, `AGENTS.md` (agent instructions), compatibility wra
 
 #### `brain get <topic>`
 
-Read accumulated knowledge. Entries show a strength indicator (`●0.82`) based on recency and usage.
+Read accumulated knowledge. Entries show a strength indicator (`1.00`) based on recency and usage.
 
 ```bash
 brain get gotchas                          # See known pitfalls
 brain get patterns                         # See discovered conventions
-brain get all                              # Load everything
+brain get all                              # Tiered view: overview + recent + top
+brain get all --full                       # Complete dump (all entries)
 brain get all --focus "infrastructure"     # Filter by topic
-brain get gotchas --json                   # Machine-readable output
+brain get gotchas --compact                # One line per entry, no blank lines
+brain get gotchas --message-only           # Pure message text (no metadata)
+brain get gotchas --json                   # Structured JSON output
 ```
+
+**Output modes:**
+- **Default:** Full entries with timestamps and strength scores
+- **`--compact`:** One line per entry with relative timestamps (e.g., `Apr 26`)
+- **`--message-only`:** Just the message text — ideal for piping to AI agents
+- **`--json`:** Structured format `{topic, entry_count, entries: [{timestamp, message}]}`
 
 **Topics:** `memory`, `gotchas`, `patterns`, `decisions`, `architecture`, `all`
 
@@ -192,7 +201,7 @@ Retrieval automatically strengthens memories (extends their half-life).
 
 #### `brain search <query>`
 
-Search across all knowledge files.
+Search across all knowledge files. Results are grouped by topic with markdown stripped.
 
 ```bash
 brain search "auth"
@@ -376,17 +385,26 @@ brain config setup                        # Interactive setup wizard
 
 #### `brain status [--json]`
 
-Show knowledge hub statistics.
+Show knowledge hub statistics with TTY-aware color indicators.
 
 ```
-Knowledge Hub Status
-====================
-MEMORY.md:       45 lines (OK, under 200)
-Topic files:     4 files
-Session files:   12 sessions
-Total size:      23 KB
-Queue depth:     0 pending, 47 done
-Pending entries: 2 (run 'brain review' to approve)
+brain v1.2.0  linux/amd64  abc1234
+
+Hub
+  .brain/      found ✓
+  Topics       5 files (63 KB)
+  Sessions     10
+  MEMORY.md    43 lines (OK)
+
+Config
+  Provider     openrouter
+  Model        qwen/qwen3.5-9b
+  API Key      configured
+  Profile      agent
+
+Daemon
+  Status       running ●
+  Queue        0 pending, 90 done, 0 failed
 ```
 
 ---

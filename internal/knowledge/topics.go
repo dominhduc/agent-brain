@@ -154,6 +154,42 @@ type TopicSummary struct {
 	HasDuplicates bool   `json:"has_duplicates"`
 }
 
+type TopicEntry struct {
+	Timestamp string `json:"timestamp"`
+	Message   string `json:"message"`
+}
+
+func GetTopicEntries(name string) ([]TopicEntry, error) {
+	path, err := TopicFilePath(name)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read %s: %w", filepath.Base(path), err)
+	}
+
+	content := string(data)
+	var entries []TopicEntry
+	for _, line := range strings.Split(content, "\n") {
+		if strings.HasPrefix(line, "### [") {
+			endIdx := strings.Index(line, "] ")
+			if endIdx > 0 {
+				timestamp := line[5:endIdx]
+				message := strings.TrimSpace(line[endIdx+2:])
+				if message != "" {
+					entries = append(entries, TopicEntry{
+						Timestamp: timestamp,
+						Message:   message,
+					})
+				}
+			}
+		}
+	}
+	return entries, nil
+}
+
 func (h *Hub) GetSummary(name string) (TopicSummary, error) {
 	path, err := h.topicFilePath(name)
 	if err != nil {
