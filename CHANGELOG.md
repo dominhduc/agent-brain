@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.1.1] - 2026-04-14
+
+### Added
+- `brain skill update` now prompts for confirmation before overwriting modified skill files, listing which files have local changes
+
+### Changed
+- Help banner uses `fmt.Printf` with `%-64s` format for proper alignment, truncates long version strings to 64 chars
+- Makefile now injects `version`, `commit`, and `date` via `-ldflags` using `git describe --tags` for automatic versioning
+
 ## [v1.1.0] - 2026-04-14
 
 ### Changed

@@ -73,7 +73,7 @@ AI coding agents are brilliant — but they **forget everything** between sessio
 | No institutional memory across sessions | Knowledge compounds and grows smarter |
 | Agent makes the same mistakes repeatedly | Past gotchas are flagged before they happen again |
 
-**v1.1.0** consolidates the internal architecture — 8 duplicate packages eliminated, 22→14 internal packages, ~1,800 lines of redundant code removed. Behavior tracking tests and skill install tests added. Documentation bugs fixed (prune config, skill template inaccuracies, OTel instructions). All tests pass with race detector.
+**v1.1.1** adds skill update confirmation prompt, aligned help banner, and Makefile ldflags version injection. Fixes from v1.1.0: consolidated 8 duplicate packages (22→14), ~1,800 lines of redundant code removed, behavior/skill tests added, documentation bugs fixed. All tests pass with race detector.
 
 ---
 
