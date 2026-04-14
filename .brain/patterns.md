@@ -173,7 +173,6 @@
 ### [2026-04-06 11:46:28] Add command now deduplicates entries based on normalized message content
 
 
-### [2026-04-06 11:46:28] Version variable consistent with changelog release version.
 
 
 ### [2026-04-06 11:46:28] New CLI flags support JSON and compact summary output.
@@ -202,7 +201,6 @@
 
 
 
-### [2026-04-06 13:43:38] Auto-accept flag replaces interactive TUI in CI/automated workflows
 
 
 ### [2026-04-06 13:43:38] Content deduplication via map[string]bool tracking before committing to set
@@ -348,49 +346,37 @@
 ### [2026-04-09 14:56:21] Entry archival follows a specific directory structure with date-based filenames.
 
 
-### [2026-04-12 06:20:41] Modular CLI structure splits monolithic main.go into per-command files
 
 
-### [2026-04-12 06:20:41] Queue-based daemon processing includes backoff retry logic and error reason tracking
 
 
-### [2026-04-12 06:20:41] LLM prompts utilize explicit JSON schema for better structured output compliance
 
 
 ### [2026-04-12 06:20:41] Platform-specific terminal capability checks prevent issues with raw mode usage
 
 
-### [2026-04-12 06:20:41] Entry deduplication via normalizeEntry() with whitespace collapsing
 
 
-### [2026-04-12 06:20:41] Machine-reasonable code: pure functions with explicit data flow and side effects at boundaries
 
 
-### [2026-04-12 06:20:41] SUPER principles: Side Effects at Edge, Uncoupled Logic, Pure Functions, Explicit Data Flow, Replaceable by Value
 
 
-### [2026-04-12 06:20:41] SPIRALS loop: Sense, Plan, Inquire, Refine, Act, Learn, Scan for agent collaboration
 
 
-### [2026-04-12 06:20:41] UI failure triggers fallback to line-buffered mode
 
 
-### [2026-04-12 06:20:41] Auto-accept flag replaces interactive TUI in CI/automated workflows
 
 
 ### [2026-04-12 06:20:41] Use standard library packages like golang.org/x/term instead of custom syscall wrappers
 
 
-### [2026-04-12 06:20:41] Version bump in code matches entry in CHANGELOG.md
 
 
 ### [2026-04-12 06:20:41] Limited external dependencies to Go standard library (golang.org/x/term)
 
 
-### [2026-04-12 06:20:41] Terminal state managed within internal/tui module via stdin file descriptors
 
 
-### [2026-04-12 06:20:41] Line-buffered fallback is now default for non-TTY sessions
 
 
 ### [2026-04-12 06:20:41] TUI gracefully handles EOF - stdin closed during review exits cleanly
@@ -411,13 +397,11 @@
 ### [2026-04-14 01:32:14] Self-learning uses behavior signals (.brain/behavior/signals.json) + index strength data to generate skill adaptations via brain skill reflect
 
 
-### [2026-04-14 06:46:30] Modular CLI structure splits monolithic main.go into per-command files
 
 
 ### [2026-04-14 06:46:30] Queue-based daemon processing includes backoff retry logic
 
 
-### [2026-04-14 06:46:30] Entry deduplication via normalizeEntry() with whitespace collapsing
 
 
 ### [2026-04-14 06:46:30] SUPER principles: Side Effects at Edge, Uncoupled Logic, Pure Functions, Explicit Data Flow
@@ -426,7 +410,6 @@
 ### [2026-04-14 06:46:30] SPIRALS loop for agent collaboration: Sense, Plan, Inquire, Refine, Act, Learn, Scan
 
 
-### [2026-04-14 06:46:30] Line-buffered fallback default for non-TTY sessions
 
 
 ### [2026-04-14 06:46:30] Version bump in code matches CHANGELOG.md
@@ -450,46 +433,37 @@
 ### [2026-04-14 06:46:30] Config resolves to project-local if exists, falling back to global.
 
 
-### [2026-04-14 06:46:30] Queue-based daemon processing includes backoff retry logic and error reason tracking
 
 
 ### [2026-04-14 06:46:30] Limited external dependencies to Go standard library
 
 
-### [2026-04-14 06:46:30] Use standard library packages like golang.org/x/term instead of custom syscall wrappers
 
 
 ### [2026-04-14 06:46:30] Layered config system with global and project-specific sources
 
 
-### [2026-04-14 06:46:30] TUI gracefully handles EOF - stdin closed during review exits cleanly
 
 
 ### [2026-04-14 06:46:30] Lazily batch config resolution with separate read/write paths
 
 
-### [2026-04-14 06:46:30] TopicSummary struct separates metadata from actual content
 
 
-### [2026-04-14 06:46:30] UI failure triggers fallback to line-buffered mode
 
 
-### [2026-04-14 06:46:30] Version bump in code matches entry in CHANGELOG.md
 
 
-### [2026-04-14 06:46:30] Auto-accept flag replaces interactive TUI in CI/automated workflows
 
 
 ### [2026-04-14 06:46:30] Layered configuration system with project-local and global sources
 
 
-### [2026-04-14 06:46:30] Modular CLI structure with per-command files like cmd_config.go and cmd_init.go
 
 
 ### [2026-04-14 06:46:30] Queue-based daemon processing with backoff retry logic and error tracking
 
 
-### [2026-04-14 06:46:30] Content deduplication via map[string]bool tracking across topics
 
 
 ### [2026-04-14 06:46:30] Two-tier config system with project-first precedence over global config
@@ -516,11 +490,13 @@
 ### [2026-04-14 06:46:30] Unified knowledge Hub consolidates state operations to eliminate deep dependencies
 
 
-### [2026-04-14 06:46:30] Queue-based daemon processing includes backoff retry logic and error tracking
 
 
 ### [2026-04-14 06:46:30] Self-learning generates skill adaptations from behavior signals and usage data.
 
 
 ### [2026-04-14 06:46:30] Unified knowledge.Hub acts as the single core for all state operations.
+
+
+### [2026-04-14 13:05:03] v1.1.0 consolidated 8 duplicate packages into unified knowledge/ and session/ packages
 

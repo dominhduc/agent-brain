@@ -99,13 +99,32 @@ func cmdSkillDiff() {
 }
 
 func cmdSkillUpdate(cwd string) {
-	if skill.HasUncommittedChanges(cwd) {
-		fmt.Println("Warning: You have uncommitted changes to skill files.")
-		fmt.Println("Run 'git diff' to review, or 'git stash' to save your changes.")
+	infos := skill.ListInstalled(cwd)
+	var modified []skill.SkillInfo
+	for _, info := range infos {
+		if info.Installed && info.Modified {
+			modified = append(modified, info)
+		}
+	}
+
+	if len(modified) > 0 {
+		fmt.Println("The following skill files have local modifications:")
+		for _, m := range modified {
+			label := "Project"
+			if m.Global {
+				label = "Global"
+			}
+			fmt.Printf("  [%s] %s\n", label, m.Path)
+		}
 		fmt.Println()
+		fmt.Println("Updating will overwrite local changes (adaptations inside markers are preserved).")
+
+		if skill.HasUncommittedChanges(cwd) {
+			fmt.Println("Warning: You also have uncommitted git changes to skill files.")
+		}
 
 		reader := bufio.NewReader(os.Stdin)
-		fmt.Print("Continue anyway? [y/N] ")
+		fmt.Print("Continue? [y/N] ")
 		choice, _ := reader.ReadString('\n')
 		choice = strings.TrimSpace(choice)
 		if choice != "y" && choice != "Y" {
@@ -120,7 +139,6 @@ func cmdSkillUpdate(cwd string) {
 	}
 
 	fmt.Println("Skill files updated successfully.")
-	fmt.Println("Note: Your changes have been overwritten. Use 'git diff' to see what changed.")
 }
 
 func cmdSkillInstall(cwd string, global bool) {

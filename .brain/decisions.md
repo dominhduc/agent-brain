@@ -123,7 +123,6 @@
 
 
 
-### [2026-04-06 13:43:38] CLI command logic isolated in cmd/brain/cmd.go
 
 
 ### [2026-04-06 13:43:38] Knowledge base uses separate MEMORY.md and PATTERNS.md files within .brain/
@@ -142,7 +141,6 @@
 
 
 
-### [2026-04-06 13:43:38] Version variable consistent with CHANGELOG release version
 
 
 ### [2026-04-06 13:43:38] Architecture decisions documented in dedicated decisions.md file
@@ -300,28 +298,21 @@
 ### [2026-04-12 06:20:41] Unified API key configuration renamed from nested structure to flat api-key
 
 
-### [2026-04-12 06:20:41] Named custom providers replaced single custom option to improve configurability
 
 
-### [2026-04-12 06:20:41] Project-specific daemon service names generated via unique hash lookup
 
 
 ### [2026-04-12 06:20:41] Implemented strictly limits external dependencies to Go standard library only
 
 
-### [2026-04-12 06:20:41] TopicSummary struct separates metadata from actual content
 
 
-### [2026-04-12 06:20:41] Duplicate detection adds entries to a set before committing to prevent redundancy
 
 
-### [2026-04-12 06:20:41] TUI logic differentiates initial vs mid-loop stdin closure
 
 
-### [2026-04-12 06:20:41] Review command handles TTY/auto-accept affinity logic
 
 
-### [2026-04-12 06:20:41] Line-buffered fallback is now default for non-TTY sessions
 
 
 ### [2026-04-12 06:20:41] Adopted golang.org/x/term for reliable TTY detection
@@ -336,7 +327,6 @@
 ### [2026-04-12 06:20:41] Config values can be mixed - some projects with global config, others with project-specific
 
 
-### [2026-04-12 06:20:41] Test comments removed from binary source code
 
 
 ### [2026-04-12 06:20:41] Auto-accepting pending entries to avoid treating silent closure as fatal
@@ -345,10 +335,8 @@
 ### [2026-04-12 06:20:41] Adopted golang.org/x/term for reliable TTY detection instead of custom wrappers
 
 
-### [2026-04-12 06:20:41] Config setup wizard prioritizes provider selection over base URL setup
 
 
-### [2026-04-12 06:20:41] Version variable consistent with CHANGELOG release version
 
 
 ### [2026-04-12 06:20:41] Prior behavior of --tty flag forcing TUI is removed on non-terminals
@@ -363,7 +351,6 @@
 ### [2026-04-12 06:20:41] Config source indication added to CLI output for clarity
 
 
-### [2026-04-12 06:20:41] Added --summary flag for compact view with entry counts and duplicate warnings
 
 
 ### [2026-04-12 06:20:41] Coqustruments cannot be overridden by ldflags — use var instead
@@ -381,7 +368,6 @@
 ### [2026-04-14 06:46:30] Dual-config system: global (~/.config/brain/) or project-specific (.brain/) configuration
 
 
-### [2026-04-14 06:46:30] Project-specific daemon service names isolated per project hash
 
 
 ### [2026-04-14 06:46:30] Auto-accept flag replaces interactive TUI in CI/automated workflows
@@ -396,10 +382,8 @@
 ### [2026-04-14 06:46:30] Config resolves project-local first, then falls back to global
 
 
-### [2026-04-14 06:46:30] Implemented gitleaks allowlist for scanner/config test files
 
 
-### [2026-04-14 06:46:30] Lazy config loading with resolveConfig() and resolveConfigForWrite() patterns
 
 
 ### [2026-04-14 06:46:30] Config scope is resolved during initialize: global shared or project-specific isolated.
@@ -420,28 +404,21 @@
 ### [2026-04-14 06:46:30] Auto-accepting pending entries to avoid treating silent closure as fatal.
 
 
-### [2026-04-14 06:46:30] Config scope choice: global shared or project-specific isolated in .brain/config.yaml
 
 
-### [2026-04-14 06:46:30] Automated config scope choice during brain init - global vs project
 
 
-### [2026-04-14 06:46:30] Line-buffered fallback is now default for non-TTY sessions
 
 
 ### [2026-04-14 06:46:30] Train model logic: prefer auto-accepting pending entries to avoid treating silent closure as fatal
 
 
-### [2026-04-14 06:46:30] Unified API key configuration renamed from nested structure to flat api-key
 
 
-### [2026-04-14 06:46:30] Version variable consistent with CHANGELOG release version
 
 
-### [2026-04-14 06:46:30] Static TTY state checked at startup and maintained via stdin file descriptors
 
 
-### [2026-04-14 06:46:30] Adopted auto-accepting pending entries to avoid treating silent closure as fatal
 
 
 ### [2026-04-14 06:46:30] Preferred using golang.org/x/term for reliable TTY detection
@@ -453,7 +430,6 @@
 ### [2026-04-14 06:46:30] Internal config layer resolves config sources and handles reading/writing appropriately
 
 
-### [2026-04-14 06:46:30] Project config takes precedence over global config when both exist
 
 
 ### [2026-04-14 06:46:30] Brain initialize checks for project config first before global config
@@ -468,7 +444,6 @@
 ### [2026-04-14 06:46:30] Auto-accepting pending entries prevents treating silent closure as fatal in automated workflows
 
 
-### [2026-04-14 06:46:30] Terminal state managed within internal/tui module using stdin file descriptors
 
 
 ### [2026-04-14 06:46:30] Version variable consistent with CHANGELOG release version for proper tracking

@@ -119,16 +119,15 @@ func printUsage() {
 	if v == "" {
 		v = "dev"
 	}
-	padding := 19 - len(v)
-	if padding < 0 {
-		padding = 0
+	tagline := fmt.Sprintf("agent-brain — Persistent Memory for AI Coding Agents (%s)", v)
+	if len(tagline) > 64 {
+		tagline = tagline[:61] + "..."
 	}
-	fmt.Printf(`+--------------------------------------------------------------+
-|  agent-brain  --  Persistent Memory for AI Coding Agents  (%s)%s|
-|  https://github.com/dominhduc/agent-brain                        |
-+--------------------------------------------------------------+
-
-WHAT IS AGENT-BRAIN?
+	fmt.Printf("+------------------------------------------------------------------+\n")
+	fmt.Printf("| %-64s |\n", tagline)
+	fmt.Printf("|  https://github.com/dominhduc/agent-brain                        |\n")
+	fmt.Printf("+------------------------------------------------------------------+\n\n")
+	fmt.Print(`WHAT IS AGENT-BRAIN?
 
   agent-brain gives your AI coding agent (Claude Code, OpenCode, Cursor, etc.)
   a persistent memory. It creates a .brain/ knowledge hub that:
@@ -225,16 +224,5 @@ EXAMPLES
   brain eval --good
   brain skill diff
   brain skill update
-`, v, spaces(padding))
-}
-
-func spaces(n int) string {
-	if n < 0 {
-		n = 0
-	}
-	s := make([]byte, n)
-	for i := range s {
-		s[i] = ' '
-	}
-	return string(s)
+`)
 }

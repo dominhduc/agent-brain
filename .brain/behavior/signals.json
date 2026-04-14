@@ -1,14 +1,29 @@
 {
   "command_counts": {
-    "get": 2
+    "add": 1,
+    "search": 1
   },
-  "topic_access": {},
-  "search_queries": [],
+  "topic_access": {
+    "--summary": {
+      "retrievals": 1,
+      "last_access": "2026-04-14T13:04:52.97546269+07:00"
+    },
+    "patterns": {
+      "retrievals": 1,
+      "last_access": "2026-04-14T13:05:03.774611895+07:00"
+    }
+  },
+  "search_queries": [
+    {
+      "query": "package",
+      "count": 1
+    }
+  ],
   "eval_outcomes": {
     "good": 0,
     "bad": 0,
     "total_sessions": 0,
     "last_eval": "0001-01-01T00:00:00Z"
   },
-  "last_updated": "2026-04-14T08:19:46.209186834+07:00"
+  "last_updated": "2026-04-14T13:05:03.774612069+07:00"
 }

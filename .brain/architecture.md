@@ -250,16 +250,13 @@
 ### [2026-04-12 06:20:41] Brain architecture uses stratified knowledge hub with separate topic files under .brain/
 
 
-### [2026-04-12 06:20:41] Environment isolation uses XDG_CONFIG_HOME to prevent test pollution
 
 
-### [2026-04-12 06:20:41] Content deduplication via map[string]bool tracking
 
 
 ### [2026-04-12 06:20:41] CLI command logic isolated in cmd/brain/cmd.go
 
 
-### [2026-04-12 06:20:41] Human-in-the-loop review integrates directly with git hooks
 
 
 ### [2026-04-12 06:20:41] Config scope system allows global (~/.config/brain/) or project-specific (.brain/config.yaml) configuration
@@ -307,7 +304,6 @@
 ### [2026-04-12 06:20:41] Version variable consistent with CHANGELOG release version
 
 
-### [2026-04-12 06:20:41] TUI logic differentiates initial vs mid-loop stdin closure
 
 
 ### [2026-04-12 06:20:41] Config dual-source resolver checks project first, falls back to global
@@ -316,13 +312,11 @@
 ### [2026-04-12 06:20:41] Knowledge hub uses separate topic files under .brain/
 
 
-### [2026-04-12 06:20:41] Multi-project daemon support isolates service names per project hash
 
 
 ### [2026-04-12 06:20:41] Stratified knowledge hub with separate topic files
 
 
-### [2026-04-12 06:20:41] Terminal state managed within internal/tui module via stdin file descriptors
 
 
 ### [2026-04-12 06:20:41] Embedded skill templates managed via fs/embed for version control
@@ -337,16 +331,13 @@
 ### [2026-04-14 01:32:14] knowledge.Hub is the unified core — all state operations go through it. New packages: knowledge/ (topics+index+pending+wm+retrieval+behavior+adapt), session/ (handoffs+git stats). Daemon now has local analyze.go + secrets.go instead of importing external packages.
 
 
-### [2026-04-14 06:46:30] Stratified knowledge hub with separate topic files under .brain/
 
 
 ### [2026-04-14 06:46:30] Two-tier config system with dual-source resolver
 
 
-### [2026-04-14 06:46:30] Multi-project daemon support with project isolation
 
 
-### [2026-04-14 06:46:30] Terminal state managed within internal/tui module
 
 
 ### [2026-04-14 06:46:30] Agent skill files installed to .claude/, .opencode/, .agents/ directories
@@ -376,25 +367,18 @@
 ### [2026-04-14 06:46:30] CLI command logic isolated in cmd/brain/cmd.go with per-command files.
 
 
-### [2026-04-14 06:46:30] Environment isolation uses XDG_CONFIG_HOME to prevent test pollution
 
 
-### [2026-04-14 06:46:30] Multi-project daemon support isolates service names per project hash
 
 
-### [2026-04-14 06:46:30] Terminal state managed within internal/tui module via stdin file descriptors
 
 
-### [2026-04-14 06:46:30] Content deduplication via map[string]bool tracking across topics
 
 
-### [2026-04-14 06:46:30] CLI command logic isolated in cmd/brain/cmd.go with per-command files
 
 
-### [2026-04-14 06:46:30] Two-tier config system with global (~/.config/brain/) and project-specific (.brain/) sources
 
 
-### [2026-04-14 06:46:30] Embedded skill templates managed via fs/embed for version control
 
 
 ### [2026-04-14 06:46:30] Two-tier config system with global and project-specific sources
@@ -412,13 +396,11 @@
 ### [2026-04-14 06:46:30] Git-integrated knowledge persistence through session captures
 
 
-### [2026-04-14 06:46:30] Brain architecture uses stratified knowledge hub with separate topic files under .brain/
 
 
 ### [2026-04-14 06:46:30] Project-specific daemon service names isolated per project hash for multi-project support
 
 
-### [2026-04-14 06:46:30] Internal config layer resolves config sources and handles reading/writing to appropriate locations
 
 
 ### [2026-04-14 06:46:30] New internal/daemon package replaces internal/analyzer for code analysis functionality
