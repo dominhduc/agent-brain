@@ -63,3 +63,35 @@ func (h *Hub) ClearRetrievals() error {
 	}
 	return nil
 }
+
+func RecordRetrieval(brainDir string, keys []string) error {
+	h, err := Open(brainDir)
+	if err != nil {
+		return err
+	}
+	return h.RecordRetrieval(keys)
+}
+
+func LoadRetrievals(brainDir string) ([]string, error) {
+	path := filepath.Join(brainDir, ".session", "retrieved.json")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("reading session: %w", err)
+	}
+	var sr SessionRetrieved
+	if err := json.Unmarshal(data, &sr); err != nil {
+		return nil, nil
+	}
+	return sr.Keys, nil
+}
+
+func ClearRetrievals(brainDir string) error {
+	path := filepath.Join(brainDir, ".session", "retrieved.json")
+	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
+}

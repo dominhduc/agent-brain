@@ -4,8 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/dominhduc/agent-brain/internal/brain"
-	"github.com/dominhduc/agent-brain/internal/wm"
+	"github.com/dominhduc/agent-brain/internal/knowledge"
 )
 
 func cmdWM() {
@@ -21,7 +20,7 @@ func cmdWM() {
 		os.Exit(1)
 	}
 
-	brainDir, err := brain.FindBrainDir()
+	brainDir, err := knowledge.FindBrainDir()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
@@ -41,13 +40,13 @@ func cmdWM() {
 				fmt.Sscanf(os.Args[i+1], "%f", &importance)
 			}
 		}
-		if err := wm.Push(brainDir, content, importance); err != nil {
+		if err := knowledge.PushWM(brainDir, content, importance); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
 		fmt.Println("Working memory updated.")
 	case "read":
-		entries, err := wm.Read(brainDir)
+		entries, err := knowledge.ReadWM(brainDir)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
@@ -60,13 +59,13 @@ func cmdWM() {
 			fmt.Printf("• %s\n", e.Content)
 		}
 	case "clear":
-		if err := wm.Clear(brainDir); err != nil {
+		if err := knowledge.ClearRetrievals(brainDir); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
 		fmt.Println("Working memory cleared.")
 	case "flush":
-		if err := wm.Flush(brainDir); err != nil {
+		if err := knowledge.ClearWM(brainDir); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}

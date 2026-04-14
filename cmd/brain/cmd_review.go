@@ -9,12 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dominhduc/agent-brain/internal/brain"
+	"github.com/dominhduc/agent-brain/internal/knowledge"
 	"github.com/dominhduc/agent-brain/internal/config"
-	"github.com/dominhduc/agent-brain/internal/index"
 	"github.com/dominhduc/agent-brain/internal/otel"
 	"github.com/dominhduc/agent-brain/internal/profile"
-	"github.com/dominhduc/agent-brain/internal/review"
 	"github.com/dominhduc/agent-brain/internal/tui"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -24,14 +22,14 @@ func cmdReview(allFlag, yesFlag, ttyFlag bool) {
 	ctx, span := otel.StartSpan(ctx, "brain.review")
 	defer otel.EndSpan(span, nil)
 
-	brainDir, err := brain.FindBrainDir()
+	brainDir, err := knowledge.FindBrainDir()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: run 'brain init' first.\n", err)
 		os.Exit(1)
 	}
 
 	pendingDir := filepath.Join(brainDir, "pending")
-	entries, err := review.LoadPendingEntries(pendingDir)
+	entries, err := knowledge.LoadPendingEntries(pendingDir)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading pending entries: %v\n", err)
 		os.Exit(1)
@@ -46,7 +44,7 @@ func cmdReview(allFlag, yesFlag, ttyFlag bool) {
 		}
 		totalImported := 0
 		for topic, path := range topicFiles {
-			count, err := review.TopicEntriesToPending(topic, path, pendingDir)
+			count, err := knowledge.TopicEntriesToPending(topic, path, pendingDir)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Warning: could not import from %s: %v\n", path, err)
 				continue
@@ -56,11 +54,11 @@ func cmdReview(allFlag, yesFlag, ttyFlag bool) {
 		if totalImported > 0 {
 			fmt.Printf("Imported %d existing entries into pending queue.\n", totalImported)
 		}
-		entries, _ = review.LoadPendingEntries(pendingDir)
+		entries, _ = knowledge.LoadPendingEntries(pendingDir)
 	}
 
 	if len(entries) == 0 {
-		fmt.Println("No pending entries to review.")
+		fmt.Println("No pending entries to knowledge.")
 		fmt.Println("What to do: push some commits and let the daemon analyze them.")
 		return
 	}
@@ -81,7 +79,7 @@ func cmdReview(allFlag, yesFlag, ttyFlag bool) {
 	canUseTTY := tui.CanUseRawMode()
 	useTUI := !prof.AutoAccept && !yesFlag && !ttyFlag && canUseTTY
 
-	var accepted []review.PendingEntry
+	var accepted []knowledge.PendingEntry
 	var rejectedIDs []string
 	var mode string
 
@@ -90,7 +88,7 @@ func cmdReview(allFlag, yesFlag, ttyFlag bool) {
 		accepted, rejectedIDs, err = tui.RunReview(entries, prof.Name, os.Stdout)
 		if err != nil {
 			if accepted == nil && rejectedIDs == nil {
-				fmt.Fprintf(os.Stderr, "TUI not available, falling back to line-buffered review.\n\n")
+				fmt.Fprintf(os.Stderr, "TUI not available, falling back to line-buffered knowledge.\n\n")
 				mode = "line_buffered"
 				accepted, rejectedIDs = doLineBufferedReview(ctx, span, entries, prof, pendingDir)
 			} else {
@@ -100,7 +98,7 @@ func cmdReview(allFlag, yesFlag, ttyFlag bool) {
 				return
 			}
 		} else if accepted == nil && rejectedIDs == nil {
-			fmt.Fprintf(os.Stderr, "TUI not available, falling back to line-buffered review.\n\n")
+			fmt.Fprintf(os.Stderr, "TUI not available, falling back to line-buffered knowledge.\n\n")
 			mode = "line_buffered"
 			accepted, rejectedIDs = doLineBufferedReview(ctx, span, entries, prof, pendingDir)
 		} else {
@@ -127,7 +125,7 @@ func cmdReview(allFlag, yesFlag, ttyFlag bool) {
 	)
 }
 
-func doAutoAccept(ctx context.Context, span trace.Span, entries []review.PendingEntry, prof profile.Profile, pendingDir string, nonInteractive bool) {
+func doAutoAccept(ctx context.Context, span trace.Span, entries []knowledge.PendingEntry, prof profile.Profile, pendingDir string, nonInteractive bool) {
 	accepted, rejectedIDs := autoAcceptEntries(entries, prof)
 	writeAccepted(ctx, span, accepted, pendingDir)
 	removeEntries(accepted, rejectedIDs, pendingDir)
@@ -139,11 +137,11 @@ func doAutoAccept(ctx context.Context, span trace.Span, entries []review.Pending
 	fmt.Printf(msg, len(accepted), prof.AutoDedup)
 }
 
-func doInteractiveReview(entries []review.PendingEntry, prof profile.Profile, pendingDir string) {
+func doInteractiveReview(entries []knowledge.PendingEntry, prof profile.Profile, pendingDir string) {
 	accepted, rejectedIDs, err := tui.RunReview(entries, prof.Name, os.Stdout)
 	if err != nil {
 		if accepted == nil && rejectedIDs == nil {
-			fmt.Fprintf(os.Stderr, "TUI not available, falling back to line-buffered review.\n\n")
+			fmt.Fprintf(os.Stderr, "TUI not available, falling back to line-buffered knowledge.\n\n")
 			doLineBufferedReviewFallback(entries, prof, pendingDir)
 			return
 		}
@@ -153,7 +151,7 @@ func doInteractiveReview(entries []review.PendingEntry, prof profile.Profile, pe
 	}
 
 	if accepted == nil && rejectedIDs == nil {
-		fmt.Fprintf(os.Stderr, "TUI not available, falling back to line-buffered review.\n\n")
+		fmt.Fprintf(os.Stderr, "TUI not available, falling back to line-buffered knowledge.\n\n")
 		doLineBufferedReviewFallback(entries, prof, pendingDir)
 		return
 	}
@@ -163,10 +161,10 @@ func doInteractiveReview(entries []review.PendingEntry, prof profile.Profile, pe
 	fmt.Printf("\nApplied %d entries, rejected %d.\n", len(accepted), len(rejectedIDs))
 }
 
-func doLineBufferedReview(ctx context.Context, span trace.Span, entries []review.PendingEntry, prof profile.Profile, pendingDir string) ([]review.PendingEntry, []string) {
+func doLineBufferedReview(ctx context.Context, span trace.Span, entries []knowledge.PendingEntry, prof profile.Profile, pendingDir string) ([]knowledge.PendingEntry, []string) {
 	reader := bufio.NewReader(os.Stdin)
 
-	var accepted []review.PendingEntry
+	var accepted []knowledge.PendingEntry
 	var rejectedIDs []string
 
 	for i, e := range entries {
@@ -211,7 +209,7 @@ func doLineBufferedReview(ctx context.Context, span trace.Span, entries []review
 			accepted = append(accepted, e)
 		}
 
-		otel.RecordEvent(span, "brain.review.entry",
+		otel.RecordEvent(span, "brain.knowledge.entry",
 			otel.BrainEntryID.String(e.ID),
 			otel.BrainEntryTopic.String(e.Topic),
 			otel.BrainEntryDecision.String(decision),
@@ -234,10 +232,10 @@ done:
 	return accepted, rejectedIDs
 }
 
-func doLineBufferedReviewFallback(entries []review.PendingEntry, prof profile.Profile, pendingDir string) {
+func doLineBufferedReviewFallback(entries []knowledge.PendingEntry, prof profile.Profile, pendingDir string) {
 	reader := bufio.NewReader(os.Stdin)
 
-	var accepted []review.PendingEntry
+	var accepted []knowledge.PendingEntry
 	var rejectedIDs []string
 
 	for i, e := range entries {
@@ -293,7 +291,7 @@ done:
 	}
 }
 
-func doAutoAcceptFallback(entries []review.PendingEntry, prof profile.Profile, pendingDir string, nonInteractive bool) {
+func doAutoAcceptFallback(entries []knowledge.PendingEntry, prof profile.Profile, pendingDir string, nonInteractive bool) {
 	accepted, rejectedIDs := autoAcceptEntries(entries, prof)
 	writeAcceptedSimple(accepted, pendingDir)
 	removeEntries(accepted, rejectedIDs, pendingDir)
@@ -305,7 +303,7 @@ func doAutoAcceptFallback(entries []review.PendingEntry, prof profile.Profile, p
 	fmt.Printf(msg, len(accepted), prof.AutoDedup)
 }
 
-func collectIDs(entries []review.PendingEntry) []string {
+func collectIDs(entries []knowledge.PendingEntry) []string {
 	var ids []string
 	for _, e := range entries {
 		ids = append(ids, e.ID)
@@ -322,12 +320,12 @@ func truncateForPrompt(s string, maxLen int) string {
 	return firstLine
 }
 
-func autoAcceptEntries(entries []review.PendingEntry, prof profile.Profile) ([]review.PendingEntry, []string) {
+func autoAcceptEntries(entries []knowledge.PendingEntry, prof profile.Profile) ([]knowledge.PendingEntry, []string) {
 	accepted := entries
 	var rejectedIDs []string
 	if prof.AutoDedup {
 		seen := make(map[string]bool)
-		var unique []review.PendingEntry
+		var unique []knowledge.PendingEntry
 		for _, e := range entries {
 			fp := e.Fingerprint()
 			if seen[fp] {
@@ -342,17 +340,17 @@ func autoAcceptEntries(entries []review.PendingEntry, prof profile.Profile) ([]r
 	return accepted, rejectedIDs
 }
 
-func writeAccepted(ctx context.Context, span trace.Span, accepted []review.PendingEntry, pendingDir string) {
-	ctx, writeSpan := otel.StartSpan(ctx, "brain.review.write")
+func writeAccepted(ctx context.Context, span trace.Span, accepted []knowledge.PendingEntry, pendingDir string) {
+	ctx, writeSpan := otel.StartSpan(ctx, "brain.knowledge.write")
 	defer otel.EndSpan(writeSpan, nil)
 
 	timestamp := time.Now().Format("2006-01-02 15:04:05")
-	brainDir, _ := brain.FindBrainDir()
-	idx, _ := index.Load(brainDir)
+	brainDir, _ := knowledge.FindBrainDir()
+	idx, _ := knowledge.LoadIndex(brainDir)
 	now := time.Now()
 
 	for _, e := range accepted {
-		path, err := brain.TopicFilePath(e.Topic)
+		path, err := knowledge.TopicFilePath(e.Topic)
 		if err != nil {
 			continue
 		}
@@ -363,7 +361,7 @@ func writeAccepted(ctx context.Context, span trace.Span, accepted []review.Pendi
 		fmt.Fprintf(f, "\n### [%s] %s\n\n", timestamp, e.Content)
 		f.Close()
 
-		idx.Set(e.Topic, timestamp, index.IndexEntry{
+		idx.Set(e.Topic, timestamp, knowledge.IndexEntry{
 			Strength:       1.0,
 			RetrievalCount: 0,
 			LastRetrieved:  now,
@@ -372,7 +370,7 @@ func writeAccepted(ctx context.Context, span trace.Span, accepted []review.Pendi
 			Topics:         e.Topics,
 		})
 
-		otel.RecordEvent(writeSpan, "brain.review.entry_written",
+		otel.RecordEvent(writeSpan, "brain.knowledge.entry_written",
 			otel.BrainEntryID.String(e.ID),
 			otel.BrainEntryTopic.String(e.Topic),
 		)
@@ -384,14 +382,14 @@ func writeAccepted(ctx context.Context, span trace.Span, accepted []review.Pendi
 	)
 }
 
-func writeAcceptedSimple(accepted []review.PendingEntry, pendingDir string) {
+func writeAcceptedSimple(accepted []knowledge.PendingEntry, pendingDir string) {
 	timestamp := time.Now().Format("2006-01-02 15:04:05")
-	brainDir, _ := brain.FindBrainDir()
-	idx, _ := index.Load(brainDir)
+	brainDir, _ := knowledge.FindBrainDir()
+	idx, _ := knowledge.LoadIndex(brainDir)
 	now := time.Now()
 
 	for _, e := range accepted {
-		path, err := brain.TopicFilePath(e.Topic)
+		path, err := knowledge.TopicFilePath(e.Topic)
 		if err != nil {
 			continue
 		}
@@ -402,7 +400,7 @@ func writeAcceptedSimple(accepted []review.PendingEntry, pendingDir string) {
 		fmt.Fprintf(f, "\n### [%s] %s\n\n", timestamp, e.Content)
 		f.Close()
 
-		idx.Set(e.Topic, timestamp, index.IndexEntry{
+		idx.Set(e.Topic, timestamp, knowledge.IndexEntry{
 			Strength:       1.0,
 			RetrievalCount: 0,
 			LastRetrieved:  now,
@@ -414,11 +412,11 @@ func writeAcceptedSimple(accepted []review.PendingEntry, pendingDir string) {
 	idx.Save(brainDir)
 }
 
-func removeEntries(accepted []review.PendingEntry, rejectedIDs []string, pendingDir string) {
+func removeEntries(accepted []knowledge.PendingEntry, rejectedIDs []string, pendingDir string) {
 	for _, id := range rejectedIDs {
-		review.RemovePendingEntry(pendingDir, id)
+		knowledge.RemovePendingEntry(pendingDir, id)
 	}
 	for _, e := range accepted {
-		review.RemovePendingEntry(pendingDir, e.ID)
+		knowledge.RemovePendingEntry(pendingDir, e.ID)
 	}
 }

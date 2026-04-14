@@ -8,12 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dominhduc/agent-brain/internal/brain"
-	"github.com/dominhduc/agent-brain/internal/handoff"
-	"github.com/dominhduc/agent-brain/internal/index"
 	"github.com/dominhduc/agent-brain/internal/knowledge"
-	"github.com/dominhduc/agent-brain/internal/outcome"
-	"github.com/dominhduc/agent-brain/internal/wm"
+	"github.com/dominhduc/agent-brain/internal/session"
 )
 
 func cmdEval() {
@@ -26,13 +22,13 @@ func cmdEval() {
 		os.Exit(1)
 	}
 
-	if !brain.IsGitRepo(cwd) {
+	if !knowledge.IsGitRepo(cwd) {
 		fmt.Fprintln(os.Stderr, "Error: this doesn't appear to be a git repository.")
 		fmt.Fprintln(os.Stderr, "What to do: run 'git init' first.")
 		os.Exit(1)
 	}
 
-	brainDir, err := brain.FindBrainDir()
+	brainDir, err := knowledge.FindBrainDir()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: run 'brain init' first.\n", err)
 		os.Exit(1)
@@ -104,7 +100,7 @@ func cmdEval() {
 	summary := fmt.Sprintf("Modified %d files (%d created, %d modified, %d deleted)", len(created)+len(modified)+len(deleted), len(created), len(modified), len(deleted))
 	next := "Review session evaluation and continue work."
 
-	h, err := handoff.Create(brainDir, summary, next, timestamp, topic)
+	h, err := session.CreateHandoff(brainDir, summary, next, timestamp, topic)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Warning: could not create handoff: %v\n", err)
 	} else {
@@ -112,8 +108,8 @@ func cmdEval() {
 	}
 
 	if good || bad {
-		keys, _ := outcome.LoadKeys(brainDir)
-		idx, err := index.Load(brainDir)
+		keys, _ := knowledge.LoadRetrievals(brainDir)
+		idx, err := knowledge.LoadIndex(brainDir)
 		if err == nil {
 			var adjusted int
 			for _, key := range keys {
@@ -132,7 +128,7 @@ func cmdEval() {
 			if err := idx.Save(brainDir); err == nil {
 				fmt.Printf("Applied %s outcome to %d entries\n", map[bool]string{true: "positive", false: "negative"}[good], adjusted)
 			}
-			outcome.Clear(brainDir)
+			knowledge.ClearRetrievals(brainDir)
 		}
 	}
 
@@ -143,7 +139,7 @@ func cmdEval() {
 		}
 	}
 
-	if err := wm.Clear(brainDir); err != nil {
+	if err := knowledge.ClearRetrievals(brainDir); err != nil {
 		fmt.Fprintf(os.Stderr, "Warning: could not clear working memory: %v\n", err)
 	} else {
 		fmt.Println("Working memory flushed.")
@@ -170,7 +166,7 @@ func formatList(items []string) string {
 }
 
 func detectTopicFromDiff(diff string) string {
-	topics := index.DetectTopics(diff)
+	topics := knowledge.DetectTopics(diff)
 	if len(topics) > 0 {
 		return topics[0]
 	}

@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/dominhduc/agent-brain/internal/brain"
+	"github.com/dominhduc/agent-brain/internal/knowledge"
 	"github.com/dominhduc/agent-brain/internal/config"
 	"github.com/dominhduc/agent-brain/internal/service"
 )
@@ -66,7 +66,7 @@ func checkGit() (string, bool, string) {
 
 func checkBrainDir() (string, bool, string) {
 	cwd, _ := os.Getwd()
-	brainDir, err := brain.FindBrainDir()
+	brainDir, err := knowledge.FindBrainDir()
 	if err != nil {
 		return "Project .brain/", false, fmt.Sprintf("not found (cwd: %s)", cwd)
 	}
@@ -96,7 +96,7 @@ func checkPreflight() (string, bool, string) {
 }
 
 func checkDaemon() (string, bool, string) {
-	brainDir, err := brain.FindBrainDir()
+	brainDir, err := knowledge.FindBrainDir()
 	if err != nil {
 		return "Daemon", false, "no project .brain/ found"
 	}

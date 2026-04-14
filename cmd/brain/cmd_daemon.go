@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dominhduc/agent-brain/internal/brain"
+	"github.com/dominhduc/agent-brain/internal/knowledge"
 	"github.com/dominhduc/agent-brain/internal/config"
 	"github.com/dominhduc/agent-brain/internal/daemon"
 	"github.com/dominhduc/agent-brain/internal/service"
@@ -51,7 +51,7 @@ func cmdDaemonStart() {
 		execPath = "brain"
 	}
 
-	brainDir, err := brain.FindBrainDir()
+	brainDir, err := knowledge.FindBrainDir()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
@@ -67,7 +67,7 @@ func cmdDaemonStart() {
 }
 
 func cmdDaemonStop() {
-	brainDir, err := brain.FindBrainDir()
+	brainDir, err := knowledge.FindBrainDir()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
@@ -89,7 +89,7 @@ func cmdDaemonRestart() {
 }
 
 func cmdDaemonStatus() {
-	brainDir, err := brain.FindBrainDir()
+	brainDir, err := knowledge.FindBrainDir()
 	if err != nil {
 		fmt.Println("Daemon Status")
 		fmt.Println("=============")
@@ -137,7 +137,7 @@ func cmdDaemonStatus() {
 }
 
 func cmdDaemonFailed() {
-	brainDir, err := brain.FindBrainDir()
+	brainDir, err := knowledge.FindBrainDir()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: run 'brain init' first.\n", err)
 		os.Exit(1)
@@ -184,7 +184,7 @@ func cmdDaemonFailed() {
 }
 
 func cmdDaemonRetry() {
-	brainDir, err := brain.FindBrainDir()
+	brainDir, err := knowledge.FindBrainDir()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: run 'brain init' first.\n", err)
 		os.Exit(1)
@@ -251,7 +251,7 @@ func lockFilePath() (string, error) {
 		return "", err
 	}
 
-	brainDir, err := brain.FindBrainDir()
+	brainDir, err := knowledge.FindBrainDir()
 	if err == nil {
 		workDir := filepath.Dir(brainDir)
 		hash := projectHash(workDir)
@@ -357,7 +357,7 @@ func runDaemon() {
 			apiKey = config.GetAPIKey()
 		}
 
-		brainDir, err := brain.FindBrainDir()
+		brainDir, err := knowledge.FindBrainDir()
 		if err != nil {
 			time.Sleep(pollInterval)
 			continue

@@ -8,8 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dominhduc/agent-brain/internal/brain"
-	"github.com/dominhduc/agent-brain/internal/review"
+	"github.com/dominhduc/agent-brain/internal/knowledge"
 )
 
 func setupTestProject(t *testing.T) string {
@@ -27,7 +26,7 @@ func setupTestProject(t *testing.T) string {
 	os.Chdir(tmpDir)
 	t.Cleanup(func() {
 		os.Chdir(originalDir)
-		brain.ResetCache()
+		knowledge.ResetCache()
 	})
 	return tmpDir
 }
@@ -58,7 +57,7 @@ func TestCmdStatus_WithPendingEntries(t *testing.T) {
 	setupTestProject(t)
 
 	for i := 0; i < 3; i++ {
-		entry := review.PendingEntry{
+		entry := knowledge.PendingEntry{
 			ID:         "test-00" + string(rune('0'+i)),
 			Topic:      "gotchas",
 			Content:    "Test gotcha " + string(rune('0'+i)),

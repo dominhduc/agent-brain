@@ -215,3 +215,11 @@ func (h *Hub) RunDedup(dryRun bool) (*DedupReport, error) {
 
 	return report, nil
 }
+
+func RunDedup(brainDir string, dryRun bool) (*DedupReport, error) {
+	h, err := Open(brainDir)
+	if err != nil {
+		return nil, err
+	}
+	return h.RunDedup(dryRun)
+}

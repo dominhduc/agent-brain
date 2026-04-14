@@ -336,3 +336,114 @@
 
 ### [2026-04-14 01:32:14] knowledge.Hub is the unified core — all state operations go through it. New packages: knowledge/ (topics+index+pending+wm+retrieval+behavior+adapt), session/ (handoffs+git stats). Daemon now has local analyze.go + secrets.go instead of importing external packages.
 
+
+### [2026-04-14 06:46:30] Stratified knowledge hub with separate topic files under .brain/
+
+
+### [2026-04-14 06:46:30] Two-tier config system with dual-source resolver
+
+
+### [2026-04-14 06:46:30] Multi-project daemon support with project isolation
+
+
+### [2026-04-14 06:46:30] Terminal state managed within internal/tui module
+
+
+### [2026-04-14 06:46:30] Agent skill files installed to .claude/, .opencode/, .agents/ directories
+
+
+### [2026-04-14 06:46:30] Knowledge deduplication via map[string]bool tracking
+
+
+### [2026-04-14 06:46:30] Embedded skill templates managed via fs/embed
+
+
+### [2026-04-14 06:46:30] Stratified knowledge hub uses separate topic files stored under .brain/.
+
+
+### [2026-04-14 06:46:30] Multi-project daemon support isolates service names via project hash lookup.
+
+
+### [2026-04-14 06:46:30] Dual-source config system allows fallback from project-local to global settings.
+
+
+### [2026-04-14 06:46:30] Terminal state is managed within the internal/tui module using XDG paths.
+
+
+### [2026-04-14 06:46:30] Embedded skill templates managed via fs/embed for version control.
+
+
+### [2026-04-14 06:46:30] CLI command logic isolated in cmd/brain/cmd.go with per-command files.
+
+
+### [2026-04-14 06:46:30] Environment isolation uses XDG_CONFIG_HOME to prevent test pollution
+
+
+### [2026-04-14 06:46:30] Multi-project daemon support isolates service names per project hash
+
+
+### [2026-04-14 06:46:30] Terminal state managed within internal/tui module via stdin file descriptors
+
+
+### [2026-04-14 06:46:30] Content deduplication via map[string]bool tracking across topics
+
+
+### [2026-04-14 06:46:30] CLI command logic isolated in cmd/brain/cmd.go with per-command files
+
+
+### [2026-04-14 06:46:30] Two-tier config system with global (~/.config/brain/) and project-specific (.brain/) sources
+
+
+### [2026-04-14 06:46:30] Embedded skill templates managed via fs/embed for version control
+
+
+### [2026-04-14 06:46:30] Two-tier config system with global and project-specific sources
+
+
+### [2026-04-14 06:46:30] Working memory with importance-based scoring and size limits
+
+
+### [2026-04-14 06:46:30] JSON-based index tracking with half-life decay for entry strength
+
+
+### [2026-04-14 06:46:30] Cross-platform filesystem handling using filepath utilities
+
+
+### [2026-04-14 06:46:30] Git-integrated knowledge persistence through session captures
+
+
+### [2026-04-14 06:46:30] Brain architecture uses stratified knowledge hub with separate topic files under .brain/
+
+
+### [2026-04-14 06:46:30] Project-specific daemon service names isolated per project hash for multi-project support
+
+
+### [2026-04-14 06:46:30] Internal config layer resolves config sources and handles reading/writing to appropriate locations
+
+
+### [2026-04-14 06:46:30] New internal/daemon package replaces internal/analyzer for code analysis functionality
+
+
+### [2026-04-14 06:46:30] Behavioral learning layer using user-generated signals
+
+
+### [2026-04-14 06:46:30] Knowledge hub generates adaptations from retrieval patterns
+
+
+### [2026-04-14 06:46:30] Multi-directory synchronization for skill files
+
+
+### [2026-04-14 06:46:30] Command-driven reflection workflow for project integration
+
+
+### [2026-04-14 06:46:30] New internal/knowledge/Hub acts as unified core for all state operations
+
+
+### [2026-04-14 06:46:30] Behavior signals tracked in .brain/behavior/signals.json for self-learning
+
+
+### [2026-04-14 06:46:30] Core logic consolidated into integrated internal/knowledge package structure.
+
+
+### [2026-04-14 06:46:30] Directory layout expanded to include behavior/ signals for self-learning tracking.
+

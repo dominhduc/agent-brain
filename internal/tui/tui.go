@@ -6,7 +6,7 @@ import (
 	"os"
 	"sort"
 
-	"github.com/dominhduc/agent-brain/internal/review"
+	"github.com/dominhduc/agent-brain/internal/knowledge"
 )
 
 type Key int
@@ -100,22 +100,22 @@ func (k Key) String() string {
 }
 
 type ReviewState struct {
-	Entries     []review.PendingEntry
-	Groups      map[string][]review.PendingEntry
+	Entries     []knowledge.PendingEntry
+	Groups      map[string][]knowledge.PendingEntry
 	GroupOrder  []string
 	CurrentGroup  int
 	CurrentEntry  int
 	Selected    map[string]bool
-	DedupGroups []review.DedupGroup
+	DedupGroups []knowledge.PendingDedupGroup
 	Profile     string
 	Exit        bool
-	ExitAccepted []review.PendingEntry
+	ExitAccepted []knowledge.PendingEntry
 	ExitRejected []string
 	ExitErr     error
 }
 
-func NewReviewState(entries []review.PendingEntry, profile string) *ReviewState {
-	groups := review.GroupByTopic(entries)
+func NewReviewState(entries []knowledge.PendingEntry, profile string) *ReviewState {
+	groups := knowledge.GroupByTopic(entries)
 
 	var topics []string
 	for topic := range groups {
@@ -123,7 +123,7 @@ func NewReviewState(entries []review.PendingEntry, profile string) *ReviewState 
 	}
 	sort.Strings(topics)
 
-	dedups := review.FindDuplicateGroups(entries)
+	dedups := knowledge.FindDuplicateGroups(entries)
 
 	return &ReviewState{
 		Entries:     entries,
@@ -144,7 +144,7 @@ func (s *ReviewState) CurrentTopic() string {
 	return s.GroupOrder[s.CurrentGroup]
 }
 
-func (s *ReviewState) CurrentEntries() []review.PendingEntry {
+func (s *ReviewState) CurrentEntries() []knowledge.PendingEntry {
 	topic := s.CurrentTopic()
 	if topic == "" {
 		return nil
@@ -192,8 +192,8 @@ func (s *ReviewState) ToggleSelected() {
 	}
 }
 
-func (s *ReviewState) AcceptSelected() []review.PendingEntry {
-	var accepted []review.PendingEntry
+func (s *ReviewState) AcceptSelected() []knowledge.PendingEntry {
+	var accepted []knowledge.PendingEntry
 	for _, e := range s.Entries {
 		if s.Selected[e.ID] {
 			accepted = append(accepted, e)
@@ -224,7 +224,7 @@ func (s *ReviewState) DeselectAll() {
 	}
 }
 
-func RunReview(entries []review.PendingEntry, profile string, writer io.Writer) ([]review.PendingEntry, []string, error) {
+func RunReview(entries []knowledge.PendingEntry, profile string, writer io.Writer) ([]knowledge.PendingEntry, []string, error) {
 	state := NewReviewState(entries, profile)
 
 	oldState, err := EnableRawMode()

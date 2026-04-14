@@ -9,20 +9,19 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dominhduc/agent-brain/internal/brain"
-	"github.com/dominhduc/agent-brain/internal/index"
+	"github.com/dominhduc/agent-brain/internal/knowledge"
 )
 
 var entryHeaderRe = regexp.MustCompile(`^### \[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]`)
 
 func cmdSleep(dryRun bool) {
-	brainDir, err := brain.FindBrainDir()
+	brainDir, err := knowledge.FindBrainDir()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 
-	idx, err := index.Load(brainDir)
+	idx, err := knowledge.LoadIndex(brainDir)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading index: %v\n", err)
 		os.Exit(1)
@@ -35,7 +34,7 @@ func cmdSleep(dryRun bool) {
 	var toRemove []string
 
 	for key, entry := range idx.Entries {
-		strength := index.CalculateStrength(entry, now)
+		strength := knowledge.CalculateStrength(entry, now)
 		if strength < threshold {
 			toRemove = append(toRemove, key)
 			decayed++
@@ -92,7 +91,7 @@ func cmdSleep(dryRun bool) {
 }
 
 func extractEntryText(brainDir, topic, timestamp string) string {
-	path, err := brain.TopicFilePathForDir(topic, brainDir)
+	path, err := knowledge.TopicFilePathForDir(topic, brainDir)
 	if err != nil {
 		return ""
 	}
@@ -123,7 +122,7 @@ func removeArchivedFromTopicFiles(brainDir string, keys []string) error {
 	}
 
 	for topic, timestamps := range topicEntries {
-		path, err := brain.TopicFilePathForDir(topic, brainDir)
+		path, err := knowledge.TopicFilePathForDir(topic, brainDir)
 		if err != nil {
 			continue
 		}

@@ -32,12 +32,16 @@ const indexVersion = 1
 
 var entryHeaderRe = regexp.MustCompile(`^### \[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]`)
 
-func (h *Hub) indexPath() string {
-	return filepath.Join(h.dir, "index.json")
+func IndexFilePath(brainDir string) string {
+	return filepath.Join(brainDir, "index.json")
 }
 
-func (h *Hub) LoadIndex() (*Index, error) {
-	data, err := os.ReadFile(h.indexPath())
+func (h *Hub) indexPath() string {
+	return IndexFilePath(h.dir)
+}
+
+func LoadIndex(brainDir string) (*Index, error) {
+	data, err := os.ReadFile(IndexFilePath(brainDir))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return newEmptyIndex(), nil
@@ -58,7 +62,11 @@ func (h *Hub) LoadIndex() (*Index, error) {
 	return &idx, nil
 }
 
-func (h *Hub) SaveIndex(idx *Index) error {
+func (h *Hub) LoadIndex() (*Index, error) {
+	return LoadIndex(h.dir)
+}
+
+func (idx *Index) Save(brainDir string) error {
 	idx.Version = indexVersion
 	idx.LastRebuild = time.Now()
 
@@ -67,7 +75,7 @@ func (h *Hub) SaveIndex(idx *Index) error {
 		return fmt.Errorf("failed to marshal index: %w", err)
 	}
 
-	path := h.indexPath()
+	path := IndexFilePath(brainDir)
 	tmpPath := path + ".tmp"
 	if err := os.WriteFile(tmpPath, data, 0600); err != nil {
 		return fmt.Errorf("failed to write index: %w", err)
@@ -78,11 +86,15 @@ func (h *Hub) SaveIndex(idx *Index) error {
 	return nil
 }
 
-func (h *Hub) RebuildIndex() (*Index, error) {
+func (h *Hub) SaveIndex(idx *Index) error {
+	return idx.Save(h.dir)
+}
+
+func RebuildIndex(brainDir string) (*Index, error) {
 	idx := newEmptyIndex()
 
 	for _, topic := range AvailableTopics() {
-		path, err := h.topicFilePath(topic)
+		path, err := TopicFilePathForDir(topic, brainDir)
 		if err != nil {
 			continue
 		}
@@ -143,6 +155,10 @@ func (h *Hub) RebuildIndex() (*Index, error) {
 
 	idx.LastRebuild = time.Now()
 	return idx, nil
+}
+
+func (h *Hub) RebuildIndex() (*Index, error) {
+	return RebuildIndex(h.dir)
 }
 
 func MakeKey(topic, timestamp string) string {

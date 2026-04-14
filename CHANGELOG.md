@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.1.0] - 2026-04-14
+
+### Changed
+- **Consolidated internal packages**: eliminated 8 duplicate packages (22→14), removing ~1,800 lines of redundant code. All imports now use `internal/knowledge/` and `internal/session/` exclusively
+- Deleted packages: `internal/analyzer/`, `internal/secrets/`, `internal/index/`, `internal/review/`, `internal/handoff/`, `internal/wm/`, `internal/outcome/`, `internal/brain/`
+- Added standalone function wrappers in `knowledge/` and `session/` packages for backward-compatible API without requiring Hub instantiation
+
+### Fixed
+- Skill template inaccuracies: wrong prune config path (`.brainprune` not `.brain/.brainprune`), removed nonexistent `--area` flag, fixed deprecated command docs
+- README OTel configuration: use environment variables instead of `brain config set otel.*`
+- Skill template autonomy profiles section referenced wrong command syntax
+
+### Added
+- Tests for `internal/knowledge/behavior.go`: load/save, track command/topic/search/eval, corrupt file handling (10 tests)
+- Tests for `internal/skill/skill.go`: install, skip existing, detect installed/modified, extract adaptations, generate diff (11 tests)
+
 ## [v1.0.0] - 2026-04-14
 
 ### Added

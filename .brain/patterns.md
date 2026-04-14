@@ -410,3 +410,117 @@
 
 ### [2026-04-14 01:32:14] Self-learning uses behavior signals (.brain/behavior/signals.json) + index strength data to generate skill adaptations via brain skill reflect
 
+
+### [2026-04-14 06:46:30] Modular CLI structure splits monolithic main.go into per-command files
+
+
+### [2026-04-14 06:46:30] Queue-based daemon processing includes backoff retry logic
+
+
+### [2026-04-14 06:46:30] Entry deduplication via normalizeEntry() with whitespace collapsing
+
+
+### [2026-04-14 06:46:30] SUPER principles: Side Effects at Edge, Uncoupled Logic, Pure Functions, Explicit Data Flow
+
+
+### [2026-04-14 06:46:30] SPIRALS loop for agent collaboration: Sense, Plan, Inquire, Refine, Act, Learn, Scan
+
+
+### [2026-04-14 06:46:30] Line-buffered fallback default for non-TTY sessions
+
+
+### [2026-04-14 06:46:30] Version bump in code matches CHANGELOG.md
+
+
+### [2026-04-14 06:46:30] Modular CLI splits monolithic code into per-command files.
+
+
+### [2026-04-14 06:46:30] Duplicate detection normalizes content before committing to a set.
+
+
+### [2026-04-14 06:46:30] Terminal introspection favors standard library packages over native syscalls.
+
+
+### [2026-04-14 06:46:30] Auto-accepting pending entries prevents treating silent stdin closure as fatal.
+
+
+### [2026-04-14 06:46:30] Queue-based daemon processing includes backoff retry logic and error tracking.
+
+
+### [2026-04-14 06:46:30] Config resolves to project-local if exists, falling back to global.
+
+
+### [2026-04-14 06:46:30] Queue-based daemon processing includes backoff retry logic and error reason tracking
+
+
+### [2026-04-14 06:46:30] Limited external dependencies to Go standard library
+
+
+### [2026-04-14 06:46:30] Use standard library packages like golang.org/x/term instead of custom syscall wrappers
+
+
+### [2026-04-14 06:46:30] Layered config system with global and project-specific sources
+
+
+### [2026-04-14 06:46:30] TUI gracefully handles EOF - stdin closed during review exits cleanly
+
+
+### [2026-04-14 06:46:30] Lazily batch config resolution with separate read/write paths
+
+
+### [2026-04-14 06:46:30] TopicSummary struct separates metadata from actual content
+
+
+### [2026-04-14 06:46:30] UI failure triggers fallback to line-buffered mode
+
+
+### [2026-04-14 06:46:30] Version bump in code matches entry in CHANGELOG.md
+
+
+### [2026-04-14 06:46:30] Auto-accept flag replaces interactive TUI in CI/automated workflows
+
+
+### [2026-04-14 06:46:30] Layered configuration system with project-local and global sources
+
+
+### [2026-04-14 06:46:30] Modular CLI structure with per-command files like cmd_config.go and cmd_init.go
+
+
+### [2026-04-14 06:46:30] Queue-based daemon processing with backoff retry logic and error tracking
+
+
+### [2026-04-14 06:46:30] Content deduplication via map[string]bool tracking across topics
+
+
+### [2026-04-14 06:46:30] Two-tier config system with project-first precedence over global config
+
+
+### [2026-04-14 06:46:30] Dry-run flag for previewing changes before writing
+
+
+### [2026-04-14 06:46:30] Marker-based section insertion to preserve existing adaptations
+
+
+### [2026-04-14 06:46:30] Behavior signals tracking for personalized adaptation generation
+
+
+### [2026-04-14 06:46:30] Command-based behavioral feedback loops with eval outcomes
+
+
+### [2026-04-14 06:46:30] Topic access metrics for identifying knowledge gaps
+
+
+### [2026-04-14 06:46:30] Self-learning uses behavior signals and index strength to generate skill adaptations
+
+
+### [2026-04-14 06:46:30] Unified knowledge Hub consolidates state operations to eliminate deep dependencies
+
+
+### [2026-04-14 06:46:30] Queue-based daemon processing includes backoff retry logic and error tracking
+
+
+### [2026-04-14 06:46:30] Self-learning generates skill adaptations from behavior signals and usage data.
+
+
+### [2026-04-14 06:46:30] Unified knowledge.Hub acts as the single core for all state operations.
+

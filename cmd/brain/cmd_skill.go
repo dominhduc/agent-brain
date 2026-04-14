@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/dominhduc/agent-brain/internal/brain"
 	"github.com/dominhduc/agent-brain/internal/knowledge"
 	"github.com/dominhduc/agent-brain/internal/skill"
 )
@@ -166,7 +165,7 @@ func cmdSkillReflect(cwd string, args []string) {
 		}
 	}
 
-	brainDir, err := brain.FindBrainDir()
+	brainDir, err := knowledge.FindBrainDir()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)

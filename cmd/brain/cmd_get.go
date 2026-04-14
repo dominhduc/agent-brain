@@ -9,10 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dominhduc/agent-brain/internal/brain"
-	"github.com/dominhduc/agent-brain/internal/index"
 	"github.com/dominhduc/agent-brain/internal/knowledge"
-	"github.com/dominhduc/agent-brain/internal/outcome"
 )
 
 var entryLineRe = regexp.MustCompile(`^### \[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]`)
@@ -41,7 +38,7 @@ func cmdGet(jsonFlag, summaryFlag bool) {
 		}
 	}
 
-	if brainDir, err := brain.FindBrainDir(); err == nil {
+	if brainDir, err := knowledge.FindBrainDir(); err == nil {
 		if hub, err := knowledge.Open(brainDir); err == nil {
 			_ = hub.TrackCommand("get")
 			if topic != "all" {
@@ -51,7 +48,7 @@ func cmdGet(jsonFlag, summaryFlag bool) {
 	}
 
 	if summaryFlag {
-		summaries, err := brain.GetAllSummaries()
+		summaries, err := knowledge.GetAllSummaries()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: run 'brain init' first.\n", err)
 			os.Exit(1)
@@ -77,8 +74,8 @@ func cmdGet(jsonFlag, summaryFlag bool) {
 	}
 
 	if topic == "all" {
-		brainDir, _ := brain.FindBrainDir()
-		idx, _ := index.Load(brainDir)
+		brainDir, _ := knowledge.FindBrainDir()
+		idx, _ := knowledge.LoadIndex(brainDir)
 		now := time.Now()
 
 		if focusFlag && focusTopic != "" {
@@ -93,8 +90,8 @@ func cmdGet(jsonFlag, summaryFlag bool) {
 
 		if jsonFlag {
 			topics := map[string]string{}
-			for _, t := range brain.AvailableTopics() {
-				c, err := brain.GetTopic(t)
+			for _, t := range knowledge.AvailableTopics() {
+				c, err := knowledge.GetTopic(t)
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "Error reading %s: %v\n", t, err)
 					os.Exit(1)
@@ -104,7 +101,7 @@ func cmdGet(jsonFlag, summaryFlag bool) {
 			data, _ := json.MarshalIndent(topics, "", "  ")
 			fmt.Println(string(data))
 		} else {
-			content, err := brain.GetAllTopicsWithSummary()
+			content, err := knowledge.GetAllTopicsWithSummary()
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: run 'brain init' first.\n", err)
 				os.Exit(1)
@@ -114,7 +111,7 @@ func cmdGet(jsonFlag, summaryFlag bool) {
 		return
 	}
 
-	path, err := brain.TopicFilePath(topic)
+	path, err := knowledge.TopicFilePath(topic)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
@@ -126,8 +123,8 @@ func cmdGet(jsonFlag, summaryFlag bool) {
 		os.Exit(1)
 	}
 
-	brainDir, _ := brain.FindBrainDir()
-	idx, _ := index.Load(brainDir)
+	brainDir, _ := knowledge.FindBrainDir()
+	idx, _ := knowledge.LoadIndex(brainDir)
 	now := time.Now()
 
 	if jsonFlag {
@@ -144,12 +141,12 @@ func cmdGet(jsonFlag, summaryFlag bool) {
 			timestamp := matches[1]
 			entry, found := idx.Get(topic, timestamp)
 			if found {
-				strength := index.CalculateStrength(entry, now)
+				strength := knowledge.CalculateStrength(entry, now)
 				fmt.Printf("●%.2f  %s\n", strength, line)
 				entry.RetrievalCount++
 				entry.LastRetrieved = now
 				idx.Set(topic, timestamp, entry)
-				retrievedKeys = append(retrievedKeys, index.MakeKey(topic, timestamp))
+				retrievedKeys = append(retrievedKeys, knowledge.MakeKey(topic, timestamp))
 			} else {
 				fmt.Println(line)
 			}
@@ -160,24 +157,24 @@ func cmdGet(jsonFlag, summaryFlag bool) {
 
 	if len(retrievedKeys) > 0 {
 		idx.Save(brainDir)
-		outcome.Track(brainDir, retrievedKeys)
+		knowledge.RecordRetrieval(brainDir, retrievedKeys)
 	}
 }
 
-func getFocusedTopics(focusTopic string, idx *index.Index, now time.Time, jsonFlag bool) (string, error) {
+func getFocusedTopics(focusTopic string, idx *knowledge.Index, now time.Time, jsonFlag bool) (string, error) {
 	type scoredEntry struct {
 		topicFile   string
 		timestamp   string
 		content     string
 		strength    float64
 		relevance   int
-		entry       index.IndexEntry
+		entry       knowledge.IndexEntry
 	}
 
 	var highRelevance, medRelevance, otherEntries []scoredEntry
 
-	for _, topicFile := range brain.AvailableTopics() {
-		content, err := brain.GetTopic(topicFile)
+	for _, topicFile := range knowledge.AvailableTopics() {
+		content, err := knowledge.GetTopic(topicFile)
 		if err != nil {
 			continue
 		}
@@ -195,7 +192,7 @@ func getFocusedTopics(focusTopic string, idx *index.Index, now time.Time, jsonFl
 				return
 			}
 
-			strength := index.CalculateStrength(entry, now)
+			strength := knowledge.CalculateStrength(entry, now)
 			content := strings.TrimSpace(currentContent.String())
 
 			var relevance int

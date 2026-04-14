@@ -4,17 +4,17 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/dominhduc/agent-brain/internal/brain"
+	"github.com/dominhduc/agent-brain/internal/knowledge"
 )
 
 func cmdDedup(dryRun bool) {
-	_, err := brain.FindBrainDir()
+	brainDir, err := knowledge.FindBrainDir()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: run 'brain init' first.\n", err)
 		os.Exit(1)
 	}
 
-	report, err := brain.RunDedup(dryRun)
+	report, err := knowledge.RunDedup(brainDir, dryRun)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)

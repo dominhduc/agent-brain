@@ -141,3 +141,11 @@ func FindDuplicateGroups(entries []PendingEntry) []PendingDedupGroup {
 	})
 	return groups
 }
+
+func RemovePendingEntry(pendingDir, id string) error {
+	path := filepath.Join(pendingDir, id+".json")
+	if err := os.Remove(path); err != nil {
+		return fmt.Errorf("removing entry %s: %w", id, err)
+	}
+	return nil
+}

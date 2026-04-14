@@ -331,3 +331,84 @@
 
 ### [2026-04-14 01:32:14] AdaptSkill in knowledge/adapt.go uses os.ReadFile directly to extract entry messages — this should use hub.Get() for consistency
 
+
+### [2026-04-14 06:46:30] Manual file descriptor syscalls are error-prone under varying terminal states
+
+
+### [2026-04-14 06:46:30] Non-blocking terminal detection fails when no input is pending
+
+
+### [2026-04-14 06:46:30] Go constants cannot be overridden by ldflags—use var instead
+
+
+### [2026-04-14 06:46:30] Test fixture secrets cause false positives without proper exclusions
+
+
+### [2026-04-14 06:46:30] String-based path concatenation breaks on cross-platform environments
+
+
+### [2026-04-14 06:46:30] Testing config writes can corrupt live settings without proper isolation
+
+
+### [2026-04-14 06:46:30] Avoid manual file descriptor syscalls for terminal detection as they are error-prone.
+
+
+### [2026-04-14 06:46:30] Use variables, not constants, to support overrides via ldflags or build tags.
+
+
+### [2026-04-14 06:46:30] Isolate test config writes to prevent corruption of production settings.
+
+
+### [2026-04-14 06:46:30] Path-based exclusions are necessary to prevent test fixture false positives in security scanners.
+
+
+### [2026-04-14 06:46:30] String-based path concatenation breaks on cross-platform environments without filepath utilities.
+
+
+### [2026-04-14 06:46:30] Go constants cannot be overridden by ldflags - use var instead
+
+
+### [2026-04-14 06:46:30] Manual terminal syscalls are error-prone under varying terminal states
+
+
+### [2026-04-14 06:46:30] Test fixture secrets cause false positives without path-based exclusions
+
+
+### [2026-04-14 06:46:30] Hidden dependencies trap agents: functions using GLOBAL_CONFIG look pure but fail in production
+
+
+### [2026-04-14 06:46:30] String-based path concatenation breaks on cross-platform environments without filepath utilities
+
+
+### [2026-04-14 06:46:30] Non-blocking reads for terminal detection fail when no input is pending
+
+
+### [2026-04-14 06:46:30] Hidden dependencies using GLOBAL_CONFIG or singletons cause failures in production environments
+
+
+### [2026-04-14 06:46:30] Test fixture secrets trigger false positives without proper Gitleaks allowlist exclusions
+
+
+### [2026-04-14 06:46:30] Non-blocking terminal detection fails when no input is pending in stdin
+
+
+### [2026-04-14 06:46:30] Go constants cannot be overridden by ldflags - must use variables instead
+
+
+### [2026-04-14 06:46:30] Empty SKILL.md triggers early return skipping adaptation writing
+
+
+### [2026-04-14 06:46:30] Thread-safe behavior tracking with mutex may bottleneck concurrent operations
+
+
+### [2026-04-14 06:46:30] Weak entry threshold requires manual prune command triggering
+
+
+### [2026-04-14 06:46:30] 0600 file permissions for behavior data may restrict read access for analysis
+
+
+### [2026-04-14 06:46:30] AdaptSkill uses os.ReadFile directly for messages; should use hub.Get() for consistency
+
+
+### [2026-04-14 06:46:30] AdaptSkill uses os.ReadFile directly for messages which should use hub.Get() for consistency.
+

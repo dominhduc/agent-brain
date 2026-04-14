@@ -5,11 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/dominhduc/agent-brain/internal/brain"
-	"github.com/dominhduc/agent-brain/internal/index"
 	"github.com/dominhduc/agent-brain/internal/knowledge"
-	"github.com/dominhduc/agent-brain/internal/secrets"
-	"github.com/dominhduc/agent-brain/internal/wm"
 )
 
 var knownTopics = []string{"ui", "backend", "infrastructure", "database", "security", "testing", "architecture", "general"}
@@ -41,12 +37,12 @@ func cmdAdd() {
 			os.Exit(1)
 		}
 		message := strings.Join(os.Args[3:], " ")
-		brainDir, err := brain.FindBrainDir()
+		brainDir, err := knowledge.FindBrainDir()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
-		if err := wm.Push(brainDir, message, 0.5); err != nil {
+		if err := knowledge.PushWM(brainDir, message, 0.5); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
@@ -73,8 +69,8 @@ func cmdAdd() {
 		os.Exit(1)
 	}
 
-	if secrets.HasSecrets(message) {
-		findings := secrets.Scan(message)
+	if knowledge.HasSecrets(message) {
+		findings := knowledge.ScanSecrets(message)
 		fmt.Fprintf(os.Stderr, "Error: your message may contain a secret (detected: %s).\n", findings[0].Type)
 		fmt.Fprintln(os.Stderr, "What to do: redact the sensitive value and try again.")
 		os.Exit(1)
@@ -95,12 +91,12 @@ func cmdAdd() {
 		os.Exit(1)
 	}
 
-	if err := brain.AddEntry(normalized, message); err != nil {
+	if err := knowledge.AddEntry(normalized, message); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: make sure you are in a project with .brain/ initialized.\n", err)
 		os.Exit(1)
 	}
 
-	if brainDir, err := brain.FindBrainDir(); err == nil {
+	if brainDir, err := knowledge.FindBrainDir(); err == nil {
 		if hub, err := knowledge.Open(brainDir); err == nil {
 			_ = hub.TrackCommand("add")
 			_ = hub.TrackTopicAccess(normalized)
@@ -108,11 +104,11 @@ func cmdAdd() {
 	}
 
 	if messageTopic != "" {
-		brainDir, err := brain.FindBrainDir()
+		brainDir, err := knowledge.FindBrainDir()
 		if err == nil {
-			idx, err := index.Load(brainDir)
+			idx, err := knowledge.LoadIndex(brainDir)
 			if err == nil {
-				timestamp := index.MakeKey(normalized, "")
+				timestamp := knowledge.MakeKey(normalized, "")
 				_ = timestamp
 				for k := range idx.Entries {
 					if strings.HasPrefix(k, normalized+":") {

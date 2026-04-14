@@ -59,6 +59,30 @@ func (h *Hub) ClearWM() error {
 	return nil
 }
 
+func ClearWM(brainDir string) error {
+	path := filepath.Join(brainDir, "buffer", "wm.json")
+	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
+}
+
+func PushWM(brainDir string, content string, importance float64) error {
+	h, err := Open(brainDir)
+	if err != nil {
+		return err
+	}
+	return h.PushWM(content, importance)
+}
+
+func ReadWM(brainDir string) ([]WMEntry, error) {
+	h, err := Open(brainDir)
+	if err != nil {
+		return nil, err
+	}
+	return h.ReadWM()
+}
+
 func (h *Hub) loadWM() ([]WMEntry, error) {
 	path := filepath.Join(h.dir, "buffer", "wm.json")
 	data, err := os.ReadFile(path)

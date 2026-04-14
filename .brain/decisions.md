@@ -377,3 +377,129 @@
 
 ### [2026-04-12 06:20:41] TUI mode activation conditional (!ttyFlag && canUseTTY)
 
+
+### [2026-04-14 06:46:30] Dual-config system: global (~/.config/brain/) or project-specific (.brain/) configuration
+
+
+### [2026-04-14 06:46:30] Project-specific daemon service names isolated per project hash
+
+
+### [2026-04-14 06:46:30] Auto-accept flag replaces interactive TUI in CI/automated workflows
+
+
+### [2026-04-14 06:46:30] TUI mode activates only when !ttyFlag && canUseTTY
+
+
+### [2026-04-14 06:46:30] API key configured via environment variable as fallback
+
+
+### [2026-04-14 06:46:30] Config resolves project-local first, then falls back to global
+
+
+### [2026-04-14 06:46:30] Implemented gitleaks allowlist for scanner/config test files
+
+
+### [2026-04-14 06:46:30] Lazy config loading with resolveConfig() and resolveConfigForWrite() patterns
+
+
+### [2026-04-14 06:46:30] Config scope is resolved during initialize: global shared or project-specific isolated.
+
+
+### [2026-04-14 06:46:30] Named custom providers replace single custom option for better configurability.
+
+
+### [2026-04-14 06:46:30] TUI mode activates only when explicit TTY flag is unset and stdin is a terminal.
+
+
+### [2026-04-14 06:46:30] Project config takes precedence over global config when both exist.
+
+
+### [2026-04-14 06:46:30] Version variable consistent with CHANGELOG release version.
+
+
+### [2026-04-14 06:46:30] Auto-accepting pending entries to avoid treating silent closure as fatal.
+
+
+### [2026-04-14 06:46:30] Config scope choice: global shared or project-specific isolated in .brain/config.yaml
+
+
+### [2026-04-14 06:46:30] Automated config scope choice during brain init - global vs project
+
+
+### [2026-04-14 06:46:30] Line-buffered fallback is now default for non-TTY sessions
+
+
+### [2026-04-14 06:46:30] Train model logic: prefer auto-accepting pending entries to avoid treating silent closure as fatal
+
+
+### [2026-04-14 06:46:30] Unified API key configuration renamed from nested structure to flat api-key
+
+
+### [2026-04-14 06:46:30] Version variable consistent with CHANGELOG release version
+
+
+### [2026-04-14 06:46:30] Static TTY state checked at startup and maintained via stdin file descriptors
+
+
+### [2026-04-14 06:46:30] Adopted auto-accepting pending entries to avoid treating silent closure as fatal
+
+
+### [2026-04-14 06:46:30] Preferred using golang.org/x/term for reliable TTY detection
+
+
+### [2026-04-14 06:46:30] Decided to remove --tty flag forcing TUI on non-terminals
+
+
+### [2026-04-14 06:46:30] Internal config layer resolves config sources and handles reading/writing appropriately
+
+
+### [2026-04-14 06:46:30] Project config takes precedence over global config when both exist
+
+
+### [2026-04-14 06:46:30] Brain initialize checks for project config first before global config
+
+
+### [2026-04-14 06:46:30] Config scope choice during init: users can choose global or project-specific configuration
+
+
+### [2026-04-14 06:46:30] Line-buffered fallback is now default for non-TTY sessions instead of forcing TUI mode
+
+
+### [2026-04-14 06:46:30] Auto-accepting pending entries prevents treating silent closure as fatal in automated workflows
+
+
+### [2026-04-14 06:46:30] Terminal state managed within internal/tui module using stdin file descriptors
+
+
+### [2026-04-14 06:46:30] Version variable consistent with CHANGELOG release version for proper tracking
+
+
+### [2026-04-14 06:46:30] Use JSON format for persisting behavioral signals
+
+
+### [2026-04-14 06:46:30] Tag adaptations with start/end markers for later extraction
+
+
+### [2026-04-14 06:46:30] Rate-based filtering for top gotchas (strength < 0.5 or retrievals < 2)
+
+
+### [2026-04-14 06:46:30] Thresholds for strong/weak entries (0.7 and 0.3 strength)
+
+
+### [2026-04-14 06:46:30] Different counters for good/bad eval outcomes stored per session
+
+
+### [2026-04-14 06:46:30] Daemon adopted local types for analyze and secrets to simplify dependency chains
+
+
+### [2026-04-14 06:46:30] Session lifecycle functions are separated into internal/session/ package
+
+
+### [2026-04-14 06:46:30] Daemon types are local to eliminate deep dependency chains across packages.
+
+
+### [2026-04-14 06:46:30] Project config prevails over global config when both sources exist during init.
+
+
+### [2026-04-14 06:46:30] Skill adaptations are preserved using merge-based updates during versioning.
+

@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/dominhduc/agent-brain/internal/brain"
-	"github.com/dominhduc/agent-brain/internal/index"
-	"github.com/dominhduc/agent-brain/internal/outcome"
+	"github.com/dominhduc/agent-brain/internal/knowledge"
 )
 
 func cmdOutcome() {
@@ -21,13 +19,13 @@ func cmdOutcome() {
 		os.Exit(1)
 	}
 
-	brainDir, err := brain.FindBrainDir()
+	brainDir, err := knowledge.FindBrainDir()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 
-	keys, err := outcome.LoadKeys(brainDir)
+	keys, err := knowledge.LoadRetrievals(brainDir)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading session: %v\n", err)
 		os.Exit(1)
@@ -38,7 +36,7 @@ func cmdOutcome() {
 		return
 	}
 
-	idx, err := index.Load(brainDir)
+	idx, err := knowledge.LoadIndex(brainDir)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading index: %v\n", err)
 		os.Exit(1)
@@ -64,7 +62,7 @@ func cmdOutcome() {
 		os.Exit(1)
 	}
 
-	outcome.Clear(brainDir)
+	knowledge.ClearRetrievals(brainDir)
 
 	fmt.Printf("Applied %s outcome to %d entries\n", map[bool]string{true: "positive", false: "negative"}[good], adjusted)
 }

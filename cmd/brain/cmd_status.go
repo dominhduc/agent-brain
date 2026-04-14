@@ -8,15 +8,14 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/dominhduc/agent-brain/internal/brain"
+	"github.com/dominhduc/agent-brain/internal/knowledge"
 	"github.com/dominhduc/agent-brain/internal/config"
-	"github.com/dominhduc/agent-brain/internal/review"
 	"github.com/dominhduc/agent-brain/internal/service"
 	"github.com/dominhduc/agent-brain/internal/updater"
 )
 
 func cmdStatus(jsonFlag bool) {
-	brainDir, err := brain.FindBrainDir()
+	brainDir, err := knowledge.FindBrainDir()
 
 	// Hub stats
 	var hubFound bool
@@ -42,7 +41,7 @@ func cmdStatus(jsonFlag bool) {
 				}
 			}
 		}
-		lineCount, _ = brain.MemoryLineCount()
+		lineCount, _ = knowledge.MemoryLineCount()
 		lineStatus = "OK"
 		if lineCount > 200 {
 			lineStatus = "OVER LIMIT"
@@ -92,7 +91,7 @@ func cmdStatus(jsonFlag bool) {
 	var pendingEntries int
 	if brainDir != "" {
 		pendingDir := filepath.Join(brainDir, "pending")
-		entries, err := review.LoadPendingEntries(pendingDir)
+		entries, err := knowledge.LoadPendingEntries(pendingDir)
 		if err == nil {
 			pendingEntries = len(entries)
 		}

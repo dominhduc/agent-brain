@@ -29,8 +29,7 @@ Searches across all knowledge entries.
 
 **Flags:**
 - `--json` — Output as JSON
-- `--topic "<topic>"` — Search within a specific topic
-- `--area "<area>"` — Filter by area tag
+- `--topic "<topic>"` — Filter by topic (e.g., --topic "infrastructure")
 
 **Examples:**
 ```bash
@@ -111,7 +110,7 @@ Archives stale entries based on configured prune patterns.
 - `--dry-run` — Preview what would be archived without making changes
 
 **Configuration:**
-Patterns are defined in `.brain/prune.conf` (one pattern per line). Entries matching any pattern are archived to `.brain/archived/`.
+Patterns are defined in `.brainprune` (at project root, one pattern per line). Entries matching any pattern are archived to `.brain/archived/`.
 
 **Examples:**
 ```bash
@@ -218,31 +217,33 @@ Updates the `brain` binary to the latest version.
 
 Shows version information including build date and commit hash.
 
-### `brain wm`
+### `brain wm` (deprecated)
 
-Working memory operations.
-
-**Subcommands:**
-- `brain wm list` — List working memory entries
-- `brain wm clear` — Clear all working memory
-- `brain wm add "<message>"` — Add to working memory
-
-### `brain handoff`
-
-Manages session handoffs.
+Working memory operations. Use `brain add --wm` instead.
 
 **Subcommands:**
-- `brain handoff list` — List recent handoffs
-- `brain handoff show <session-id>` — Show a specific handoff
-- `brain handoff export` — Export handoffs to a file
+- `brain wm push "<content>"` — Add to working memory
+- `brain wm read` — Show current working notes
+- `brain wm clear` — Clear working memory
+- `brain wm flush` — Flush (same as clear)
 
-### `brain outcome`
+### `brain handoff` (deprecated)
 
-Tracks outcomes of recommendations.
+Manages session handoffs. Use `brain eval` instead.
 
 **Subcommands:**
-- `brain outcome list` — List tracked outcomes
-- `brain outcome add <session-id> <rating>` — Record an outcome (good/bad)
+- `brain handoff create --summary "..." --next "..."` — Create a handoff
+- `brain handoff latest` — Show latest handoff
+- `brain handoff show <id>` — Show a specific handoff
+- `brain handoff resume` — Re-inject latest handoff
+
+### `brain outcome` (deprecated)
+
+Tracks outcomes. Use `brain eval --good/--bad` instead.
+
+**Subcommands:**
+- `brain outcome --good` — Mark memories as helpful
+- `brain outcome --bad` — Mark memories as irrelevant
 
 ## Skill Commands
 

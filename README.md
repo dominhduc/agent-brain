@@ -73,7 +73,7 @@ AI coding agents are brilliant — but they **forget everything** between sessio
 | No institutional memory across sessions | Knowledge compounds and grows smarter |
 | Agent makes the same mistakes repeatedly | Past gotchas are flagged before they happen again |
 
-**v1.0.0** adds self-learning skill adaptation — `brain skill reflect` generates usage-based adaptations from behavior signals, search queries, and eval outcomes. Skills now improve themselves based on how you use them.
+**v1.1.0** consolidates the internal architecture — 8 duplicate packages eliminated, 22→14 internal packages, ~1,800 lines of redundant code removed. Behavior tracking tests and skill install tests added. Documentation bugs fixed (prune config, skill template inaccuracies, OTel instructions). All tests pass with race detector.
 
 ---
 
@@ -556,16 +556,14 @@ daemon:
 
 ### OpenTelemetry Tracing
 
-Enable distributed tracing for debugging and observability:
+Enable distributed tracing for debugging and observability via environment variables:
 
 ```bash
 # Enable OTel tracing
-brain config set otel.enabled true
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
 
-# Set the export endpoint
-brain config set otel.endpoint localhost:4317           # OTLP gRPC (default)
-brain config set otel.endpoint http://localhost:4318/v1/traces  # OTLP HTTP
-brain config set otel.endpoint stdout                   # Debug: print to console
+# Or use stdout for debugging
+export OTEL_EXPORTER_OTLP_ENDPOINT=stdout
 ```
 
 When enabled, `brain` emits OpenTelemetry spans for CLI commands, daemon pipeline, and review sessions. Compatible with Jaeger, Grafana Tempo, Honeycomb, etc. See the [OpenTelemetry specification](https://opentelemetry.io/docs/) for details.

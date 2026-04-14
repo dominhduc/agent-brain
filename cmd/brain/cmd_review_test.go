@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/dominhduc/agent-brain/internal/config"
-	"github.com/dominhduc/agent-brain/internal/review"
+	"github.com/dominhduc/agent-brain/internal/knowledge"
 )
 
 func TestCmdReview_NoPendingEntries(t *testing.T) {
@@ -40,7 +40,7 @@ func TestCmdReview_WithPendingEntries(t *testing.T) {
 	cfg.Review.Profile = "agent"
 	config.Save(cfg)
 
-	entry := review.PendingEntry{
+	entry := knowledge.PendingEntry{
 		ID:         "test-review-001",
 		Topic:      "gotchas",
 		Content:    "Test gotcha for review",

@@ -135,12 +135,11 @@ brain skill update         # Update skill files to latest version
 
 ## Autonomy Profiles
 
-The skill supports different autonomy levels:
+The skill supports different autonomy levels, configured via `brain config set profile <name>`:
 
-- **Guard mode** (`brain guard`): Maximum safety — destructive command warnings + directory-scoped edits
-- **Careful mode** (`brain careful`): Safety warnings for destructive commands only
-- **Assist mode** (default): Normal operation with standard safeguards
-- **Agent mode**: Full autonomy for trusted workflows
+- **Guard** (default): No auto-accept, no auto-dedup — all entries reviewed
+- **Assist**: Auto-dedup yes, auto-accept no — less noise
+- **Agent**: Auto-dedup yes, auto-accept yes — fully automatic
 
 ## Skill Management
 

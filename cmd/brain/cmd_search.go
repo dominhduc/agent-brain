@@ -10,8 +10,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/dominhduc/agent-brain/internal/brain"
-	"github.com/dominhduc/agent-brain/internal/index"
 	"github.com/dominhduc/agent-brain/internal/knowledge"
 )
 
@@ -34,7 +32,7 @@ func cmdSearch(jsonFlag bool) {
 		}
 	}
 
-	brainDir, err := brain.FindBrainDir()
+	brainDir, err := knowledge.FindBrainDir()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: run 'brain init' in your project directory first.\n", err)
 		os.Exit(1)
@@ -55,7 +53,7 @@ func cmdSearch(jsonFlag bool) {
 	}
 	pattern := regexp.MustCompile("(?i)" + regexp.QuoteMeta(query))
 
-	idx, _ := index.Load(brainDir)
+	idx, _ := knowledge.LoadIndex(brainDir)
 
 	type Match struct {
 		File    string `json:"file"`

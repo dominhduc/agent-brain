@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/dominhduc/agent-brain/internal/brain"
+	"github.com/dominhduc/agent-brain/internal/knowledge"
 	"github.com/dominhduc/agent-brain/internal/config"
 	providerPkg "github.com/dominhduc/agent-brain/internal/provider"
 	"github.com/dominhduc/agent-brain/internal/profile"
@@ -48,7 +48,7 @@ func cmdConfig() {
 }
 
 func cmdConfigShow() {
-	brainDir, brainErr := brain.FindBrainDir()
+	brainDir, brainErr := knowledge.FindBrainDir()
 	var cfg config.Config
 	var source config.ConfigSource
 	var err error
@@ -122,7 +122,7 @@ func cmdConfigShow() {
 }
 
 func resolveConfig() (config.Config, string) {
-	brainDir, brainErr := brain.FindBrainDir()
+	brainDir, brainErr := knowledge.FindBrainDir()
 	if brainErr == nil && config.ProjectConfigExists(brainDir) {
 		cfg, err := config.LoadForProject(brainDir)
 		if err != nil {
@@ -135,7 +135,7 @@ func resolveConfig() (config.Config, string) {
 }
 
 func resolveConfigForWrite() (config.Config, string, error) {
-	brainDir, brainErr := brain.FindBrainDir()
+	brainDir, brainErr := knowledge.FindBrainDir()
 	if brainErr == nil && config.ProjectConfigExists(brainDir) {
 		cfg, err := config.LoadForProject(brainDir)
 		if err != nil {
@@ -201,7 +201,7 @@ func cmdConfigSet() {
 		os.Exit(1)
 	}
 
-	brainDir, brainErr := brain.FindBrainDir()
+	brainDir, brainErr := knowledge.FindBrainDir()
 	if brainErr == nil && config.ProjectConfigExists(brainDir) {
 		if err := config.SaveToProject(cfg, brainDir); err != nil {
 			fmt.Fprintf(os.Stderr, "Error saving config: %v\n", err)
@@ -254,7 +254,7 @@ func cmdConfigReset() {
 	defaultCfg := config.DefaultConfig()
 
 	if len(os.Args) < 4 {
-		brainDir, brainErr := brain.FindBrainDir()
+		brainDir, brainErr := knowledge.FindBrainDir()
 		if brainErr == nil && config.ProjectConfigExists(brainDir) {
 			if err := config.SaveToProject(defaultCfg, brainDir); err != nil {
 				fmt.Fprintf(os.Stderr, "Error saving config: %v\n", err)
@@ -288,7 +288,7 @@ func cmdConfigReset() {
 		os.Exit(1)
 	}
 
-	brainDir, brainErr := brain.FindBrainDir()
+	brainDir, brainErr := knowledge.FindBrainDir()
 	if brainErr == nil && config.ProjectConfigExists(brainDir) {
 		if err := config.SaveToProject(cfg, brainDir); err != nil {
 			fmt.Fprintf(os.Stderr, "Error saving config: %v\n", err)
@@ -514,7 +514,7 @@ func cmdConfigSetup() {
 	}
 	cfg.Review.Profile = prof
 
-	brainDir, brainErr := brain.FindBrainDir()
+	brainDir, brainErr := knowledge.FindBrainDir()
 	if brainErr == nil && config.ProjectConfigExists(brainDir) {
 		if err := config.SaveToProject(cfg, brainDir); err != nil {
 			fmt.Fprintf(os.Stderr, "Error saving config: %v\n", err)

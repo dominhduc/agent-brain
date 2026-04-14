@@ -5,8 +5,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/dominhduc/agent-brain/internal/brain"
-	"github.com/dominhduc/agent-brain/internal/handoff"
+	"github.com/dominhduc/agent-brain/internal/knowledge"
+	"github.com/dominhduc/agent-brain/internal/session"
 )
 
 func cmdHandoff() {
@@ -22,7 +22,7 @@ func cmdHandoff() {
 		os.Exit(1)
 	}
 
-	brainDir, err := brain.FindBrainDir()
+	brainDir, err := knowledge.FindBrainDir()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
@@ -33,7 +33,7 @@ func cmdHandoff() {
 	case "create":
 		summary := ""
 		next := ""
-		session := ""
+		sessionID := ""
 		for i := 3; i < len(os.Args); i++ {
 			switch os.Args[i] {
 			case "--summary":
@@ -48,7 +48,7 @@ func cmdHandoff() {
 				}
 			case "--session":
 				if i+1 < len(os.Args) {
-					session = os.Args[i+1]
+					sessionID = os.Args[i+1]
 					i++
 				}
 			}
@@ -57,14 +57,14 @@ func cmdHandoff() {
 			fmt.Println("Usage: brain handoff create --summary \"...\" --next \"...\"")
 			os.Exit(1)
 		}
-		h, err := handoff.Create(brainDir, summary, next, session, "")
+		h, err := session.CreateHandoff(brainDir, summary, next, sessionID, "")
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
 		fmt.Printf("Handoff created: %s\n", h.ID)
 	case "latest":
-		h, err := handoff.Latest(brainDir)
+		h, err := session.LatestHandoff(brainDir)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
@@ -85,7 +85,7 @@ func cmdHandoff() {
 			fmt.Println("Usage: brain handoff show <id>")
 			os.Exit(1)
 		}
-		h, err := handoff.Show(brainDir, os.Args[3])
+		h, err := session.ShowHandoff(brainDir, os.Args[3])
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
@@ -99,7 +99,7 @@ func cmdHandoff() {
 		fmt.Printf("Next:    %s\n", h.Next)
 		fmt.Printf("Time:    %s\n", h.Timestamp.Format("2006-01-02 15:04:05"))
 	case "resume":
-		h, err := handoff.Resume(brainDir)
+		h, err := session.ResumeHandoff(brainDir)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)

@@ -4,8 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/dominhduc/agent-brain/internal/brain"
-	"github.com/dominhduc/agent-brain/internal/index"
+	"github.com/dominhduc/agent-brain/internal/knowledge"
 )
 
 func cmdIndex() {
@@ -27,13 +26,13 @@ func cmdIndex() {
 }
 
 func cmdIndexRebuild() {
-	brainDir, err := brain.FindBrainDir()
+	brainDir, err := knowledge.FindBrainDir()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 
-	idx, err := index.Rebuild(brainDir)
+	idx, err := knowledge.RebuildIndex(brainDir)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error rebuilding index: %v\n", err)
 		os.Exit(1)
@@ -44,5 +43,5 @@ func cmdIndexRebuild() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("Index rebuilt: %d entries across %d topics\n", len(idx.Entries), len(brain.AvailableTopics()))
+	fmt.Printf("Index rebuilt: %d entries across %d topics\n", len(idx.Entries), len(knowledge.AvailableTopics()))
 }

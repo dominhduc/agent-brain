@@ -3,6 +3,7 @@ package knowledge
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -112,6 +113,14 @@ func TopicFilePathForDir(topic, brainDir string) (string, error) {
 	return filepath.Join(brainDir, filename), nil
 }
 
+func TopicFilePath(topic string) (string, error) {
+	brainDir, err := FindBrainDir()
+	if err != nil {
+		return "", err
+	}
+	return TopicFilePathForDir(topic, brainDir)
+}
+
 func (h *Hub) Dir() string {
 	return h.dir
 }
@@ -137,4 +146,9 @@ func EnsureBrainDir(cwd string) error {
 		}
 	}
 	return nil
+}
+
+func IsGitRepo(cwd string) bool {
+	cmd := exec.Command("git", "-C", cwd, "rev-parse", "--git-dir")
+	return cmd.Run() == nil
 }

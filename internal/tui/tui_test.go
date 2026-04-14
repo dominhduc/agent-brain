@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dominhduc/agent-brain/internal/review"
+	"github.com/dominhduc/agent-brain/internal/knowledge"
 )
 
-func makeEntry(id, topic, content string) review.PendingEntry {
-	return review.PendingEntry{
+func makeEntry(id, topic, content string) knowledge.PendingEntry {
+	return knowledge.PendingEntry{
 		ID:        id,
 		Topic:     topic,
 		Content:   content,
@@ -154,7 +154,7 @@ func TestTruncateString(t *testing.T) {
 }
 
 func TestNewReviewState(t *testing.T) {
-	entries := []review.PendingEntry{
+	entries := []knowledge.PendingEntry{
 		makeEntry("1", "gotcha", "bug: nil pointer dereference"),
 		makeEntry("2", "pattern", "use context with timeout"),
 		makeEntry("3", "gotcha", "race condition in map access"),
@@ -186,7 +186,7 @@ func TestNewReviewState(t *testing.T) {
 }
 
 func TestReviewStateNavigation(t *testing.T) {
-	entries := []review.PendingEntry{
+	entries := []knowledge.PendingEntry{
 		makeEntry("1", "alpha", "entry one"),
 		makeEntry("2", "alpha", "entry two"),
 		makeEntry("3", "alpha", "entry three"),
@@ -242,7 +242,7 @@ func TestReviewStateNavigation(t *testing.T) {
 }
 
 func TestReviewStateToggle(t *testing.T) {
-	entries := []review.PendingEntry{
+	entries := []knowledge.PendingEntry{
 		makeEntry("1", "alpha", "entry one"),
 		makeEntry("2", "alpha", "entry two"),
 	}
@@ -261,7 +261,7 @@ func TestReviewStateToggle(t *testing.T) {
 }
 
 func TestReviewStateAcceptReject(t *testing.T) {
-	entries := []review.PendingEntry{
+	entries := []knowledge.PendingEntry{
 		makeEntry("1", "alpha", "entry one"),
 		makeEntry("2", "alpha", "entry two"),
 		makeEntry("3", "beta", "entry three"),
@@ -287,7 +287,7 @@ func TestReviewStateAcceptReject(t *testing.T) {
 }
 
 func TestReviewStateSelectAllDeselectAll(t *testing.T) {
-	entries := []review.PendingEntry{
+	entries := []knowledge.PendingEntry{
 		makeEntry("1", "alpha", "entry one"),
 		makeEntry("2", "alpha", "entry two"),
 		makeEntry("3", "beta", "entry three"),
@@ -310,7 +310,7 @@ func TestReviewStateSelectAllDeselectAll(t *testing.T) {
 }
 
 func TestReviewStateCurrentTopic(t *testing.T) {
-	entries := []review.PendingEntry{
+	entries := []knowledge.PendingEntry{
 		makeEntry("1", "alpha", "entry one"),
 		makeEntry("2", "beta", "entry two"),
 	}
@@ -339,7 +339,7 @@ func TestReviewStateEmpty(t *testing.T) {
 }
 
 func TestReviewStateDedupGroups(t *testing.T) {
-	entries := []review.PendingEntry{
+	entries := []knowledge.PendingEntry{
 		makeEntry("1", "gotcha", "always check for nil"),
 		makeEntry("2", "gotcha", "Always check for nil"),
 	}
@@ -352,7 +352,7 @@ func TestReviewStateDedupGroups(t *testing.T) {
 }
 
 func TestRenderScreen(t *testing.T) {
-	entries := []review.PendingEntry{
+	entries := []knowledge.PendingEntry{
 		makeEntry("1", "alpha", "entry one"),
 	}
 

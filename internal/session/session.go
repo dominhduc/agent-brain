@@ -180,3 +180,26 @@ func formatList(items []string) string {
 	}
 	return "`" + strings.Join(items, "`, `") + "`"
 }
+
+func CreateHandoff(brainDir, summary, next, session, topic string) (*Handoff, error) {
+	return Open(brainDir).CreateHandoff(summary, next, session, topic)
+}
+
+func LatestHandoff(brainDir string) (*Handoff, error) {
+	return Open(brainDir).LatestHandoff()
+}
+
+func ResumeHandoff(brainDir string) (*Handoff, error) {
+	return Open(brainDir).ResumeHandoff()
+}
+
+func ShowHandoff(brainDir, id string) (*Handoff, error) {
+	h, err := LatestHandoff(brainDir)
+	if err != nil {
+		return nil, err
+	}
+	if h == nil || h.ID != id {
+		return nil, nil
+	}
+	return h, nil
+}

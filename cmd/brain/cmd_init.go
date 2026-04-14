@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/dominhduc/agent-brain/internal/brain"
+	"github.com/dominhduc/agent-brain/internal/knowledge"
 	"github.com/dominhduc/agent-brain/internal/config"
 	"github.com/dominhduc/agent-brain/internal/hook"
 	"github.com/dominhduc/agent-brain/internal/preflight"
@@ -24,7 +24,7 @@ func cmdInit() {
 
 	warnings := preflight.RunAll(cwd)
 
-	if brain.BrainDirExists(cwd) {
+	if knowledge.BrainDirExists(cwd) {
 		fmt.Println("Knowledge hub already exists in this project.")
 		fmt.Println("What to do: to reinitialize, remove the .brain/ directory first: rm -rf .brain/")
 		return
@@ -32,7 +32,7 @@ func cmdInit() {
 
 	fmt.Println("Initializing knowledge hub...")
 
-	if err := brain.EnsureBrainDir(cwd); err != nil {
+	if err := knowledge.EnsureBrainDir(cwd); err != nil {
 		fmt.Fprintf(os.Stderr, "Error creating .brain/ directory: %v\nWhat to do: check directory permissions.\n", err)
 		os.Exit(1)
 	}
@@ -103,7 +103,7 @@ func cmdInit() {
 	}
 
 	gitignorePath := filepath.Join(cwd, ".gitignore")
-	entries := []string{".brain/archived/", ".brain/.queue/", ".brain/pending/", ".brain/index.json", ".brain/buffer/", ".brain/handoffs/", ".brain/.session/"}
+	entries := []string{".brain/archived/", ".brain/.queue/", ".brain/pending/", ".brain/knowledge.json", ".brain/buffer/", ".brain/handoffs/", ".brain/.session/"}
 	existing := ""
 	if data, err := os.ReadFile(gitignorePath); err == nil {
 		existing = string(data)
@@ -186,7 +186,7 @@ func cmdInit() {
 		fmt.Println("Daemon registered and started.")
 	}
 
-	brain.ResetCache()
+	knowledge.ResetCache()
 
 	fmt.Println("\nKnowledge hub initialized successfully!")
 	fmt.Println("First commit will auto-populate knowledge via the daemon.")
