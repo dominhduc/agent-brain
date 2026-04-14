@@ -9,7 +9,7 @@ import (
 	"github.com/dominhduc/agent-brain/internal/otel"
 )
 
-var version = "v1.2.0"
+var version = "v1.3.0"
 
 var (
 	commit string
@@ -66,7 +66,7 @@ func main() {
 	case "prune":
 		cmdPrune(dryRun)
 	case "dedup":
-		cmdDedup(dryRun)
+		cmdDedup(dryRun, hasFlag("--fuzzy"), hasFlag("--threshold"))
 	case "sleep":
 		cmdSleep(dryRun)
 	case "status":
@@ -189,6 +189,7 @@ FULL REFERENCE
     brain status               Hub statistics & health
     brain prune [--dry-run]    Archive stale entries
     brain dedup [--dry-run]    Remove duplicate entries
+    brain dedup --fuzzy [--dry-run]  Remove near-duplicate entries (trigram Jaccard)
     brain sleep [--dry-run]    Consolidate memory (decay + archive)
     brain index rebuild        Rebuild metadata index
     brain doctor               Full health check & diagnostics

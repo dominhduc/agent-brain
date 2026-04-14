@@ -7,26 +7,42 @@ import (
 	"github.com/dominhduc/agent-brain/internal/knowledge"
 )
 
-func cmdDedup(dryRun bool) {
+func cmdDedup(dryRun bool, fuzzy bool, customThreshold bool) {
 	brainDir, err := knowledge.FindBrainDir()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: run 'brain init' first.\n", err)
 		os.Exit(1)
 	}
 
-	report, err := knowledge.RunDedup(brainDir, dryRun)
+	var report *knowledge.DedupReport
+	threshold := 0.55
+
+	if fuzzy {
+		report, err = knowledge.RunFuzzyDedup(brainDir, dryRun, threshold)
+	} else {
+		report, err = knowledge.RunDedup(brainDir, dryRun)
+	}
+
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 
 	if len(report.Groups) == 0 {
-		fmt.Println("No duplicates found. All entries are unique!")
+		if fuzzy {
+			fmt.Printf("No fuzzy duplicates found (threshold: %.2f). All entries are distinct!\n", threshold)
+		} else {
+			fmt.Println("No duplicates found. All entries are unique!")
+		}
 		return
 	}
 
-	fmt.Printf("Found %d duplicate groups (%d total duplicates):\n\n",
-		len(report.Groups), report.TotalRemoved)
+	mode := ""
+	if fuzzy {
+		mode = " (fuzzy, threshold=" + fmt.Sprintf("%.2f", threshold) + ")"
+	}
+	fmt.Printf("Found %d duplicate groups%s (%d total duplicates):\n\n",
+		len(report.Groups), mode, report.TotalRemoved)
 
 	for i, group := range report.Groups {
 		fmt.Printf("  [%d] Content: %s\n", i+1, truncate(group.Message, 60))

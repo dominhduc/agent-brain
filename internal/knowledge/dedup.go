@@ -223,3 +223,287 @@ func RunDedup(brainDir string, dryRun bool) (*DedupReport, error) {
 	}
 	return h.RunDedup(dryRun)
 }
+
+const defaultFuzzyThreshold = 0.55
+
+func trigrams(s string) map[string]bool {
+	s = strings.ToLower(s)
+	s = strings.Join(strings.Fields(s), " ")
+	if len(s) < 3 {
+		return nil
+	}
+	ts := make(map[string]bool)
+	for i := 0; i < len(s)-2; i++ {
+		ts[s[i:i+3]] = true
+	}
+	return ts
+}
+
+func trigramJaccard(a, b string) float64 {
+	ta := trigrams(a)
+	tb := trigrams(b)
+	if len(ta) == 0 || len(tb) == 0 {
+		return 0
+	}
+	if a == b {
+		return 1.0
+	}
+	inter := 0
+	for k := range ta {
+		if tb[k] {
+			inter++
+		}
+	}
+	union := len(ta) + len(tb) - inter
+	if union == 0 {
+		return 0
+	}
+	return float64(inter) / float64(union)
+}
+
+func (h *Hub) FindFuzzyDuplicates(threshold float64) ([]DedupGroup, error) {
+	if threshold <= 0 || threshold > 1 {
+		threshold = defaultFuzzyThreshold
+	}
+
+	topics := AvailableTopics()
+
+	type fuzzyEntry struct {
+		topic       string
+		line        string
+		lineNum     int
+		message     string
+		normalized  string
+		triSet      map[string]bool
+	}
+
+	var allEntries []fuzzyEntry
+
+	for _, topic := range topics {
+		path, err := h.topicFilePath(topic)
+		if err != nil {
+			continue
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+			return nil, fmt.Errorf("reading %s: %w", topic, err)
+		}
+
+		for i, line := range strings.Split(string(data), "\n") {
+			if strings.HasPrefix(line, "### [") {
+				msg := extractMessageFromEntry(line)
+				norm := normalizeEntry(msg)
+				allEntries = append(allEntries, fuzzyEntry{
+					topic:      topic,
+					line:       line,
+					lineNum:    i + 1,
+					message:    msg,
+					normalized: norm,
+					triSet:     trigrams(norm),
+				})
+			}
+		}
+	}
+
+	parent := make([]int, len(allEntries))
+	for i := range parent {
+		parent[i] = i
+	}
+
+	var find func(x int) int
+	find = func(x int) int {
+		if parent[x] != x {
+			parent[x] = find(parent[x])
+		}
+		return parent[x]
+	}
+
+	union := func(x, y int) {
+		px, py := find(x), find(y)
+		if px != py {
+			parent[px] = py
+		}
+	}
+
+	for i := 0; i < len(allEntries); i++ {
+		if allEntries[i].triSet == nil {
+			continue
+		}
+		for j := i + 1; j < len(allEntries); j++ {
+			if allEntries[j].triSet == nil {
+				continue
+			}
+			inter := 0
+			for k := range allEntries[i].triSet {
+				if allEntries[j].triSet[k] {
+					inter++
+				}
+			}
+			unionSize := len(allEntries[i].triSet) + len(allEntries[j].triSet) - inter
+			if unionSize == 0 {
+				continue
+			}
+			score := float64(inter) / float64(unionSize)
+			if score >= threshold {
+				union(i, j)
+			}
+		}
+	}
+
+	clusters := make(map[int][]int)
+	for i := range allEntries {
+		clusters[find(i)] = append(clusters[find(i)], i)
+	}
+
+	var groups []DedupGroup
+	for _, indices := range clusters {
+		if len(indices) < 2 {
+			continue
+		}
+
+		sort.Slice(indices, func(a, b int) bool {
+			if allEntries[a].topic != allEntries[b].topic {
+				return allEntries[a].topic < allEntries[b].topic
+			}
+			return allEntries[a].lineNum < allEntries[b].lineNum
+		})
+
+		topicsInGroup := make(map[string]bool)
+		for _, idx := range indices {
+			topicsInGroup[allEntries[idx].topic] = true
+		}
+
+		group := DedupGroup{
+			Fingerprint:  fmt.Sprintf("fuzzy-%d", len(groups)),
+			Message:      allEntries[indices[0]].message,
+			Kept:         DedupEntry{Topic: allEntries[indices[0]].topic, Line: allEntries[indices[0]].line, LineNum: allEntries[indices[0]].lineNum},
+			IsCrossTopic: len(topicsInGroup) > 1,
+		}
+		for _, idx := range indices[1:] {
+			group.Duplicates = append(group.Duplicates, DedupEntry{
+				Topic:   allEntries[idx].topic,
+				Line:    allEntries[idx].line,
+				LineNum: allEntries[idx].lineNum,
+			})
+		}
+		groups = append(groups, group)
+	}
+
+	sort.Slice(groups, func(i, j int) bool {
+		return len(groups[i].Duplicates) > len(groups[j].Duplicates)
+	})
+
+	return groups, nil
+}
+
+func (h *Hub) RunFuzzyDedup(dryRun bool, threshold float64) (*DedupReport, error) {
+	groups, err := h.FindFuzzyDuplicates(threshold)
+	if err != nil {
+		return nil, err
+	}
+
+	report := &DedupReport{Groups: groups}
+	if len(groups) == 0 {
+		return report, nil
+	}
+
+	dupLines := make(map[string]bool)
+	for _, g := range groups {
+		for _, d := range g.Duplicates {
+			dupLines[d.Topic+"_"+d.Line] = true
+		}
+	}
+
+	for _, topic := range AvailableTopics() {
+		path, err := h.topicFilePath(topic)
+		if err != nil {
+			continue
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+			return nil, fmt.Errorf("reading %s: %w", topic, err)
+		}
+
+		lines := strings.Split(string(data), "\n")
+		var kept []string
+		for _, line := range lines {
+			if dupLines[topic+"_"+line] {
+				continue
+			}
+			kept = append(kept, line)
+		}
+
+		if len(kept) != len(lines) && !dryRun {
+			if err := os.WriteFile(path, []byte(strings.Join(kept, "\n")), 0600); err != nil {
+				return nil, fmt.Errorf("writing %s: %w", topic, err)
+			}
+		}
+	}
+
+	totalRemoved := 0
+	crossTopicCount := 0
+	for _, g := range groups {
+		totalRemoved += len(g.Duplicates)
+		if g.IsCrossTopic {
+			crossTopicCount++
+		}
+	}
+	report.TotalRemoved = totalRemoved
+	report.CrossTopicCount = crossTopicCount
+
+	if !dryRun {
+		archivedDir := filepath.Join(h.dir, "archived")
+		if err := os.MkdirAll(archivedDir, 0755); err != nil {
+			return nil, fmt.Errorf("creating archived dir: %w", err)
+		}
+
+		archivePath := filepath.Join(archivedDir, fmt.Sprintf("dedup-fuzzy-%s.md", time.Now().Format("2006-01-02")))
+		report.ArchivedPath = archivePath
+
+		var archive strings.Builder
+		archive.WriteString(fmt.Sprintf("# Archived Fuzzy Duplicates — %s\n\n", time.Now().Format("2006-01-02")))
+		archive.WriteString("Generated by: brain dedup --fuzzy\n")
+		archive.WriteString(fmt.Sprintf("Threshold: %.2f\n", threshold))
+		archive.WriteString(fmt.Sprintf("Total entries archived: %d\n\n", totalRemoved))
+
+		byTopic := make(map[string][]DedupEntry)
+		for _, g := range groups {
+			for _, d := range g.Duplicates {
+				byTopic[d.Topic] = append(byTopic[d.Topic], d)
+			}
+		}
+
+		for _, topic := range AvailableTopics() {
+			entries, ok := byTopic[topic]
+			if !ok {
+				continue
+			}
+			archive.WriteString(fmt.Sprintf("## From %s.md\n\n", topic))
+			for _, d := range entries {
+				msg := extractMessageFromEntry(d.Line)
+				archive.WriteString(fmt.Sprintf("### [archived %s] (was line %d)\n%s\n\n",
+					time.Now().Format("2006-01-02"), d.LineNum, msg))
+			}
+		}
+
+		if err := os.WriteFile(archivePath, []byte(archive.String()), 0600); err != nil {
+			return nil, fmt.Errorf("writing archive: %w", err)
+		}
+	}
+
+	return report, nil
+}
+
+func RunFuzzyDedup(brainDir string, dryRun bool, threshold float64) (*DedupReport, error) {
+	h, err := Open(brainDir)
+	if err != nil {
+		return nil, err
+	}
+	return h.RunFuzzyDedup(dryRun, threshold)
+}

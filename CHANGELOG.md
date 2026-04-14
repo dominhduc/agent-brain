@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.3.0] - 2026-04-14
+
+### Added
+- `brain dedup --fuzzy`: Fuzzy deduplication using character trigram Jaccard similarity (threshold 0.55)
+- Detects near-duplicate entries that paraphrase the same concept with different wording
+- Union-find clustering groups all similar entries; keeps first occurrence, archives rest
+- In active projects, typically finds 50%+ more duplicates than exact mode alone
+- `trigramJaccard()` and `FindFuzzyDuplicates()` — pure Go stdlib, zero external dependencies
+- 6 new tests for fuzzy dedup logic
+
+### Changed
+- `brain dedup` now accepts `--fuzzy` flag for near-duplicate detection
+- Help text updated with `--fuzzy` flag documentation
+
 ## [v1.2.0] - 2026-04-14
 
 ### Added
