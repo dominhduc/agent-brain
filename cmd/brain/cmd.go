@@ -9,7 +9,7 @@ import (
 	"github.com/dominhduc/agent-brain/internal/otel"
 )
 
-var version = "v1.4.0"
+var version = "v1.4.1"
 
 var (
 	commit string
@@ -32,7 +32,7 @@ func main() {
 	defer otel.Shutdown(ctx)
 
 	if len(os.Args) < 2 {
-		printUsage()
+		printUsage(false)
 		os.Exit(0)
 	}
 
@@ -72,7 +72,7 @@ func main() {
 	case "update":
 		cmdUpdate()
 	case "--help", "-h", "help":
-		printUsage()
+		printUsage(hasFlag("--full"))
 
 	// Backward compatibility aliases
 	case "search":
@@ -117,7 +117,7 @@ func main() {
 		os.Exit(1)
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n\n", os.Args[1])
-		printUsage()
+		printUsage(false)
 		os.Exit(1)
 	}
 }
@@ -131,46 +131,69 @@ func hasFlag(flag string) bool {
 	return false
 }
 
-func printUsage() {
+func printUsage(full bool) {
 	v := version
 	if v == "" {
 		v = "dev"
 	}
-	tagline := fmt.Sprintf("agent-brain — Persistent Memory for AI Coding Agents (%s)", v)
-	if len(tagline) > 64 {
-		tagline = tagline[:61] + "..."
+	if full {
+		printUsageFull(v)
+	} else {
+		printUsageBrief(v)
 	}
-	fmt.Printf("+------------------------------------------------------------------+\n")
-	fmt.Printf("| %-64s |\n", tagline)
-	fmt.Printf("|  https://github.com/dominhduc/agent-brain                        |\n")
-	fmt.Printf("+------------------------------------------------------------------+\n\n")
-	fmt.Print(`WHAT IS AGENT-BRAIN?
+}
 
-  agent-brain gives your AI coding agent (Claude Code, OpenCode, Cursor, etc.)
-  a persistent memory. It creates a .brain/ knowledge hub that:
+func printUsageBrief(v string) {
+	fmt.Printf("agent-brain %s — Persistent Memory for AI Coding Agents\n", v)
+	fmt.Printf("https://github.com/dominhduc/agent-brain\n\n")
+	fmt.Print(`USAGE
+  brain <command> [arguments] [flags]
 
-  - Remembers project conventions, gotchas, and decisions across sessions
-  - Auto-analyzes every git commit via LLM to discover patterns
-  - Feeds accumulated knowledge back into every new agent session
-  - Lets agents record learnings so the next session starts smarter
+COMMANDS
+  init                Initialize .brain/ knowledge hub
+  get <topic|query>   Retrieve knowledge or search
+  add <topic> "<msg>" Record a learning or decision
+  add --eval          End session with self-evaluation
+  clean               Run all cleanup (dedup, prune, decay, rebuild)
+  doctor              Hub health check & diagnostics
+  daemon <action>     Manage daemon (start|stop|status|review|failed|retry)
+  config <action>     Manage settings (list|get|set|setup|reset)
+  update              Update agent-brain or skill files
+
+TOPICS   gotcha, pattern, decision, architecture, memory
+AREAS    ui, backend, infrastructure, database, security, testing, architecture, general
+
+WORKFLOWS
+  Session start     brain get all
+  When corrected    brain add gotcha "..."
+  Session end       brain add --eval
+
+FLAGS  --dry-run  --json  --summary  --compact  --full  --yes/-y
+
+Run 'brain help --full' for complete reference with all flags and examples.
+`)
+}
+
+func printUsageFull(v string) {
+	fmt.Printf("agent-brain %s — Persistent Memory for AI Coding Agents\n", v)
+	fmt.Printf("https://github.com/dominhduc/agent-brain\n\n")
+	fmt.Print(`USAGE
+  brain <command> [arguments] [flags]
 
 QUICK START
-
   brain init                    Initialize knowledge hub in current project
   brain get all                 Load all accumulated knowledge
   brain add <topic> "<msg>"     Record a new learning or decision
   brain add --eval              End session with self-evaluation + handoff
   brain get <query>             Search if not a known topic
 
-COMMON WORKFLOWS
-
+WORKFLOWS
   Session start     brain get all
   Before debugging  brain get gotchas
   When corrected    brain add gotcha "The fix"
   Session end       brain add --eval
 
-FULL REFERENCE
-
+COMMANDS
   CORE
     brain init                 Create .brain/ hub, AGENTS.md, git hooks, daemon
     brain get <topic>          Topics: all, gotchas, patterns, decisions, architecture, memory
@@ -213,7 +236,6 @@ FULL REFERENCE
     brain update --skills --reflect [--dry-run]  Generate skill adaptations from usage data
 
 AREA TAXONOMY (8 topics)
-
   ui            Frontend, styling, components, accessibility
   backend       API, services, middleware, business logic
   infrastructure Deploy, CI/CD, Docker, cloud, monitoring
@@ -223,8 +245,15 @@ AREA TAXONOMY (8 topics)
   architecture  Module structure, design patterns, data flow
   general       Cross-cutting conventions, tooling, guidelines
 
-EXAMPLES
+DEPRECATED ALIASES
+  search  → brain get <query>       eval     → brain add --eval
+  prune   → brain clean --patterns  dedup    → brain clean --duplicates
+  sleep   → brain clean --decay     status   → brain doctor
+  review  → brain daemon review     index    → brain clean --rebuild
+  wm      → brain add --wm          handoff  → brain add --eval
+  outcome → brain add --eval --good/--bad
 
+EXAMPLES
   brain init
   brain get gotchas
   brain get all --focus "security"

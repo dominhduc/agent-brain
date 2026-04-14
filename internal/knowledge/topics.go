@@ -407,6 +407,39 @@ func deduplicateContent(content string) string {
 	return strings.Join(result, "\n")
 }
 
+const defaultDuplicateThreshold = 0.55
+
+func IsDuplicateOfExisting(topicFilePath string, content string) (bool, error) {
+	data, err := os.ReadFile(topicFilePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	normalized := normalizeEntry(content)
+	if normalized == "" {
+		return false, nil
+	}
+
+	for _, line := range strings.Split(string(data), "\n") {
+		msg := extractMessageFromEntry(line)
+		existing := normalizeEntry(msg)
+		if existing == "" {
+			continue
+		}
+		if existing == normalized {
+			return true, nil
+		}
+		if trigramJaccard(existing, normalized) >= defaultDuplicateThreshold {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 var entryPattern = regexp.MustCompile(`^### \[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\] (.+)$`)
 
 func ExtractTopicEntries(topicFile string) ([]PendingEntry, error) {

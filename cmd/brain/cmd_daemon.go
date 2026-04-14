@@ -704,11 +704,23 @@ func writeAcceptedDaemon(ctx context.Context, span trace.Span, accepted []knowle
 	idx, _ := knowledge.LoadIndex(brainDir)
 	now := time.Now()
 
+	var written, skipped int
+
 	for _, e := range accepted {
 		path, err := knowledge.TopicFilePath(e.Topic)
 		if err != nil {
 			continue
 		}
+
+		isDup, err := knowledge.IsDuplicateOfExisting(path, e.Content)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: dedup check failed for %s: %v\n", e.Topic, err)
+		}
+		if isDup {
+			skipped++
+			continue
+		}
+
 		f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 		if err != nil {
 			continue
@@ -725,6 +737,8 @@ func writeAcceptedDaemon(ctx context.Context, span trace.Span, accepted []knowle
 			Topics:         e.Topics,
 		})
 
+		written++
+
 		otel.RecordEvent(writeSpan, "brain.knowledge.entry_written",
 			otel.BrainEntryID.String(e.ID),
 			otel.BrainEntryTopic.String(e.Topic),
@@ -732,8 +746,12 @@ func writeAcceptedDaemon(ctx context.Context, span trace.Span, accepted []knowle
 	}
 	idx.Save(brainDir)
 
+	if skipped > 0 {
+		fmt.Printf("Skipped %d duplicate(s), wrote %d entries.\n", skipped, written)
+	}
+
 	otel.SetAttributes(writeSpan,
-		otel.BrainReviewAccepted.Int(len(accepted)),
+		otel.BrainReviewAccepted.Int(written),
 	)
 }
 

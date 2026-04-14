@@ -34,6 +34,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `brain review` → use `brain daemon review`
 - `brain skill` → use `brain update --skills`
 
+## [v1.4.1] - 2026-04-15
+
+### Added
+- `brain help --full`: Complete reference with all flags, area taxonomy, deprecated aliases, and examples
+- `IsDuplicateOfExisting()`: Reusable fuzzy dedup check using trigram Jaccard similarity (threshold 0.55)
+- DEPRECATED ALIASES section in full help — documents all 11 backward-compat command aliases (were completely undocumented)
+
+### Changed
+- `brain help` now shows brief output (~28 lines: commands, topics, workflows, flags) instead of 96-line wall of text
+- `brain daemon review` (`writeAcceptedDaemon`) now deduplicates accepted entries against existing topic file content before writing. Prevents the LLM from generating paraphrased duplicates across commits
+- Removed "WHAT IS AGENT-BRAIN?" marketing copy and banner box from help output (agents don't need it)
+- Help footer now points to `brain help --full` for complete reference
+
 ## [v1.3.0] - 2026-04-14
 
 ### Added

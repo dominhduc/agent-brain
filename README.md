@@ -73,7 +73,7 @@ AI coding agents are brilliant — but they **forget everything** between sessio
 | No institutional memory across sessions | Knowledge compounds and grows smarter |
 | Agent makes the same mistakes repeatedly | Past gotchas are flagged before they happen again |
 
-**v1.3.0** adds fuzzy deduplication (`brain clean --duplicates --fuzzy`) using trigram Jaccard similarity to catch near-duplicate entries that paraphrase the same concept. Removes 50%+ of redundant entries in active projects. v1.2.0 improvements: clean output formatting with `--compact`, `--message-only`, and structured JSON modes; tiered `brain get all` view; search results grouped by topic; TTY-aware color in `brain doctor`. All tests pass with race detector.
+**v1.4.1** reorganizes `brain help` into brief (28 lines) + `--full` reference, fixes daemon review writing paraphrased duplicates into topic files, and documents all deprecated command aliases. v1.4.0 consolidates 21 commands into 8 with backward-compatible aliases. v1.3.0 adds fuzzy deduplication (`brain clean --duplicates --fuzzy`) using trigram Jaccard similarity to catch near-duplicate entries.
 
 ---
 
@@ -154,6 +154,13 @@ That's it. Every commit is analyzed automatically. Every agent session loads acc
 ---
 
 ## Commands
+
+### Getting Help
+
+```bash
+brain help              # Brief: commands, topics, workflows (~28 lines)
+brain help --full       # Complete reference: all flags, area taxonomy, deprecated aliases, examples
+```
 
 ### Core Commands
 
@@ -265,6 +272,8 @@ brain daemon review --all     # Import existing topic entries for re-review
 ```
 
 The TUI shows entries grouped by topic. Navigate with arrows, accept with `a`, reject with `r`, press `q` to quit. Only entries you approve become permanent.
+
+Accepted entries are deduplicated against existing topic file content using trigram similarity (threshold 0.55). If an accepted entry paraphrases what's already in a topic file, it's skipped automatically.
 
 ---
 
