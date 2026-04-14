@@ -527,7 +527,7 @@ func cmdDaemonReview(allFlag, yesFlag, ttyFlag bool) {
 	fmt.Printf("Reviewing %d pending entries (profile: %s)\n\n", len(entries), prof.Name)
 
 	canUseTTY := tui.CanUseRawMode()
-	useTUI := !prof.AutoAccept && !yesFlag && !ttyFlag && canUseTTY
+	useTUI := !yesFlag && !ttyFlag && canUseTTY
 
 	var accepted []knowledge.PendingEntry
 	var rejectedIDs []string
@@ -556,12 +556,12 @@ func cmdDaemonReview(allFlag, yesFlag, ttyFlag bool) {
 			removeEntriesDaemon(accepted, rejectedIDs, pendingDir)
 			fmt.Printf("\nApplied %d entries, rejected %d.\n", len(accepted), len(rejectedIDs))
 		}
-	} else if !prof.AutoAccept && !yesFlag {
+	} else if !yesFlag {
 		mode = "line_buffered"
 		accepted, rejectedIDs = doLineBufferedReviewDaemon(ctx, span, entries, prof, pendingDir)
 	} else {
 		mode = "auto"
-		doAutoAcceptDaemon(ctx, span, entries, prof, pendingDir, yesFlag || !canUseTTY)
+		doAutoAcceptDaemon(ctx, span, entries, prof, pendingDir, true)
 		return
 	}
 

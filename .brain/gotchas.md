@@ -385,3 +385,18 @@
 
 ### [2026-04-14 22:53:12] Duplicate entries require safe overwrite confirmation before updating
 
+
+### [2026-04-15 05:54:00] String concatenation for file paths causes errors on non-Windows systems; use filepath.Join instead.
+
+
+### [2026-04-15 05:54:00] Double-marshaling JSON sends corrupted base64 data to LLMs; avoid nested encoding.
+
+
+### [2026-04-15 05:54:00] Direct TTY ioctl calls (TCGETS) fail on non-TTY inputs; detect terminal type before raw mode.
+
+
+### [2026-04-15 05:54:00] Test config writes corrupt production settings; isolate with XDG_CONFIG_HOME.
+
+
+### [2026-04-15 05:54:00] Non-blocking reads fail when stdin has no pending input; handle EOF conditions properly.
+

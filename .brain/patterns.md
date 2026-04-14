@@ -515,3 +515,30 @@
 
 ### [2026-04-14 22:53:12] Global threshold fallback when provided invalid values
 
+
+### [2026-04-15 05:54:00] Consolidate CLI commands into unified modules (borrowing existing logic like cmdClean covering old prune/dedup).
+
+
+### [2026-04-15 05:54:00] Queue-based daemon processing with backoff retry logic for resilience.
+
+
+### [2026-04-15 05:54:00] Use standard library golang.org/x/term for TTY detection across platforms.
+
+
+### [2026-04-15 05:54:00] Auto-accept pending entries in non-TTY environments to prevent fatal exits.
+
+
+### [2026-04-15 05:54:00] Fuzzy deduplication using trigram Jaccard similarity with thresholding (0.55).
+
+
+### [2026-04-15 05:54:00] Union-Find clustering groups similar entries for cross-topic deduplication.
+
+
+### [2026-04-15 05:54:00] Semantic Versioning for consistent release tracking and changelog generation.
+
+
+### [2026-04-15 05:54:00] Modular CLI structure with per-command files to improve maintenance.
+
+
+### [2026-04-15 05:54:00] Session evaluation handoffs with topic detection from git diff content.
+

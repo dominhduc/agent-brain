@@ -425,3 +425,30 @@
 
 ### [2026-04-14 22:53:12] Fuzzy deduplication integrated alongside existing exact dedup workflow
 
+
+### [2026-04-15 05:54:00] .brain/ knowledge hub with separate topic files (gotchas, patterns, memory) for modularity.
+
+
+### [2026-04-15 05:54:00] Stratified knowledge base with MEMORY.md and PATTERNS.md as core knowledge vectors.
+
+
+### [2026-04-15 05:54:00] Background daemon service with isolated queue processing per project.
+
+
+### [2026-04-15 05:54:00] Two-tier config system with global (~/.config/brain/) and project-specific (.brain/).
+
+
+### [2026-04-15 05:54:00] CLI command routing via main.go with backward compatibility aliases for legacy commands.
+
+
+### [2026-04-15 05:54:00] Centralized Knowledge.Hub as core state manager eliminating deep package dependencies.
+
+
+### [2026-04-15 05:54:00] Behavior-driven skill adaptations stored in .brain/behavior/signals.json.
+
+
+### [2026-04-15 05:54:00] Trigram-Jaccard deduplication system with exact and fuzzy modes for knowledge curation.
+
+
+### [2026-04-15 05:54:00] Tiered display architecture (memory, patterns, constraints) for knowledge retrieval.
+
