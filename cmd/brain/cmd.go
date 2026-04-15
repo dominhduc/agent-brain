@@ -9,7 +9,7 @@ import (
 	"github.com/dominhduc/agent-brain/internal/otel"
 )
 
-var version = "v1.5.0"
+var version = "v1.5.1"
 
 var (
 	commit string

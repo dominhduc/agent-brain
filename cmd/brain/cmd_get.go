@@ -188,7 +188,21 @@ func cmdGet(jsonFlag, summaryFlag, compactFlag, messageOnlyFlag, fullFlag bool) 
 			os.Exit(1)
 		}
 		if len(entries) == 0 {
-			fmt.Println("No working memory entries.")
+			if jsonFlag {
+				fmt.Println(`{"topic":"wm","entry_count":0,"entries":[]}`)
+			} else {
+				fmt.Println("No working memory entries.")
+			}
+			return
+		}
+		if jsonFlag {
+			type wmJSON struct {
+				Topic   string               `json:"topic"`
+				Count   int                  `json:"entry_count"`
+				Entries []knowledge.WMEntry  `json:"entries"`
+			}
+			data, _ := json.MarshalIndent(wmJSON{Topic: "wm", Count: len(entries), Entries: entries}, "", "  ")
+			fmt.Println(string(data))
 			return
 		}
 		fmt.Println("# Working Memory")
