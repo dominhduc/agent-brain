@@ -104,3 +104,17 @@ func TestCmdDoctor_NoPendingEntries(t *testing.T) {
 		t.Errorf("expected 0 pending entries, got %v", status["pending_entries"])
 	}
 }
+
+func TestCmdGet_FocusWithoutTopic(t *testing.T) {
+	setupTestProject(t)
+
+	oldArgs := os.Args
+	os.Args = []string{"brain", "get", "--focus", "security"}
+	defer func() { os.Args = oldArgs }()
+
+	output := captureStdout(func() { cmdGet(false, false, false, false, false) })
+
+	if strings.Contains(output, "No results for") {
+		t.Error("should not search for '--focus'; should treat as focus flag with implicit 'all' topic")
+	}
+}

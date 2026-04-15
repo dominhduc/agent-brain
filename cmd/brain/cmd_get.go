@@ -62,6 +62,11 @@ func cmdGet(jsonFlag, summaryFlag, compactFlag, messageOnlyFlag, fullFlag bool) 
 
 	topic := os.Args[2]
 
+	if strings.HasPrefix(topic, "--") && hasFlag("--focus") {
+		topic = "all"
+		fmt.Fprintln(os.Stderr, "Tip: use \"brain get all --focus <topic>\" for explicit syntax.")
+	}
+
 	if hasFlag("--search") {
 		cmdGetSearch(topic, jsonFlag)
 		return
