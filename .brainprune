@@ -1,0 +1,79 @@
+# Stale/redundant patterns to archive
+
+# Old version references
+v0.
+v1.1.0 consolidated
+Version bumping
+Version number incremented
+
+# Redundant consolidation entries (already captured in architecture)
+Consolidate CLI commands into unified modules
+consolidated from
+consolidated 8 duplicate packages
+Package consolidation reducing
+
+# Redundant architecture entries (already in architecture.md)
+Modular CLI structure consolidated
+Two-tier view architecture
+Two-tier architecture with global
+Two-tier config system: global
+Two-tier config system with project-first
+Tiered display architecture
+Centralized Knowledge.Hub
+Unified knowledge Hub
+Centralized Knowledge.Hub acts as core
+Centralized Knowledge.Hub reduces complexity
+
+# Redundant version entries
+Version injection via ldflags
+Version string is defined
+Semantic Versioning for consistent
+Semantic Versioning requirements
+Consistent version updates applied
+Version number incremented synchronously
+Store version at build-time
+Use Makefile ldflags
+
+# Redundant dedup entries (already captured)
+Trigram Jaccard similarity (threshold 0.55)
+Trigram Jaccard similarity for near-duplicate
+Fuzzy deduplication using trigram
+Added fuzzy deduplication
+
+# Redundant merge entries
+Merge legacy commands into unified
+Merge legacy commands into unified 8
+
+# Redundant config entries
+Tiered config system separates
+Tiered config system
+
+# Vague/low-value entries
+Tiered display architecture provides organized
+signal logs indicate
+System declares a CLI tool
+multi-platform skill directory support
+conditional workflow updates
+service pattern for knowledge hub
+lumped skill update logic
+removed duplicate adaptation block
+simplified skill sync
+auto-adaptation now triggered
+automatic skill reflection
+auto-sync of skill files
+centralized skill adaptation
+hub pattern for knowledge management
+Package consolidation
+Behavior tracking system with tiered
+Memory patterns with tiered
+Topic-based knowledge organization
+Usage pattern tracking
+Evaluation outcomes logging
+Event-driven behavior tracking
+Daemon lifecycle management
+Git diff content comparison
+CLI design with routing
+State management using centralized
+Config system separation
+Version management with semantic
+Service architecture with daemon

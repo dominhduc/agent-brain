@@ -104,9 +104,14 @@ func cmdAdd() {
 		os.Exit(1)
 	}
 
-	if err := knowledge.AddEntry(normalized, message); err != nil {
+	dup, err := knowledge.AddEntry(normalized, message)
+	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: make sure you are in a project with .brain/ initialized.\n", err)
 		os.Exit(1)
+	}
+	if dup {
+		fmt.Println("Already exists — skipped (similar entry found).")
+		return
 	}
 
 	if brainDir, err := knowledge.FindBrainDir(); err == nil {

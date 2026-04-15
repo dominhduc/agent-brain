@@ -46,16 +46,20 @@ func GetAllTopics() (string, error) {
 	return result.String(), nil
 }
 
-func AddEntry(topic string, message string) error {
+func AddEntry(topic string, message string) (bool, error) {
 	path, err := TopicFilePath(topic)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	normalizedMsg := normalizeEntry(message)
+	if normalizedMsg == "" {
+		return false, nil
+	}
+
 	data, err := os.ReadFile(path)
 	if err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("failed to read %s: %w", filepath.Base(path), err)
+		return false, fmt.Errorf("failed to read %s: %w", filepath.Base(path), err)
 	}
 	if data != nil {
 		existing := string(data)
@@ -64,7 +68,14 @@ func AddEntry(topic string, message string) error {
 			msg := extractMessageFromEntry(line)
 			lineNormalized := normalizeEntry(msg)
 			if lineNormalized == normalizedMsg && lineNormalized != "" {
-				return nil
+				return true, nil
+			}
+		}
+		for _, line := range lines {
+			msg := extractMessageFromEntry(line)
+			lineNormalized := normalizeEntry(msg)
+			if lineNormalized != "" && trigramJaccard(lineNormalized, normalizedMsg) >= defaultDuplicateThreshold {
+				return true, nil
 			}
 		}
 	}
@@ -74,12 +85,12 @@ func AddEntry(topic string, message string) error {
 
 	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
-		return fmt.Errorf("failed to open %s: %w.\nWhat to do: check file permissions.", filepath.Base(path), err)
+		return false, fmt.Errorf("failed to open %s: %w.\nWhat to do: check file permissions.", filepath.Base(path), err)
 	}
 	defer f.Close()
 
 	if _, err := f.WriteString(entry); err != nil {
-		return fmt.Errorf("failed to write to %s: %w", filepath.Base(path), err)
+		return false, fmt.Errorf("failed to write to %s: %w", filepath.Base(path), err)
 	}
 
 	if strings.ToLower(topic) == "memory" {
@@ -89,7 +100,7 @@ func AddEntry(topic string, message string) error {
 		}
 	}
 
-	return nil
+	return false, nil
 }
 
 func (h *Hub) GetAll() (string, error) {
@@ -104,22 +115,36 @@ func (h *Hub) GetAll() (string, error) {
 	return result.String(), nil
 }
 
-func (h *Hub) Add(topic string, message string) error {
+func (h *Hub) Add(topic string, message string) (bool, error) {
 	path, err := h.topicFilePath(topic)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	normalizedMsg := normalizeEntry(message)
+	if normalizedMsg == "" {
+		return false, nil
+	}
+
 	data, err := os.ReadFile(path)
 	if err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("failed to read %s: %w", filepath.Base(path), err)
+		return false, fmt.Errorf("failed to read %s: %w", filepath.Base(path), err)
 	}
 	if data != nil {
-		for _, line := range strings.Split(string(data), "\n") {
+		existing := string(data)
+		lines := strings.Split(existing, "\n")
+		for _, line := range lines {
 			msg := extractMessageFromEntry(line)
-			if normalizeEntry(msg) == normalizedMsg && normalizedMsg != "" {
-				return nil
+			lineNormalized := normalizeEntry(msg)
+			if lineNormalized == normalizedMsg && lineNormalized != "" {
+				return true, nil
+			}
+		}
+		for _, line := range lines {
+			msg := extractMessageFromEntry(line)
+			lineNormalized := normalizeEntry(msg)
+			if lineNormalized != "" && trigramJaccard(lineNormalized, normalizedMsg) >= defaultDuplicateThreshold {
+				return true, nil
 			}
 		}
 	}
@@ -129,22 +154,15 @@ func (h *Hub) Add(topic string, message string) error {
 
 	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
-		return fmt.Errorf("failed to open %s: %w.\nWhat to do: check file permissions.", filepath.Base(path), err)
+		return false, fmt.Errorf("failed to open %s: %w.\nWhat to do: check file permissions.", filepath.Base(path), err)
 	}
 	defer f.Close()
 
 	if _, err := f.WriteString(entry); err != nil {
-		return fmt.Errorf("failed to write to %s: %w", filepath.Base(path), err)
+		return false, fmt.Errorf("failed to write to %s: %w", filepath.Base(path), err)
 	}
 
-	if strings.ToLower(topic) == "memory" {
-		lineCount, _ := h.MemoryLineCount()
-		if lineCount > 200 {
-			fmt.Fprintf(os.Stderr, "Warning: MEMORY.md is %d lines (recommended: under 200).\nWhat to do: move detailed entries to topic files.\n", lineCount)
-		}
-	}
-
-	return nil
+	return false, nil
 }
 
 type TopicSummary struct {

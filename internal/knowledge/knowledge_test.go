@@ -53,7 +53,7 @@ func TestAvailableTopics(t *testing.T) {
 func TestAddAndGet(t *testing.T) {
 	hub := setupTestHub(t)
 
-	err := hub.Add("gotchas", "Test gotcha message")
+	_, err := hub.Add("gotchas", "Test gotcha message")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -80,11 +80,11 @@ func TestAddAndGet(t *testing.T) {
 func TestAddDuplicate(t *testing.T) {
 	hub := setupTestHub(t)
 
-	err := hub.Add("gotchas", "Duplicate test")
+	_, err := hub.Add("gotchas", "Duplicate test")
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = hub.Add("gotchas", "Duplicate test")
+	_, err = hub.Add("gotchas", "Duplicate test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,10 +104,76 @@ func TestAddDuplicate(t *testing.T) {
 	}
 }
 
+func TestAddEntryFuzzyDuplicate(t *testing.T) {
+	dir := t.TempDir()
+	brainDir := filepath.Join(dir, ".brain")
+	if err := os.MkdirAll(brainDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	topicPath := filepath.Join(brainDir, "gotchas.md")
+	content := "# gotchas.md\n\n### [2025-01-01 10:00:00] Go const cannot be overridden by ldflags - use var instead\n\n"
+	if err := os.WriteFile(topicPath, []byte(content), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	originalDir, _ := os.Getwd()
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		os.Chdir(originalDir)
+		ResetCache()
+	})
+
+	dup, err := AddEntry("gotchas", "Go const cannot be overridden by ldflags - use var instead")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dup != true {
+		t.Error("expected AddEntry to return true (duplicate) for near-duplicate entry")
+	}
+
+	data, _ := os.ReadFile(topicPath)
+	count := strings.Count(string(data), "Go const cannot be overridden by ldflags")
+	if count != 1 {
+		t.Errorf("expected 1 occurrence of ldflags entry, got %d", count)
+	}
+}
+
+func TestAddEntryNotDuplicate(t *testing.T) {
+	dir := t.TempDir()
+	brainDir := filepath.Join(dir, ".brain")
+	if err := os.MkdirAll(brainDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	topicPath := filepath.Join(brainDir, "gotchas.md")
+	content := "# gotchas.md\n\n### [2025-01-01 10:00:00] Completely different entry about something\n\n"
+	if err := os.WriteFile(topicPath, []byte(content), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	originalDir, _ := os.Getwd()
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		os.Chdir(originalDir)
+		ResetCache()
+	})
+
+	dup, err := AddEntry("gotchas", "Go const cannot be overridden by ldflags - use var instead")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dup != false {
+		t.Error("expected AddEntry to return false (new entry) for unrelated content")
+	}
+}
+
 func TestGetAll(t *testing.T) {
 	hub := setupTestHub(t)
-	hub.Add("gotchas", "Test gotcha")
-	hub.Add("patterns", "Test pattern")
+	_, _ = hub.Add("gotchas", "Test gotcha")
+	_, _ = hub.Add("patterns", "Test pattern")
 
 	content, err := hub.GetAll()
 	if err != nil {
@@ -126,8 +192,8 @@ func TestGetAll(t *testing.T) {
 
 func TestGetSummary(t *testing.T) {
 	hub := setupTestHub(t)
-	hub.Add("gotchas", "Entry one")
-	hub.Add("gotchas", "Entry two")
+	_, _ = hub.Add("gotchas", "Entry one")
+	_, _ = hub.Add("gotchas", "Entry two")
 
 	summary, err := hub.GetSummary("gotchas")
 	if err != nil {
@@ -143,8 +209,8 @@ func TestGetSummary(t *testing.T) {
 
 func TestGetAllSummaries(t *testing.T) {
 	hub := setupTestHub(t)
-	hub.Add("gotchas", "A gotcha")
-	hub.Add("patterns", "A pattern")
+	_, _ = hub.Add("gotchas", "A gotcha")
+	_, _ = hub.Add("patterns", "A pattern")
 
 	summaries, err := hub.GetAllSummaries()
 	if err != nil {
@@ -404,8 +470,8 @@ func TestIndexLoadSave(t *testing.T) {
 
 func TestIndexRebuild(t *testing.T) {
 	hub := setupTestHub(t)
-	hub.Add("gotchas", "First gotcha")
-	hub.Add("patterns", "First pattern")
+	_, _ = hub.Add("gotchas", "First gotcha")
+	_, _ = hub.Add("patterns", "First pattern")
 
 	idx, err := hub.RebuildIndex()
 	if err != nil {
@@ -461,7 +527,7 @@ func TestDetectTopics(t *testing.T) {
 
 func TestGetAllWithSummary(t *testing.T) {
 	hub := setupTestHub(t)
-	hub.Add("gotchas", "A gotcha entry")
+	_, _ = hub.Add("gotchas", "A gotcha entry")
 
 	content, err := hub.GetAllWithSummary()
 	if err != nil {
