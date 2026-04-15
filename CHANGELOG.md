@@ -5,9 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [v1.4.4] - 2026-04-15
 
-### Changed — Command Consolidation (21 → 8 commands)
+### Added
+- `brain add --eval` now auto-runs skill reflection — skill files adapt automatically at session end
+- `brain update` now auto-syncs skill files to the latest template after binary update
+
+## [Unreleased]
 
 **Core commands** (the only ones most users need):
 - `brain init` — Setup (unchanged)

@@ -10,6 +10,7 @@ import (
 
 	"github.com/dominhduc/agent-brain/internal/knowledge"
 	"github.com/dominhduc/agent-brain/internal/session"
+	"github.com/dominhduc/agent-brain/internal/skill"
 )
 
 var knownTopics = []string{"ui", "backend", "infrastructure", "database", "security", "testing", "architecture", "general"}
@@ -282,6 +283,10 @@ func cmdAddEval() {
 		}
 	}
 
+	if updated, err := autoReflectSkills(cwd); err == nil && updated > 0 {
+		fmt.Printf("Skill adaptations updated (%d file%s).\n", updated, plural(updated))
+	}
+
 	if err := knowledge.ClearRetrievals(brainDir); err != nil {
 		fmt.Fprintf(os.Stderr, "Warning: could not clear working memory: %v\n", err)
 	} else {
@@ -314,4 +319,28 @@ func detectTopicFromDiffEval(diff string) string {
 		return topics[0]
 	}
 	return "general"
+}
+
+func autoReflectSkills(cwd string) (int, error) {
+	brainDir, err := knowledge.FindBrainDir()
+	if err != nil {
+		return 0, nil
+	}
+
+	hub, err := knowledge.Open(brainDir)
+	if err != nil {
+		return 0, nil
+	}
+
+	adaptation, err := hub.GenerateAdaptation()
+	if err != nil {
+		return 0, nil
+	}
+
+	content := hub.FormatAdaptation(adaptation)
+	if strings.TrimSpace(content) == "" {
+		return 0, nil
+	}
+
+	return skill.WriteAdaptations(cwd, content)
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/dominhduc/agent-brain/internal/otel"
 )
 
-var version = "v1.4.3"
+var version = "v1.4.4"
 
 var (
 	commit string
@@ -143,7 +143,7 @@ AREAS    ui, backend, infrastructure, database, security, testing, architecture,
 WORKFLOWS
   Session start     brain get all
   When corrected    brain add gotcha "..."
-  Session end       brain add --eval
+  Session end       brain add --eval  (auto-adapts skills)
 
 FLAGS  --dry-run/-d  --json/-j  --summary/-s  --compact/-c  --full/-f  --yes/-y
 
@@ -161,14 +161,14 @@ QUICK START
   brain init                    Initialize knowledge hub in current project
   brain get all                 Load all accumulated knowledge
   brain add <topic> "<msg>"     Record a new learning or decision
-  brain add --eval              End session with self-evaluation + handoff
+  brain add --eval              End session with self-evaluation + handoff (auto-adapts skills)
   brain get <query>             Search if not a known topic
 
 WORKFLOWS
   Session start     brain get all
   Before debugging  brain get gotchas
   When corrected    brain add gotcha "The fix"
-  Session end       brain add --eval
+  Session end       brain add --eval  (auto-adapts skills)
 
 COMMANDS
   CORE
@@ -180,7 +180,7 @@ COMMANDS
     brain add <topic> "<msg>"  Add entry to a topic
     brain add <area> <topic> "<msg>"  Add entry with area tag
     brain add --wm "<msg>"     Add to working memory (temporary)
-    brain add --eval           Session evaluation + handoff
+    brain add --eval           Session evaluation + handoff (auto-adapts skills)
                                Flags: --good, --bad
 
   MAINTENANCE
