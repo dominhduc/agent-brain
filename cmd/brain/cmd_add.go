@@ -77,6 +77,18 @@ func cmdAdd() {
 		message = strings.Join(os.Args[3:], " ")
 	}
 
+	if strings.TrimSpace(entryTopic) == "" {
+		fmt.Fprintln(os.Stderr, "Error: no topic specified.")
+		fmt.Fprintln(os.Stderr, "What to do: use one of: gotcha, pattern, decision, architecture, memory")
+		os.Exit(1)
+	}
+
+	if strings.TrimSpace(message) == "" {
+		fmt.Fprintln(os.Stderr, "Error: no message provided.")
+		fmt.Fprintln(os.Stderr, "What to do: provide a message after the topic name.")
+		os.Exit(1)
+	}
+
 	if len(message) > maxMessageLen {
 		fmt.Fprintf(os.Stderr, "Error: message too long (%d bytes, max %d).\nWhat to do: shorten your message or split it into multiple entries.\n", len(message), maxMessageLen)
 		os.Exit(1)
