@@ -137,7 +137,7 @@ COMMANDS
   config <action>     Manage settings (list|get|set|setup|reset)
   update              Update brain or skill files
 
-TOPICS   gotcha, pattern, decision, architecture, memory
+TOPICS   gotcha, pattern, decision, architecture, memory, wm
 AREAS    ui, backend, infrastructure, database, security, testing, architecture, general
 
 WORKFLOWS
@@ -173,11 +173,11 @@ WORKFLOWS
 COMMANDS
   CORE
     brain init                 Create .brain/ hub, AGENTS.md, git hooks, daemon
-    brain get <topic>          Topics: all, gotchas, patterns, decisions, architecture, memory
-                                Or search if not a known topic
+    brain get <topic>          Topics: all, gotchas, patterns, decisions, architecture, memory, wm
+                                 Or search if not a known topic
                                 Flags: --search (force search), --json/-j, --summary/-s, --compact/-c,
                                        --message-only/-m, --full/-f, --focus "<topic>"
-    brain add <topic> "<msg>"  Add entry to a topic
+    brain add <topic> "<msg>"  Add entry to a topic (fuzzy dedup at add time)
     brain add <area> <topic> "<msg>"  Add entry with area tag
     brain add --wm "<msg>"     Add to working memory (temporary)
     brain add --eval           Session evaluation + handoff (auto-adapts skills)

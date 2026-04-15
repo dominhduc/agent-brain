@@ -48,7 +48,7 @@ func relativeTime(timestamp string, now time.Time) string {
 func cmdGet(jsonFlag, summaryFlag, compactFlag, messageOnlyFlag, fullFlag bool) {
 	if len(os.Args) < 3 {
 		fmt.Println("Usage: brain get <topic>")
-		fmt.Println("Topics: memory, gotchas, patterns, decisions, architecture, all")
+		fmt.Println("Topics: memory, gotchas, patterns, decisions, architecture, all, wm")
 		fmt.Println("Flags:")
 		fmt.Println("  --summary      Show summary with entry counts and duplicate warnings")
 		fmt.Println("  --json         Output as JSON (structured format)")

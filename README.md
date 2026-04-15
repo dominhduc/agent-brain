@@ -73,7 +73,7 @@ AI coding agents are brilliant — but they **forget everything** between sessio
 | No institutional memory across sessions | Knowledge compounds and grows smarter |
 | Agent makes the same mistakes repeatedly | Past gotchas are flagged before they happen again |
 
-**v1.5.0** adds fuzzy duplicate detection at `brain add` time (trigram Jaccard threshold 0.55), `brain get wm` to retrieve working memory entries, `brain doctor` warnings for stale MEMORY.md and pending daemon entries, guards against empty topic/message in `brain add`, and suggests `.brainprune` creation in `brain clean --patterns`. **v1.4.4** automates skill adaptation: `brain add --eval` now auto-runs skill reflection, and `brain update` auto-syncs skill files after binary update. **v1.4.3** adds short flag aliases (`-f`, `-d`, `-s`, `-c`, `-j`, `-m`, `-g`, `-l`, `-y`, `-h`, `-v`) and removes deprecated command aliases. **v1.4.1** reorganizes `brain help` into brief (28 lines) + `--full` reference, fixes daemon review writing paraphrased duplicates into topic files, and documents all deprecated command aliases. v1.4.0 consolidates 21 commands into 8 with backward-compatible aliases. v1.3.0 adds fuzzy deduplication (`brain clean --duplicates --fuzzy`) using trigram Jaccard similarity to catch near-duplicate entries.
+**v1.5.0** adds fuzzy duplicate detection at add time (near-duplicate entries are caught automatically with feedback), `brain get wm` to retrieve working memory, `brain doctor` warnings for stale MEMORY.md and pending entries, empty argument guards on `brain add`, and `.brainprune` creation hints. **v1.4.4** automates skill adaptation: `brain add --eval` auto-runs skill reflection, `brain update` auto-syncs skill files. **v1.4.3** adds short flag aliases and removes deprecated command aliases. v1.3.0 adds fuzzy deduplication (`brain clean --duplicates --fuzzy`).
 
 ---
 
@@ -202,9 +202,20 @@ brain get gotchas --json                   # Structured JSON output
 - **`--message-only`:** Just the message text — ideal for piping to AI agents
 - **`--json`:** Structured format `{topic, entry_count, entries: [{timestamp, message}]}`
 
-**Topics:** `memory`, `gotchas`, `patterns`, `decisions`, `architecture`, `all`
+**Topics:** `memory`, `gotchas`, `patterns`, `decisions`, `architecture`, `all`, `wm` (working memory)
 
 Retrieval automatically strengthens memories (extends their half-life).
+
+#### `brain get wm`
+
+Retrieve working memory entries — temporary notes added via `brain add --wm`.
+
+```bash
+brain get wm                # Show all working memory entries
+brain get working-memory    # Alias
+```
+
+Shows each entry with its importance score and timestamp. Working memory entries are flushed on `brain add --eval`.
 
 #### `brain get <query>` (search mode)
 
@@ -230,6 +241,10 @@ brain add --wm "investigating auth bug"                    # Working memory
 ```
 
 Use an 8-topic prefix (`ui`, `backend`, `infrastructure`, `database`, `security`, `testing`, `architecture`, `general`) before the entry type to tag entries.
+
+**Duplicate detection:** If a similar entry already exists (fuzzy match via trigram Jaccard similarity), `brain add` prints `Already exists — skipped` instead of creating a duplicate. This catches exact duplicates and near-duplicates that paraphrase the same concept.
+
+**Validation:** Empty topics and messages are rejected with a clear error message.
 
 #### `brain add --eval`
 
@@ -336,7 +351,7 @@ brain clean --patterns --dry-run   # See what would be pruned
 brain clean --patterns             # Actually prune
 ```
 
-Reads patterns from `.brainprune` (like `.gitignore` for knowledge). Moves matching entries to `.brain/archived/`.
+Reads patterns from `.brainprune` (like `.gitignore` for knowledge). Moves matching entries to `.brain/archived/`. If no `.brainprune` file exists, shows a hint with instructions to create one.
 
 #### `brain clean --duplicates [--dry-run]`
 
@@ -398,10 +413,10 @@ brain config setup                        # Interactive setup wizard
 
 #### `brain doctor [--json]`
 
-Show knowledge hub statistics with TTY-aware color indicators.
+Show knowledge hub statistics with TTY-aware color indicators. Reports warnings for stale MEMORY.md (>7 days since update), pending entries awaiting review, API key status, and failed queue items.
 
 ```
-brain v1.2.0  linux/amd64  abc1234
+brain v1.5.0  linux/amd64  abc1234
 
 Hub
   .brain/      found ✓
@@ -418,6 +433,10 @@ Config
 Daemon
   Status       running ●
   Queue        0 pending, 90 done, 0 failed
+
+Warnings
+  ⚠ MEMORY.md not updated in 12 days — run 'brain get all --summary'
+  ⚠ 3 pending entries awaiting review — run 'brain daemon review'
 ```
 
 ---
