@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/dominhduc/agent-brain/internal/knowledge"
 	"github.com/dominhduc/agent-brain/internal/config"
@@ -134,6 +135,18 @@ func cmdDoctor(jsonFlag, fixFlag bool) {
 	}
 	if queueFailed > 0 {
 		warnings = append(warnings, fmt.Sprintf("%d failed items — run 'brain daemon failed' to inspect", queueFailed))
+	}
+	if brainDir != "" {
+		memPath := filepath.Join(brainDir, "MEMORY.md")
+		if info, err := os.Stat(memPath); err == nil {
+			daysSinceUpdate := time.Since(info.ModTime()).Hours() / 24
+			if daysSinceUpdate > 7 {
+				warnings = append(warnings, fmt.Sprintf("MEMORY.md not updated in %.0f days — run 'brain get all --summary' to check index", daysSinceUpdate))
+			}
+		}
+	}
+	if pendingEntries > 0 {
+		warnings = append(warnings, fmt.Sprintf("%d pending entries awaiting review — run 'brain daemon review'", pendingEntries))
 	}
 
 	if fixFlag {
@@ -284,6 +297,14 @@ func cmdDoctor(jsonFlag, fixFlag bool) {
 	}
 
 	fmt.Println()
+
+	if len(warnings) > 0 {
+		fmt.Println("Warnings")
+		for _, w := range warnings {
+			fmt.Printf("  ⚠ %s\n", w)
+		}
+		fmt.Println()
+	}
 
 	// Health checks
 	checks := []func() (string, bool, string){
