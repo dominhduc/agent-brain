@@ -166,7 +166,7 @@ func cmdGet(jsonFlag, summaryFlag, compactFlag, messageOnlyFlag, fullFlag bool) 
 		return
 	}
 
-	var knownTopics = []string{"memory", "gotchas", "patterns", "decisions", "architecture", "all"}
+	var knownTopics = []string{"memory", "gotchas", "patterns", "decisions", "architecture", "all", "wm", "working-memory"}
 
 	isKnown := false
 	for _, t := range knownTopics {
@@ -174,6 +174,29 @@ func cmdGet(jsonFlag, summaryFlag, compactFlag, messageOnlyFlag, fullFlag bool) 
 			isKnown = true
 			break
 		}
+	}
+
+	if topic == "wm" || topic == "working-memory" {
+		brainDir, err := knowledge.FindBrainDir()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Error: no .brain/ directory found.\nWhat to do: run 'brain init' first.")
+			os.Exit(1)
+		}
+		entries, err := knowledge.ReadWM(brainDir)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error reading working memory: %v\n", err)
+			os.Exit(1)
+		}
+		if len(entries) == 0 {
+			fmt.Println("No working memory entries.")
+			return
+		}
+		fmt.Println("# Working Memory")
+		fmt.Println()
+		for _, e := range entries {
+			fmt.Printf("  %.2f  %s  (%s)\n", e.Importance, e.Content, e.Timestamp.Format("2006-01-02 15:04"))
+		}
+		return
 	}
 
 	if !isKnown {

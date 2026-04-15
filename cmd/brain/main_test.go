@@ -118,3 +118,20 @@ func TestCmdGet_FocusWithoutTopic(t *testing.T) {
 		t.Error("should not search for '--focus'; should treat as focus flag with implicit 'all' topic")
 	}
 }
+
+func TestCmdGet_WorkingMemory(t *testing.T) {
+	tmpDir := setupTestProject(t)
+	brainDir := filepath.Join(tmpDir, ".brain")
+
+	knowledge.PushWM(brainDir, "test wm entry", 0.7)
+
+	oldArgs := os.Args
+	os.Args = []string{"brain", "get", "wm"}
+	defer func() { os.Args = oldArgs }()
+
+	output := captureStdout(func() { cmdGet(false, false, false, false, false) })
+
+	if !strings.Contains(output, "test wm entry") {
+		t.Errorf("expected output to contain working memory entry, got: %s", output)
+	}
+}
