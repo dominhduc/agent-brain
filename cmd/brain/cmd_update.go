@@ -87,8 +87,27 @@ func cmdUpdate() {
 
 	fmt.Println("\nSkill updates available. Run 'brain update --skills --diff' to preview changes.")
 
-	service.StopCurrentProject()
-	fmt.Println("Restart the daemon with: brain daemon start")
+	brainDir, brainErr := knowledge.FindBrainDir()
+	wasRunning := false
+	if brainErr == nil {
+		workDir := filepath.Dir(brainDir)
+		wasRunning = service.IsRunning(workDir)
+	}
+
+	if wasRunning {
+		service.StopCurrentProject()
+		if brainErr == nil {
+			workDir := filepath.Dir(brainDir)
+			if err := service.Start(workDir); err != nil {
+				fmt.Fprintf(os.Stderr, "Warning: could not restart daemon: %v\n", err)
+			} else {
+				fmt.Println("Daemon restarted.")
+			}
+		}
+	} else {
+		service.StopCurrentProject()
+		fmt.Println("Restart the daemon with: brain daemon start")
+	}
 }
 
 func cmdUpdateSkills(installFlag, globalFlag, listFlag, diffFlag, reflectFlag, dryRunFlag bool) {

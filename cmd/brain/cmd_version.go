@@ -6,13 +6,16 @@ import (
 )
 
 func cmdVersion() {
-	fmt.Printf("brain %s", version)
+	fmt.Printf("brain %s  %s/%s", version, runtime.GOOS, runtime.GOARCH)
 	if commit != "" {
-		fmt.Printf("  commit: %s", commit)
+		short := commit
+		if len(short) > 7 {
+			short = short[:7]
+		}
+		fmt.Printf("  %s", short)
 	}
 	if date != "" {
-		fmt.Printf("  built: %s", date)
+		fmt.Printf("\n  built: %s", date)
 	}
 	fmt.Println()
-	fmt.Printf("  os/arch: %s/%s\n", runtime.GOOS, runtime.GOARCH)
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/dominhduc/agent-brain/internal/otel"
 )
 
-var version = "v1.4.1"
+var version = "v1.4.2"
 
 var (
 	commit string
@@ -144,7 +144,7 @@ func printUsage(full bool) {
 }
 
 func printUsageBrief(v string) {
-	fmt.Printf("agent-brain %s — Persistent Memory for AI Coding Agents\n", v)
+	fmt.Printf("brain %s — Persistent Memory for AI Coding Agents\n", v)
 	fmt.Printf("https://github.com/dominhduc/agent-brain\n\n")
 	fmt.Print(`USAGE
   brain <command> [arguments] [flags]
@@ -158,7 +158,7 @@ COMMANDS
   doctor              Hub health check & diagnostics
   daemon <action>     Manage daemon (start|stop|status|review|failed|retry)
   config <action>     Manage settings (list|get|set|setup|reset)
-  update              Update agent-brain or skill files
+  update              Update brain or skill files
 
 TOPICS   gotcha, pattern, decision, architecture, memory
 AREAS    ui, backend, infrastructure, database, security, testing, architecture, general
@@ -175,7 +175,7 @@ Run 'brain help --full' for complete reference with all flags and examples.
 }
 
 func printUsageFull(v string) {
-	fmt.Printf("agent-brain %s — Persistent Memory for AI Coding Agents\n", v)
+	fmt.Printf("brain %s — Persistent Memory for AI Coding Agents\n", v)
 	fmt.Printf("https://github.com/dominhduc/agent-brain\n\n")
 	fmt.Print(`USAGE
   brain <command> [arguments] [flags]

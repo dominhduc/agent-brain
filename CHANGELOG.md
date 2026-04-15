@@ -34,6 +34,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `brain review` → use `brain daemon review`
 - `brain skill` → use `brain update --skills`
 
+## [v1.4.2] - 2026-04-15
+
+### Fixed
+- `brain get --compact` no longer shows negative relative time for entries with future timestamps
+- `brain version` output now matches `brain doctor` format: `brain <version>  <os>/<arch>  <short-commit>`
+- `brain update` auto-restarts the daemon if it was running before the update
+
+### Changed
+- `brain help` header uses `brain` (the CLI name) instead of `agent-brain` (the package name)
+
 ## [v1.4.1] - 2026-04-15
 
 ### Added

@@ -30,6 +30,9 @@ func relativeTime(timestamp string, now time.Time) string {
 		return ""
 	}
 	d := now.Sub(t)
+	if d < 0 {
+		return t.Format("Jan 06")
+	}
 	switch {
 	case d < time.Hour:
 		return fmt.Sprintf("%dm ago", int(d.Minutes()))
