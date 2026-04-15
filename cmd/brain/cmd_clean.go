@@ -65,7 +65,10 @@ func cmdCleanPrune(brainDir string, dryRun bool) {
 	data, err := os.ReadFile(prunePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			fmt.Println("No .brainprune file found. Skipping prune.")
+			fmt.Println("  No .brainprune file found. Create one to enable pattern-based pruning:")
+			fmt.Println(`    echo "# Stale patterns" > .brainprune`)
+			fmt.Println(`    echo "v0." >> .brainprune`)
+			fmt.Println("    Then run: brain clean --patterns")
 			return
 		}
 		fmt.Fprintf(os.Stderr, "Error reading .brainprune: %v\n", err)
