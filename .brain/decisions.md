@@ -474,16 +474,13 @@
 ### [2026-04-15 05:54:00] Automated version injection via ldflags using git describe tags for consistency.
 
 
-### [2026-04-15 05:54:00] Consolidate duplicate packages into unified knowledge/ and session/ modules.
 
 
-### [2026-04-15 05:54:00] Safe overwrite confirmation for skill updates to prevent accidental data loss.
 
 
 ### [2026-04-15 05:54:00] TTY-aware color output in doctor/status commands for improved UX.
 
 
-### [2026-04-15 05:54:00] Tiered view display strategy for organized information presentation.
 
 
 ### [2026-04-15 05:54:00] Auto-detect missing sessions by comparing git HEAD~1 diff content.
@@ -493,4 +490,17 @@
 
 
 ### [2026-04-15 05:54:00] Behavior signal tracking using JSON for machine-readable usage patterns.
+
+
+### [2026-04-15 06:08:16] Merge legacy commands into unified commands for better maintainability.
+
+
+### [2026-04-15 06:08:16] Centralized Knowledge.Hub acts as core state manager reducing dependencies.
+
+
+### [2026-04-15 06:08:16] TTY-aware color output provides improved user experience in status commands.
+
+
+
+
 

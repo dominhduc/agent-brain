@@ -435,13 +435,11 @@
 ### [2026-04-15 05:54:00] Background daemon service with isolated queue processing per project.
 
 
-### [2026-04-15 05:54:00] Two-tier config system with global (~/.config/brain/) and project-specific (.brain/).
 
 
 ### [2026-04-15 05:54:00] CLI command routing via main.go with backward compatibility aliases for legacy commands.
 
 
-### [2026-04-15 05:54:00] Centralized Knowledge.Hub as core state manager eliminating deep package dependencies.
 
 
 ### [2026-04-15 05:54:00] Behavior-driven skill adaptations stored in .brain/behavior/signals.json.
@@ -451,4 +449,13 @@
 
 
 ### [2026-04-15 05:54:00] Tiered display architecture (memory, patterns, constraints) for knowledge retrieval.
+
+
+
+
+### [2026-04-15 06:08:16] Two-tier config system separates global and project-specific settings.
+
+
+
+
 

@@ -1,51 +1,24 @@
 {
   "command_counts": {
-    "add": 1,
-    "eval": 1,
-    "get": 46,
-    "search": 4
+    "get": 3
   },
   "topic_access": {
-    "--help": {
-      "retrievals": 1,
-      "last_access": "2026-04-14T20:55:00.350770495+07:00"
-    },
-    "architecture": {
-      "retrievals": 1,
-      "last_access": "2026-04-14T19:19:50.097948744+07:00"
-    },
-    "auth": {
-      "retrievals": 2,
-      "last_access": "2026-04-15T03:56:38.539428876+07:00"
-    },
     "daemon": {
       "retrievals": 1,
-      "last_access": "2026-04-15T03:57:49.71434153+07:00"
+      "last_access": "2026-04-15T06:52:47.861514817+07:00"
     },
     "gotchas": {
-      "retrievals": 25,
-      "last_access": "2026-04-14T22:54:18.306830631+07:00"
+      "retrievals": 2,
+      "last_access": "2026-04-15T07:26:46.136193207+07:00"
+    },
+    "patterns": {
+      "retrievals": 1,
+      "last_access": "2026-04-15T06:38:12.69280014+07:00"
     }
   },
   "search_queries": [
     {
-      "query": "config",
-      "count": 4
-    },
-    {
-      "query": "test",
-      "count": 1
-    },
-    {
-      "query": "auth",
-      "count": 2
-    },
-    {
       "query": "daemon",
-      "count": 1
-    },
-    {
-      "query": "memory",
       "count": 1
     }
   ],
@@ -55,5 +28,5 @@
     "total_sessions": 0,
     "last_eval": "0001-01-01T00:00:00Z"
   },
-  "last_updated": "2026-04-15T05:54:00.13671732+07:00"
+  "last_updated": "2026-04-15T07:26:46.136193338+07:00"
 }

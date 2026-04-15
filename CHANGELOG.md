@@ -36,6 +36,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [v1.4.2] - 2026-04-15
 
+### Added
+- Short flag aliases for all common flags: `-f` (`--full`), `-d` (`--dry-run`), `-s` (`--summary`), `-c` (`--compact`), `-j` (`--json`), `-m` (`--message-only`), `-g` (`--global`), `-l` (`--list`), `-y` (`--yes`), `-h` (`--help`), `-v` (`--version`)
+
+### Removed
+- Deprecated command aliases (`search`, `eval`, `prune`, `dedup`, `sleep`, `status`, `review`, `index`, `wm`, `handoff`, `outcome`) — use the modern commands instead
+- DEPRECATED ALIASES section from `brain help --full`
+
 ### Fixed
 - `brain get --compact` no longer shows negative relative time for entries with future timestamps
 - `brain version` output now matches `brain doctor` format: `brain <version>  <os>/<arch>  <short-commit>`
