@@ -173,7 +173,7 @@ WORKFLOWS
 COMMANDS
   CORE
     brain init                 Create .brain/ hub, AGENTS.md, git hooks, daemon
-     brain get <topic>          Topics: all, gotchas, patterns, decisions, architecture, memory
+    brain get <topic>          Topics: all, gotchas, patterns, decisions, architecture, memory
                                 Or search if not a known topic
                                 Flags: --search (force search), --json/-j, --summary/-s, --compact/-c,
                                        --message-only/-m, --full/-f, --focus "<topic>"
@@ -184,14 +184,14 @@ COMMANDS
                                Flags: --good, --bad
 
   MAINTENANCE
-     brain clean                Run all cleanup (prune + dedup + decay + rebuild)
+    brain clean                Run all cleanup (prune + dedup + decay + rebuild)
                                 Flags: --dry-run/-d, --patterns, --duplicates, --decay, --rebuild, --fuzzy
-     brain doctor               Hub statistics, health check & diagnostics
+    brain doctor               Hub statistics, health check & diagnostics
                                 Flags: --json/-j, --fix
 
   DAEMON
     brain daemon <action>      Actions: start, stop, restart, status, failed, retry, run, review
-     brain daemon review        Interactive TUI to approve/reject pending entries
+    brain daemon review        Interactive TUI to approve/reject pending entries
                                 Flags: --all, --yes/-y, --tty
 
   CONFIG
