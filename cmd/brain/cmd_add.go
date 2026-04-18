@@ -26,6 +26,7 @@ func isKnownTopic(arg string) bool {
 
 func cmdAdd() {
 	evalFlag := hasFlag("--eval")
+	globalFlag := hasFlag("--global")
 
 	if evalFlag {
 		cmdAddEval()
@@ -123,6 +124,18 @@ func cmdAdd() {
 	}
 	if dup {
 		fmt.Println("Already exists — skipped (similar entry found).")
+		return
+	}
+
+	if globalFlag {
+		dup, err := knowledge.AddGlobalEntry(normalized, message)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error adding to global store: %v\n", err)
+		} else if dup {
+			fmt.Println("Added to project. Already exists in global store.")
+		} else {
+			fmt.Println("Added to project and global store.")
+		}
 		return
 	}
 

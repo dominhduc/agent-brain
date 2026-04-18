@@ -71,6 +71,16 @@ func main() {
 		cmdVersion()
 	case "update":
 		cmdUpdate()
+	case "supersede":
+		cmdSupersedeEntry()
+	case "edit":
+		cmdUpdateEntry()
+	case "consolidate":
+		cmdConsolidate()
+	case "embed":
+		cmdEmbed()
+	case "sync":
+		cmdSync()
 	case "--help", "-h", "help":
 		printUsage(hasFlag("--full"))
 
@@ -174,10 +184,13 @@ COMMANDS
   CORE
     brain init                 Create .brain/ hub, AGENTS.md, git hooks, daemon
     brain get <topic>          Topics: all, gotchas, patterns, decisions, architecture, memory, wm
-                                 Or search if not a known topic
-                                Flags: --search (force search), --json/-j, --summary/-s, --compact/-c,
-                                       --message-only/-m, --full/-f, --focus "<topic>"
+                                  Or search if not a known topic
+                                 Flags: --search (force search), --json/-j, --summary/-s, --compact/-c,
+                                        --message-only/-m, --full/-f, --focus "<topic>",
+                                        --context (boost entries matching git diff),
+                                        --budget N (custom token limit)
     brain add <topic> "<msg>"  Add entry to a topic (fuzzy dedup at add time)
+                                Flags: --global/-g (also add to global store)
     brain add <area> <topic> "<msg>"  Add entry with area tag
     brain add --wm "<msg>"     Add to working memory (temporary)
     brain add --eval           Session evaluation + handoff (auto-adapts skills)
@@ -187,7 +200,18 @@ COMMANDS
     brain clean                Run all cleanup (prune + dedup + decay + rebuild)
                                 Flags: --dry-run/-d, --patterns, --duplicates, --decay, --rebuild, --fuzzy
     brain doctor               Hub statistics, health check & diagnostics
-                                Flags: --json/-j, --fix
+                                Flags: --json/-j, --fix, --conflicts
+    brain consolidate          Find and merge duplicate entries
+                                Flags: --dry-run, --apply, --topic
+    brain edit <topic> <ts>    Update an entry in-place
+                                Flags: --message "<new text>"
+    brain supersede <topic> <old-ts> <new-ts>  Mark entry as superseded
+
+  EMBEDDINGS
+    brain embed                Embed entries for semantic search
+                                Flags: --all, --status
+    brain sync                 Sync knowledge with global store
+                                Flags: --push, --apply
 
   DAEMON
     brain daemon <action>      Actions: start, stop, restart, status, failed, retry, run, review

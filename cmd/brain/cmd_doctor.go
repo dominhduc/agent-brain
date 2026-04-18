@@ -37,6 +37,8 @@ func colorize(condition bool, color, text string) string {
 }
 
 func cmdDoctor(jsonFlag, fixFlag bool) {
+	conflictsFlag := hasFlag("--conflicts")
+
 	brainDir, err := knowledge.FindBrainDir()
 
 	// Hub stats
@@ -304,6 +306,25 @@ func cmdDoctor(jsonFlag, fixFlag bool) {
 			fmt.Printf("  ⚠ %s\n", w)
 		}
 		fmt.Println()
+	}
+
+	if conflictsFlag {
+		hub, hubErr := knowledge.Open(brainDir)
+		if hubErr == nil {
+			conflicts, err := hub.FindConflicts()
+			if err != nil {
+				fmt.Printf("Error finding conflicts: %v\n", err)
+			} else if len(conflicts) > 0 {
+				fmt.Printf("Potential Conflicts (%d)\n", len(conflicts))
+				for _, c := range conflicts {
+					fmt.Printf("  ⚠ %s vs %s\n", c.Key1, c.Key2)
+				}
+				fmt.Println()
+			} else {
+				fmt.Println("No conflicts detected.")
+				fmt.Println()
+			}
+		}
 	}
 
 	// Health checks

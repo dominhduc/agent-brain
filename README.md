@@ -73,7 +73,7 @@ AI coding agents are brilliant — but they **forget everything** between sessio
 | No institutional memory across sessions | Knowledge compounds and grows smarter |
 | Agent makes the same mistakes repeatedly | Past gotchas are flagged before they happen again |
 
-**v1.5.0** adds fuzzy duplicate detection at add time (near-duplicate entries are caught automatically with feedback), `brain get wm` to retrieve working memory, `brain doctor` warnings for stale MEMORY.md and pending entries, empty argument guards on `brain add`, and `.brainprune` creation hints. **v1.4.4** automates skill adaptation: `brain add --eval` auto-runs skill reflection, `brain update` auto-syncs skill files. **v1.4.3** adds short flag aliases and removes deprecated command aliases. v1.3.0 adds fuzzy deduplication (`brain clean --duplicates --fuzzy`).
+**v2.0** adds token-budget retrieval (`brain get all --budget N`, `--context`), entry lifecycle (`brain edit`, `brain supersede`), consolidation (`brain consolidate`), semantic search (`brain embed` with Ollama/OpenAI + hybrid RRF fusion), and cross-project knowledge sharing (`brain sync`, `brain add --global`). Zero new dependencies through Phase 3; one pure-Go library (`chromem-go`) for embeddings. **v1.5.0** adds fuzzy duplicate detection at add time...
 
 ---
 
@@ -188,8 +188,10 @@ Read accumulated knowledge. Entries show a strength indicator (`1.00`) based on 
 ```bash
 brain get gotchas                          # See known pitfalls
 brain get patterns                         # See discovered conventions
-brain get all                              # Tiered view: overview + recent + top
+brain get all                              # Budget-aware tiered view
 brain get all --full                       # Complete dump (all entries)
+brain get all --context                    # Boost entries matching current git diff
+brain get all --budget 5000                # Custom token budget
 brain get all --focus "infrastructure"     # Filter by topic
 brain get gotchas --compact                # One line per entry, no blank lines
 brain get gotchas --message-only           # Pure message text (no metadata)
@@ -197,7 +199,10 @@ brain get gotchas --json                   # Structured JSON output
 ```
 
 **Output modes:**
-- **Default:** Full entries with timestamps and strength scores
+- **Default (budget-aware):** Shows the most relevant entries within a token budget (~3000 tokens default), sorted by strength × recency × context affinity
+- **`--full`:** Complete dump of all entries
+- **`--context`:** Reads `git diff --stat HEAD` and boosts entries related to currently changed files
+- **`--budget N`:** Custom token limit (e.g., `--budget 5000` for more entries)
 - **`--compact`:** One line per entry with relative timestamps (e.g., `Apr 26`)
 - **`--message-only`:** Just the message text — ideal for piping to AI agents
 - **`--json`:** Structured format `{topic, entry_count, entries: [{timestamp, message}]}`
@@ -238,6 +243,7 @@ brain add pattern "Tests use Vitest, not Jest"
 brain add decision "Chose SQLite over PostgreSQL for simplicity"
 brain add infrastructure gotcha "VPS uses Ubuntu 22.04"   # Tag with topic
 brain add --wm "investigating auth bug"                    # Working memory
+brain add --global pattern "Always use filepath.Join"      # Also add to global store
 ```
 
 Use an 8-topic prefix (`ui`, `backend`, `infrastructure`, `database`, `security`, `testing`, `architecture`, `general`) before the entry type to tag entries.
@@ -390,6 +396,78 @@ brain clean --rebuild
 
 Useful if the index gets out of sync. Safe to run anytime.
 
+#### `brain edit <topic> <timestamp-prefix> --message "..."`
+
+Update an entry in-place. Archives the old version to `.brain/archived/versions/`.
+
+```bash
+brain edit gotchas "2026-04-15 10" --message "Updated message text"
+```
+
+The old version is preserved in the archive directory. The index entry's version is bumped and confidence set to "verified".
+
+#### `brain supersede <topic> <old-ts> <new-ts>`
+
+Mark an entry as superseded by another. Applies strikethrough formatting to the old entry and creates bidirectional links in the index.
+
+```bash
+brain supersede gotchas "2026-04-15 10:00:00" "2026-04-18 12:00:00"
+```
+
+Superseded entries are excluded from retrieval (unless `--full`).
+
+#### `brain consolidate [--dry-run] [--apply]`
+
+Find and merge related entries that say similar things.
+
+```bash
+brain consolidate --dry-run    # See consolidation proposals
+brain consolidate --apply      # Apply consolidations
+brain consolidate --topic gotchas   # Filter to specific topic
+```
+
+Uses trigram Jaccard clustering (threshold 0.35) to find related entries, then deterministically merges them into a single richer entry. Source entries are preserved as HTML comment timelines.
+
+---
+
+### Embedding Commands
+
+#### `brain embed`
+
+Embed entries for semantic search. Requires an embedding provider (Ollama local or OpenAI API).
+
+```bash
+brain embed              # Embed new/stale entries
+brain embed --all        # Re-embed everything
+brain embed --status     # Show embedding coverage
+```
+
+Configure the provider first:
+```bash
+brain config set embedding.provider ollama    # Local (recommended)
+brain config set embedding.provider openai    # OpenAI API
+```
+
+#### `brain sync`
+
+Sync knowledge with the global store (`~/.brain/global/`).
+
+```bash
+brain sync                    # Pull relevant global entries
+brain sync --push             # Propose pushing project entries to global
+brain sync --push --apply     # Actually push to global
+```
+
+High-strength, high-retrieval entries can be promoted to the global store for sharing across projects.
+
+#### `brain doctor --conflicts`
+
+Detect potential contradictions between entries (e.g., "Always use X" vs "Never use X").
+
+```bash
+brain doctor --conflicts
+```
+
 ---
 
 ### Configuration Commands
@@ -409,7 +487,7 @@ brain config reset model                  # Reset one key to default
 brain config setup                        # Interactive setup wizard
 ```
 
-**Available keys:** `api-key`, `model`, `provider`, `profile`, `poll-interval`, `max-retries`, `retry-backoff`, `max-diff-lines`
+**Available keys:** `api-key`, `model`, `provider`, `profile`, `poll-interval`, `max-retries`, `retry-backoff`, `max-diff-lines`, `retrieval.max_tokens`, `retrieval.min_strength`, `retrieval.max_entries`, `retrieval.include_recent_days`
 
 #### `brain doctor [--json]`
 

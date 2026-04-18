@@ -20,6 +20,12 @@ type IndexEntry struct {
 	HalfLifeDays   int       `json:"half_life_days"`
 	Confidence     string    `json:"confidence"`
 	Topics         []string  `json:"topics"`
+
+	SupersededBy string    `json:"superseded_by,omitempty"`
+	Supersedes   string    `json:"supersedes,omitempty"`
+	Version      int       `json:"version"`
+	UpdatedAt    time.Time `json:"updated_at,omitempty"`
+	ConflictWith []string  `json:"conflict_with,omitempty"`
 }
 
 type Index struct {
@@ -28,7 +34,7 @@ type Index struct {
 	Entries     map[string]IndexEntry `json:"entries"`
 }
 
-const indexVersion = 1
+const indexVersion = 2
 
 var entryHeaderRe = regexp.MustCompile(`^### \[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]`)
 
@@ -56,8 +62,14 @@ func LoadIndex(brainDir string) (*Index, error) {
 	if idx.Entries == nil {
 		idx.Entries = make(map[string]IndexEntry)
 	}
-	if idx.Version != indexVersion {
+	if idx.Version < 1 || idx.Version > indexVersion {
 		return newEmptyIndex(), nil
+	}
+	if idx.Version < 2 {
+		for key, entry := range idx.Entries {
+			entry.Version = 1
+			idx.Entries[key] = entry
+		}
 	}
 	return &idx, nil
 }

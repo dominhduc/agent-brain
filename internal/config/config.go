@@ -17,7 +17,15 @@ type Config struct {
 	Analysis      AnalysisConfig            `yaml:"analysis"`
 	Daemon        DaemonConfig              `yaml:"daemon"`
 	Review        ReviewConfig              `yaml:"review"`
+	Retrieval     RetrievalConfig           `yaml:"retrieval,omitempty"`
 	CustomProviders map[string]CustomProviderConfig `yaml:"custom_providers,omitempty"`
+}
+
+type RetrievalConfig struct {
+	MaxTokens       int     `yaml:"max_tokens"`
+	MinStrength     float64 `yaml:"min_strength"`
+	MaxEntries      int     `yaml:"max_entries"`
+	IncludeRecentDays int   `yaml:"include_recent_days"`
 }
 
 type CustomProviderConfig struct {
@@ -109,6 +117,12 @@ func DefaultConfig() Config {
 		},
 		Review: ReviewConfig{
 			Profile: "guard",
+		},
+		Retrieval: RetrievalConfig{
+			MaxTokens:       3000,
+			MinStrength:     0.15,
+			MaxEntries:      50,
+			IncludeRecentDays: 7,
 		},
 	}
 }
@@ -310,6 +324,47 @@ func SetValue(dotPath, value string) error {
 		default:
 			return fmt.Errorf("unknown review config key: %s", parts[1])
 		}
+	case "retrieval":
+		switch parts[1] {
+		case "max_tokens":
+			n, err := strconv.Atoi(value)
+			if err != nil {
+				return fmt.Errorf("invalid value for max_tokens: %q is not a number", value)
+			}
+			if n < 100 {
+				return fmt.Errorf("max_tokens must be at least 100, got %d", n)
+			}
+			cfg.Retrieval.MaxTokens = n
+		case "min_strength":
+			f, err := strconv.ParseFloat(value, 64)
+			if err != nil {
+				return fmt.Errorf("invalid value for min_strength: %q is not a number", value)
+			}
+			if f < 0 || f > 1 {
+				return fmt.Errorf("min_strength must be between 0 and 1, got %.2f", f)
+			}
+			cfg.Retrieval.MinStrength = f
+		case "max_entries":
+			n, err := strconv.Atoi(value)
+			if err != nil {
+				return fmt.Errorf("invalid value for max_entries: %q is not a number", value)
+			}
+			if n < 1 {
+				return fmt.Errorf("max_entries must be at least 1, got %d", n)
+			}
+			cfg.Retrieval.MaxEntries = n
+		case "include_recent_days":
+			n, err := strconv.Atoi(value)
+			if err != nil {
+				return fmt.Errorf("invalid value for include_recent_days: %q is not a number", value)
+			}
+			if n < 1 {
+				return fmt.Errorf("include_recent_days must be at least 1, got %d", n)
+			}
+			cfg.Retrieval.IncludeRecentDays = n
+		default:
+			return fmt.Errorf("unknown retrieval config key: %s", parts[1])
+		}
 	default:
 		return fmt.Errorf("unknown config section: %s", parts[0])
 	}
@@ -408,6 +463,19 @@ func GetValue(dotPath string) (string, error) {
 			return cfg.Review.Profile, nil
 		default:
 			return "", fmt.Errorf("unknown review config key: %s", parts[1])
+		}
+	case "retrieval":
+		switch parts[1] {
+		case "max_tokens":
+			return strconv.Itoa(cfg.Retrieval.MaxTokens), nil
+		case "min_strength":
+			return strconv.FormatFloat(cfg.Retrieval.MinStrength, 'f', 2, 64), nil
+		case "max_entries":
+			return strconv.Itoa(cfg.Retrieval.MaxEntries), nil
+		case "include_recent_days":
+			return strconv.Itoa(cfg.Retrieval.IncludeRecentDays), nil
+		default:
+			return "", fmt.Errorf("unknown retrieval config key: %s", parts[1])
 		}
 	default:
 		return "", fmt.Errorf("unknown config section: %s", parts[0])

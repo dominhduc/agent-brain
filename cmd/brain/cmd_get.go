@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -54,9 +55,11 @@ func cmdGet(jsonFlag, summaryFlag, compactFlag, messageOnlyFlag, fullFlag bool) 
 		fmt.Println("  --json         Output as JSON (structured format)")
 		fmt.Println("  --compact      One-line-per-entry, no blank lines")
 		fmt.Println("  --message-only Output only the message text (no timestamps, no scores)")
-		fmt.Println("  --full         Show complete content (default: tiered view)")
-		fmt.Println("  --focus        Filter by topic (e.g., --focus \"infrastructure\")")
-		fmt.Println("What to do: specify a topic name to retrieve.")
+	fmt.Println("  --full         Show complete content (default: tiered view)")
+	fmt.Println("  --focus        Filter by topic (e.g., --focus \"infrastructure\")")
+	fmt.Println("  --context      Boost entries related to current git diff")
+	fmt.Println("  --budget N     Set custom token budget (e.g., --budget 5000)")
+	fmt.Println("What to do: specify a topic name to retrieve.")
 		os.Exit(1)
 	}
 
@@ -80,6 +83,17 @@ func cmdGet(jsonFlag, summaryFlag, compactFlag, messageOnlyFlag, fullFlag bool) 
 				focusTopic = os.Args[i+1]
 				break
 			}
+		}
+	}
+
+	contextFlag := hasFlag("--context")
+
+	budgetFlag := getFlagValue("--budget")
+	customBudget := knowledge.DefaultBudget()
+	if budgetFlag != "" {
+		n, err := strconv.Atoi(budgetFlag)
+		if err == nil && n > 0 {
+			customBudget.MaxTokens = n
 		}
 	}
 
@@ -156,12 +170,32 @@ func cmdGet(jsonFlag, summaryFlag, compactFlag, messageOnlyFlag, fullFlag bool) 
 			}
 			fmt.Println(content)
 		} else {
-			content, err := getTieredAll(idx, now)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: run 'brain init' first.\n", err)
-				os.Exit(1)
+			var contextTopics []string
+			if contextFlag {
+				cwd, _ := os.Getwd()
+				contextTopics, _ = knowledge.DetectWorkContext(cwd)
 			}
-			fmt.Println(content)
+
+			if hub, err := knowledge.Open(brainDir); err == nil {
+				result, err := hub.RetrieveWithBudget(customBudget, contextTopics)
+				if err != nil {
+					content, err2 := getTieredAll(idx, now)
+					if err2 != nil {
+						fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: run 'brain init' first.\n", err2)
+						os.Exit(1)
+					}
+					fmt.Println(content)
+					return
+				}
+				fmt.Println(formatBudgetResult(result, now))
+			} else {
+				content, err := getTieredAll(idx, now)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Error: %v\nWhat to do: run 'brain init' first.\n", err)
+					os.Exit(1)
+				}
+				fmt.Println(content)
+			}
 		}
 		return
 	}
@@ -678,4 +712,61 @@ func getFocusedTopics(focusTopic string, idx *knowledge.Index, now time.Time, js
 	}
 
 	return result.String(), nil
+}
+
+func formatBudgetResult(result *knowledge.BudgetResult, now time.Time) string {
+	var sb strings.Builder
+
+	sb.WriteString(fmt.Sprintf("PROJECT MEMORY (%d entries, ~%d tokens)\n", len(result.Entries), result.TotalTokens))
+	sb.WriteString(strings.Repeat("─", 50) + "\n")
+
+	topicCounts := make(map[string]int)
+	topicTokens := make(map[string]int)
+	for _, e := range result.Entries {
+		topicCounts[e.Topic]++
+		topicTokens[e.Topic] += e.Tokens
+	}
+
+	topics := []string{"gotchas", "patterns", "decisions", "architecture", "memory"}
+	for _, topic := range topics {
+		if count := topicCounts[topic]; count > 0 {
+			sb.WriteString(fmt.Sprintf("  %-15s %d entries  (%d tokens)\n", topic, count, topicTokens[topic]))
+		}
+	}
+
+	otherCount := len(result.Entries)
+	for _, topic := range topics {
+		otherCount -= topicCounts[topic]
+	}
+	if otherCount > 0 {
+		sb.WriteString(fmt.Sprintf("  %-15s %d entries\n", "other", otherCount))
+	}
+
+	sb.WriteString("\n")
+	sb.WriteString(fmt.Sprintf("  Skipped: %d entries\n", result.Skipped))
+	sb.WriteString("  Use --full for complete content or --budget 5000 for more.\n")
+	sb.WriteString("\n")
+
+	if len(result.Entries) > 0 {
+		sb.WriteString("ENTRIES\n")
+		sb.WriteString(strings.Repeat("─", 50) + "\n")
+		for _, e := range result.Entries {
+			rel := relativeTime(e.Timestamp, now)
+			if rel != "" {
+				rel = "  " + rel
+			}
+			sb.WriteString(fmt.Sprintf("  %.2f  %s%s\n", e.Score, e.Message, rel))
+		}
+	}
+
+	return sb.String()
+}
+
+func getFlagValue(flag string) string {
+	for i := 2; i < len(os.Args)-1; i++ {
+		if os.Args[i] == flag {
+			return os.Args[i+1]
+		}
+	}
+	return ""
 }

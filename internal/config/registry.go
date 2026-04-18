@@ -85,6 +85,34 @@ var allKeys = []ConfigKey{
 		Default:     "2000",
 		Description: "Max diff lines for analysis",
 	},
+	{
+		Friendly:    "retrieval-max-tokens",
+		DotPath:     "retrieval.max_tokens",
+		Type:        "int",
+		Default:     "3000",
+		Description: "Max tokens for retrieval budget",
+	},
+	{
+		Friendly:    "retrieval-min-strength",
+		DotPath:     "retrieval.min_strength",
+		Type:        "float",
+		Default:     "0.15",
+		Description: "Minimum entry strength for retrieval",
+	},
+	{
+		Friendly:    "retrieval-max-entries",
+		DotPath:     "retrieval.max_entries",
+		Type:        "int",
+		Default:     "50",
+		Description: "Max entries returned by retrieval",
+	},
+	{
+		Friendly:    "retrieval-recent-days",
+		DotPath:     "retrieval.include_recent_days",
+		Type:        "int",
+		Default:     "7",
+		Description: "Number of days for recent entry boost",
+	},
 }
 
 func AllKeys() []ConfigKey {
@@ -136,6 +164,14 @@ func (k *ConfigKey) Validate(value string) error {
 		if k.Friendly == "max-diff-lines" && n < 100 {
 			return fmt.Errorf("max-diff-lines must be at least 100, got %d", n)
 		}
+	case "float":
+		f, err := strconv.ParseFloat(value, 64)
+		if err != nil {
+			return fmt.Errorf("invalid number %q for %s", value, k.Friendly)
+		}
+		if f < 0 || f > 1 {
+			return fmt.Errorf("%s must be between 0 and 1, got %.2f", k.Friendly, f)
+		}
 	case "enum":
 		if k.Friendly == "provider" {
 			if provider.IsBuiltin(value) || IsCustomProvider(value) {
@@ -183,6 +219,18 @@ func (k *ConfigKey) ApplyValue(cfg *Config, value string) error {
 	case "analysis.max_diff_lines":
 		n, _ := strconv.Atoi(value)
 		cfg.Analysis.MaxDiffLines = n
+	case "retrieval.max_tokens":
+		n, _ := strconv.Atoi(value)
+		cfg.Retrieval.MaxTokens = n
+	case "retrieval.min_strength":
+		f, _ := strconv.ParseFloat(value, 64)
+		cfg.Retrieval.MinStrength = f
+	case "retrieval.max_entries":
+		n, _ := strconv.Atoi(value)
+		cfg.Retrieval.MaxEntries = n
+	case "retrieval.include_recent_days":
+		n, _ := strconv.Atoi(value)
+		cfg.Retrieval.IncludeRecentDays = n
 	default:
 		return fmt.Errorf("cannot apply value to %s", k.DotPath)
 	}
@@ -209,6 +257,14 @@ func (k *ConfigKey) GetValue(cfg *Config) string {
 		return cfg.Daemon.RetryBackoff
 	case "analysis.max_diff_lines":
 		return strconv.Itoa(cfg.Analysis.MaxDiffLines)
+	case "retrieval.max_tokens":
+		return strconv.Itoa(cfg.Retrieval.MaxTokens)
+	case "retrieval.min_strength":
+		return strconv.FormatFloat(cfg.Retrieval.MinStrength, 'f', 2, 64)
+	case "retrieval.max_entries":
+		return strconv.Itoa(cfg.Retrieval.MaxEntries)
+	case "retrieval.include_recent_days":
+		return strconv.Itoa(cfg.Retrieval.IncludeRecentDays)
 	default:
 		return ""
 	}
