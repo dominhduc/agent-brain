@@ -67,6 +67,9 @@ func cmdUpdate() {
 
 	fmt.Printf("Downloading %s...\n", asset.Name)
 
+	checksums := updater.ParseChecksums(release.Body)
+	release.Checksums = checksums
+
 	var archiveData []byte
 	if asset.ID > 0 && os.Getenv("GITHUB_TOKEN") != "" {
 		archiveData, err = updater.DownloadAsset("https://api.github.com", asset.ID)
@@ -78,7 +81,7 @@ func cmdUpdate() {
 		os.Exit(1)
 	}
 
-	if err := updater.ReplaceBinary(archiveData, asset.Name, resolvedPath); err != nil {
+	if err := updater.ReplaceBinary(archiveData, asset.Name, resolvedPath, checksums); err != nil {
 		fmt.Fprintf(os.Stderr, "Error updating: %v\nWhat to do: download manually from https://github.com/dominhduc/agent-brain/releases/latest\n", err)
 		os.Exit(1)
 	}

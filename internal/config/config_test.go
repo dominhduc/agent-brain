@@ -357,7 +357,7 @@ func TestGetValue(t *testing.T) {
 		dotPath string
 		want    string
 	}{
-		{"llm.api_key", "test-key-123"},
+		{"llm.api_key", "test****23"},
 		{"llm.model", "test-model"},
 		{"daemon.max_retries", "5"},
 		{"llm.provider", "openrouter"},

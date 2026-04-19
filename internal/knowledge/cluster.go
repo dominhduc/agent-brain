@@ -6,12 +6,13 @@ import (
 
 type EntryCluster struct {
 	Representative string
+	MemberIndices  []int
 	Members        []string
 	AvgStrength    float64
 	Topic          string
 }
 
-const clusterThreshold = 0.35
+const clusterThreshold = 0.55
 
 func ClusterEntries(entries []TopicEntry, topic string) []EntryCluster {
 	if len(entries) == 0 {
@@ -49,7 +50,7 @@ func ClusterEntries(entries []TopicEntry, topic string) []EntryCluster {
 
 	for i := 0; i < n; i++ {
 		for j := i + 1; j < n; j++ {
-			sim := trigramJaccard(normalizeEntry(entries[i].Message), normalizeEntry(entries[j].Message))
+			sim := trigramJaccard(stripStopWords(normalizeEntry(entries[i].Message)), stripStopWords(normalizeEntry(entries[j].Message)))
 			if sim >= clusterThreshold {
 				union(i, j)
 			}
@@ -73,9 +74,25 @@ func ClusterEntries(entries []TopicEntry, topic string) []EntryCluster {
 			members = append(members, entries[idx].Timestamp)
 		}
 
+		var totalStrength float64
+		var strengthCount int
+		for _, idx := range indices {
+			if len(entries) > idx {
+				s := entryStrength(entries[idx].Message)
+				totalStrength += s
+				strengthCount++
+			}
+		}
+		avgStr := 0.0
+		if strengthCount > 0 {
+			avgStr = totalStrength / float64(strengthCount)
+		}
+
 		clusters = append(clusters, EntryCluster{
 			Representative: entries[indices[0]].Timestamp,
+			MemberIndices:  indices,
 			Members:        members,
+			AvgStrength:    avgStr,
 			Topic:          topic,
 		})
 	}
@@ -105,4 +122,29 @@ func ClusterAllTopics(brainDir string) ([]EntryCluster, error) {
 
 func normalizeTextForCluster(text string) string {
 	return strings.ToLower(strings.TrimSpace(text))
+}
+
+func entryStrength(message string) float64 {
+	return 1.0
+}
+
+var stopWords = map[string]bool{
+	"a": true, "an": true, "the": true, "and": true, "or": true, "but": true,
+	"in": true, "on": true, "at": true, "to": true, "for": true, "of": true,
+	"with": true, "by": true, "from": true, "is": true, "are": true, "was": true,
+	"be": true, "has": true, "have": true, "had": true, "not": true, "this": true,
+	"that": true, "it": true, "its": true, "may": true, "can": true, "will": true,
+	"should": true, "when": true, "use": true, "using": true, "used": true,
+	"must": true, "also": true, "no": true, "via": true, "get": true,
+}
+
+func stripStopWords(text string) string {
+	words := strings.Fields(text)
+	var filtered []string
+	for _, w := range words {
+		if !stopWords[w] {
+			filtered = append(filtered, w)
+		}
+	}
+	return strings.Join(filtered, " ")
 }

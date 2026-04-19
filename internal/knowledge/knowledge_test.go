@@ -427,6 +427,7 @@ func TestDedup(t *testing.T) {
 }
 
 func TestIndexLoadSave(t *testing.T) {
+	ResetIndexCache()
 	hub := setupTestHub(t)
 
 	idx, err := hub.LoadIndex()

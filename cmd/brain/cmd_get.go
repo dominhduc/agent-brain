@@ -88,13 +88,19 @@ func cmdGet(jsonFlag, summaryFlag, compactFlag, messageOnlyFlag, fullFlag bool) 
 
 	contextFlag := hasFlag("--context")
 
-	budgetFlag := getFlagValue("--budget")
 	customBudget := knowledge.DefaultBudget()
+	budgetFlag := getFlagValue("--budget")
 	if budgetFlag != "" {
 		n, err := strconv.Atoi(budgetFlag)
-		if err == nil && n > 0 {
-			customBudget.MaxTokens = n
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: invalid budget value '%s'.\nWhat to do: use a positive number, e.g. --budget 3000.\n", budgetFlag)
+			os.Exit(1)
 		}
+		if n <= 0 {
+			fmt.Fprintf(os.Stderr, "Error: budget must be positive, got %d.\nWhat to do: use a positive number, e.g. --budget 3000.\n", n)
+			os.Exit(1)
+		}
+		customBudget.MaxTokens = n
 	}
 
 	if brainDir, err := knowledge.FindBrainDir(); err == nil {

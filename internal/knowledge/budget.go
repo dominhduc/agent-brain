@@ -134,46 +134,67 @@ func (h *Hub) RetrieveWithBudget(budget RetrievalBudget, contextTopics []string)
 	result := &BudgetResult{}
 	used := 0
 	skippedLow := 0
-	skippedOverflow := 0
+	totalCandidates := len(scored)
 
-	topicBudgets := map[string]int{
+	topicMaxTokens := map[string]int{
 		"gotchas":      int(float64(budget.MaxTokens) * budget.GotchasPct),
 		"patterns":     int(float64(budget.MaxTokens) * budget.PatternsPct),
 		"decisions":    int(float64(budget.MaxTokens) * budget.DecisionsPct),
 		"architecture": int(float64(budget.MaxTokens) * budget.ArchitecturePct),
 	}
 	topicUsed := make(map[string]int)
+	topicCounts := make(map[string]int)
+	topicMaxEntries := budget.MaxEntries / 4
+	if topicMaxEntries < 3 {
+		topicMaxEntries = 3
+	}
 
+	var leftovers []ScoredEntry
 	for _, se := range scored {
 		if len(result.Entries) >= budget.MaxEntries {
-			skippedOverflow += len(scored) - len(result.Entries)
-			break
-		}
-
-		topicBudget, hasTopicBudget := topicBudgets[se.Topic]
-		if hasTopicBudget && topicUsed[se.Topic]+se.Tokens > topicBudget {
-			if used+se.Tokens <= budget.MaxTokens {
-				topicUsed[se.Topic] += se.Tokens
-				used += se.Tokens
-				result.Entries = append(result.Entries, se)
-			} else {
-				skippedOverflow++
-			}
+			leftovers = append(leftovers, se)
 			continue
 		}
 
-		if used+se.Tokens <= budget.MaxTokens {
-			topicUsed[se.Topic] += se.Tokens
-			used += se.Tokens
-			result.Entries = append(result.Entries, se)
-		} else {
-			skippedOverflow++
+		maxTokens, hasMax := topicMaxTokens[se.Topic]
+		if hasMax {
+			if topicUsed[se.Topic]+se.Tokens > maxTokens {
+				leftovers = append(leftovers, se)
+				continue
+			}
+			if topicCounts[se.Topic] >= topicMaxEntries {
+				leftovers = append(leftovers, se)
+				continue
+			}
 		}
+
+		if used+se.Tokens > budget.MaxTokens {
+			leftovers = append(leftovers, se)
+			continue
+		}
+
+		topicUsed[se.Topic] += se.Tokens
+		topicCounts[se.Topic]++
+		used += se.Tokens
+		result.Entries = append(result.Entries, se)
+	}
+
+	for _, se := range leftovers {
+		if len(result.Entries) >= budget.MaxEntries {
+			break
+		}
+		if used+se.Tokens > budget.MaxTokens {
+			skippedLow++
+			continue
+		}
+		used += se.Tokens
+		topicUsed[se.Topic] += se.Tokens
+		result.Entries = append(result.Entries, se)
 	}
 
 	result.TotalTokens = used
 	result.BudgetUsed = float64(used) / float64(budget.MaxTokens)
-	result.Skipped = skippedLow + skippedOverflow
+	result.Skipped = skippedLow + (totalCandidates - len(result.Entries) - skippedLow)
 	result.SkippedLow = skippedLow
 
 	return result, nil

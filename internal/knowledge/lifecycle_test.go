@@ -202,6 +202,7 @@ func TestParseEntriesFromContent_SkipsSuperseded(t *testing.T) {
 }
 
 func TestIndexMigration_V1toV2(t *testing.T) {
+	ResetIndexCache()
 	tmpDir := t.TempDir()
 	brainDir := filepath.Join(tmpDir, ".brain")
 	if err := os.MkdirAll(brainDir, 0700); err != nil {

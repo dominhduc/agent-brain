@@ -73,7 +73,7 @@ AI coding agents are brilliant — but they **forget everything** between sessio
 | No institutional memory across sessions | Knowledge compounds and grows smarter |
 | Agent makes the same mistakes repeatedly | Past gotchas are flagged before they happen again |
 
-**v2.0** adds token-budget retrieval (`brain get all --budget N`, `--context`), entry lifecycle (`brain edit`, `brain supersede`), consolidation (`brain consolidate`), semantic search (`brain embed` with Ollama/OpenAI + hybrid RRF fusion), and cross-project knowledge sharing (`brain sync`, `brain add --global`). Zero new dependencies through Phase 3; one pure-Go library (`chromem-go`) for embeddings. **v1.5.0** adds fuzzy duplicate detection at add time...
+**v2.0.2** hardens security (SHA-256 checksum verification on updates, API key masking, Gemini header-based auth, path traversal protection, strict YAML parsing, diff size caps with hostname redaction) and improves performance (config and index caching with auto-invalidation). **v2.0** added token-budget retrieval (`brain get all --budget N`, `--context`), entry lifecycle (`brain edit`, `brain supersede`), consolidation (`brain consolidate`), semantic search (`brain embed` with Ollama/OpenAI + hybrid RRF fusion), and cross-project knowledge sharing (`brain sync`, `brain add --global`). Zero new dependencies through Phase 3; one pure-Go library (`chromem-go`) for embeddings.
 
 ---
 
@@ -426,7 +426,7 @@ brain consolidate --apply      # Apply consolidations
 brain consolidate --topic gotchas   # Filter to specific topic
 ```
 
-Uses trigram Jaccard clustering (threshold 0.35) to find related entries, then deterministically merges them into a single richer entry. Source entries are preserved as HTML comment timelines.
+Uses trigram Jaccard clustering (threshold 0.45) to find related entries, then deterministically merges them into a single richer entry. Source entries are preserved as HTML comment timelines.
 
 ---
 
@@ -478,7 +478,7 @@ View or modify configuration.
 
 ```bash
 brain config                              # Show current config
-brain config get api-key                  # Get a single value
+brain config get api-key                  # Get a single value (API keys are masked)
 brain config set api-key <your-key>       # Set API key
 brain config set model anthropic/claude-3.5-haiku  # Change model
 brain config set profile guard            # Set review strictness
@@ -494,7 +494,7 @@ brain config setup                        # Interactive setup wizard
 Show knowledge hub statistics with TTY-aware color indicators. Reports warnings for stale MEMORY.md (>7 days since update), pending entries awaiting review, API key status, and failed queue items.
 
 ```
-brain v1.5.0  linux/amd64  abc1234
+brain v2.0.2  linux/amd64  abc1234
 
 Hub
   .brain/      found ✓

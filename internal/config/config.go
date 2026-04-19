@@ -1,16 +1,31 @@
 package config
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/dominhduc/agent-brain/internal/provider"
 	"gopkg.in/yaml.v3"
 )
+
+var (
+	configCache     *Config
+	configCacheTime time.Time
+	configCacheMu   sync.RWMutex
+	configCacheTTL  = 5 * time.Second
+)
+
+func strictUnmarshal(data []byte, v interface{}) error {
+	dec := yaml.NewDecoder(bytes.NewReader(data))
+	dec.KnownFields(true)
+	return dec.Decode(v)
+}
 
 type Config struct {
 	LLM           LLMConfig                 `yaml:"llm"`
@@ -128,35 +143,56 @@ func DefaultConfig() Config {
 }
 
 func Load() (Config, error) {
+	configCacheMu.RLock()
+	if configCache != nil && time.Since(configCacheTime) < configCacheTTL {
+		cfg := *configCache
+		configCacheMu.RUnlock()
+		if key := os.Getenv("BRAIN_API_KEY"); key != "" {
+			cfg.LLM.APIKey = key
+		}
+		return cfg, nil
+	}
+	configCacheMu.RUnlock()
+
 	cfg := DefaultConfig()
 
-	// Try env var first
 	if key := os.Getenv("BRAIN_API_KEY"); key != "" {
 		cfg.LLM.APIKey = key
 	}
 
-	// Read config file
 	path := ConfigPath()
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
+			configCacheMu.Lock()
+			configCache = &cfg
+			configCacheTime = time.Now()
+			configCacheMu.Unlock()
 			return cfg, nil
 		}
-		// File exists but couldn't read - return defaults but log warning
 		fmt.Fprintf(os.Stderr, "Warning: could not read config file: %v\n", err)
+		configCacheMu.Lock()
+		configCache = &cfg
+		configCacheTime = time.Now()
+		configCacheMu.Unlock()
 		return cfg, nil
 	}
 
-	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		// File has invalid YAML - return defaults but log warning
-		fmt.Fprintf(os.Stderr, "Warning: could not parse config file: %v\n", err)
-		return cfg, nil
+	if err := strictUnmarshal(data, &cfg); err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: unknown fields in config file: %v\n", err)
+		if err := yaml.Unmarshal(data, &cfg); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: could not parse config file: %v\n", err)
+		}
 	}
 
-	// Env var overrides file
 	if key := os.Getenv("BRAIN_API_KEY"); key != "" {
 		cfg.LLM.APIKey = key
 	}
+
+	configCacheMu.Lock()
+	configCache = &cfg
+	configCacheTime = time.Now()
+	configCacheMu.Unlock()
 
 	return cfg, nil
 }
@@ -178,9 +214,11 @@ func LoadForProject(brainDir string) (Config, error) {
 		return cfg, nil
 	}
 
-	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		fmt.Fprintf(os.Stderr, "Warning: could not parse project config file: %v\n", err)
-		return cfg, nil
+	if err := strictUnmarshal(data, &cfg); err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: unknown fields in project config file: %v\n", err)
+		if err := yaml.Unmarshal(data, &cfg); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: could not parse project config file: %v\n", err)
+		}
 	}
 
 	if key := os.Getenv("BRAIN_API_KEY"); key != "" {
@@ -205,6 +243,11 @@ func Save(cfg Config) error {
 	if err := os.WriteFile(path, data, 0600); err != nil {
 		return fmt.Errorf("failed to write config file: %w", err)
 	}
+
+	configCacheMu.Lock()
+	configCache = &cfg
+	configCacheTime = time.Now()
+	configCacheMu.Unlock()
 
 	return nil
 }
@@ -433,7 +476,13 @@ func GetValue(dotPath string) (string, error) {
 		case "provider":
 			return cfg.LLM.Provider, nil
 		case "api_key":
-			return cfg.LLM.APIKey, nil
+			masked := cfg.LLM.APIKey
+			if len(masked) > 8 {
+				masked = masked[:4] + "****" + masked[len(masked)-2:]
+			} else if masked != "" {
+				masked = "****"
+			}
+			return masked, nil
 		case "model":
 			return cfg.LLM.Model, nil
 		default:

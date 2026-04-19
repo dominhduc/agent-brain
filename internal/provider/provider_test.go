@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -86,9 +87,20 @@ func TestAnthropic_BuildURL(t *testing.T) {
 func TestGemini_BuildURL(t *testing.T) {
 	p := &Gemini{}
 	url := p.BuildURL("gemini-2.0-flash", "api-key-123")
-	expected := "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=api-key-123"
+	expected := "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
 	if url != expected {
 		t.Errorf("got %s, want %s", url, expected)
+	}
+	if strings.Contains(url, "api-key-123") {
+		t.Error("API key should NOT appear in URL")
+	}
+}
+
+func TestGemini_BuildHeaders(t *testing.T) {
+	p := &Gemini{}
+	headers := p.BuildHeaders("api-key-123")
+	if headers["x-goog-api-key"] != "api-key-123" {
+		t.Errorf("expected x-goog-api-key header, got %v", headers)
 	}
 }
 

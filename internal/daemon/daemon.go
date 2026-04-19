@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -14,7 +15,9 @@ import (
 	"github.com/dominhduc/agent-brain/internal/otel"
 )
 
-const maxDiffSize = 2000 * 100
+const maxDiffSize = 50000
+
+var internalHostRe = regexp.MustCompile(`(?m)(?:https?://|ssh://|git@)([a-zA-Z0-9._-]+)`)
 
 type QueueItem struct {
 	Timestamp   string `json:"timestamp"`
@@ -61,9 +64,23 @@ func ProcessItemWithDeps(ctx context.Context, processingPath, queueDir, brainDir
 		return false, fmt.Errorf("invalid queue item: field too long")
 	}
 
-	absRepo, _ := filepath.Abs(item.Repo)
-	absRoot, _ := filepath.Abs(projectRoot)
-	if absRepo != absRoot {
+	absRepo, err := filepath.Abs(item.Repo)
+	if err != nil {
+		moveToFailed(processingPath, queueDir, fmt.Sprintf("invalid repo path: %v", err))
+		return false, fmt.Errorf("invalid repo path: %w", err)
+	}
+	absRoot, err := filepath.Abs(projectRoot)
+	if err != nil {
+		moveToFailed(processingPath, queueDir, fmt.Sprintf("invalid root path: %v", err))
+		return false, fmt.Errorf("invalid root path: %w", err)
+	}
+	evalRepo, _ := filepath.EvalSymlinks(absRepo)
+	evalRoot, _ := filepath.EvalSymlinks(absRoot)
+	if evalRepo != "" && evalRoot != "" && evalRepo != evalRoot {
+		otel.SetAttributes(processSpan, otel.BrainDaemonOutcome.String("error"))
+		moveToFailed(processingPath, queueDir, fmt.Sprintf("security: repo %q does not match project root %q (eval symlinks)", evalRepo, evalRoot))
+		return false, fmt.Errorf("security: queue item repo %q does not match project root %q", evalRepo, evalRoot)
+	} else if absRepo != absRoot {
 		otel.SetAttributes(processSpan, otel.BrainDaemonOutcome.String("error"))
 		moveToFailed(processingPath, queueDir, fmt.Sprintf("security: repo %q does not match project root %q", absRepo, absRoot))
 		return false, fmt.Errorf("security: queue item repo %q does not match project root %q", absRepo, absRoot)
@@ -101,6 +118,13 @@ func ProcessItemWithDeps(ctx context.Context, processingPath, queueDir, brainDir
 	if len(diff) > maxDiffSize {
 		diff = diff[:maxDiffSize]
 	}
+
+	diff = internalHostRe.ReplaceAllStringFunc(diff, func(match string) string {
+		if looksInternal(match) {
+			return "[REDACTED_HOST]"
+		}
+		return match
+	})
 
 	_, secretsSpan := otel.StartSpan(ctx, "brain.daemon.secrets")
 	if findings := ScanDiffSecrets(diff); len(findings) > 0 {
@@ -256,4 +280,20 @@ func saveAndRequeue(processingPath, originalPath string, item QueueItem) {
 
 func itemPath(processingPath string) string {
 	return strings.TrimSuffix(processingPath, ".processing")
+}
+
+func looksInternal(host string) bool {
+	public := []string{"github.com", "gitlab.com", "bitbucket.org", "localhost", "127.0.0.1", "0.0.0.0"}
+	lower := strings.ToLower(host)
+	for _, p := range public {
+		if strings.Contains(lower, p) {
+			return false
+		}
+	}
+	if strings.HasSuffix(lower, ".local") || strings.HasSuffix(lower, ".internal") ||
+		strings.HasSuffix(lower, ".corp") || strings.Contains(lower, "192.168.") ||
+		strings.Contains(lower, "10.") || strings.Contains(lower, "172.16.") {
+		return true
+	}
+	return false
 }

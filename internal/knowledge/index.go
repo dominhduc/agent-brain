@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -38,6 +39,20 @@ const indexVersion = 2
 
 var entryHeaderRe = regexp.MustCompile(`^### \[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]`)
 
+var (
+	indexCache     *Index
+	indexCacheTime time.Time
+	indexCacheMu   sync.RWMutex
+	indexCacheTTL  = 2 * time.Second
+)
+
+func ResetIndexCache() {
+	indexCacheMu.Lock()
+	defer indexCacheMu.Unlock()
+	indexCache = nil
+	indexCacheTime = time.Time{}
+}
+
 func IndexFilePath(brainDir string) string {
 	return filepath.Join(brainDir, "index.json")
 }
@@ -47,6 +62,18 @@ func (h *Hub) indexPath() string {
 }
 
 func LoadIndex(brainDir string) (*Index, error) {
+	indexCacheMu.RLock()
+	if indexCache != nil && time.Since(indexCacheTime) < indexCacheTTL {
+		idx := *indexCache
+		idx.Entries = make(map[string]IndexEntry, len(indexCache.Entries))
+		for k, v := range indexCache.Entries {
+			idx.Entries[k] = v
+		}
+		indexCacheMu.RUnlock()
+		return &idx, nil
+	}
+	indexCacheMu.RUnlock()
+
 	data, err := os.ReadFile(IndexFilePath(brainDir))
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -71,6 +98,12 @@ func LoadIndex(brainDir string) (*Index, error) {
 			idx.Entries[key] = entry
 		}
 	}
+
+	indexCacheMu.Lock()
+	indexCache = &idx
+	indexCacheTime = time.Now()
+	indexCacheMu.Unlock()
+
 	return &idx, nil
 }
 
@@ -95,6 +128,12 @@ func (idx *Index) Save(brainDir string) error {
 	if err := os.Rename(tmpPath, path); err != nil {
 		return fmt.Errorf("failed to rename index: %w", err)
 	}
+
+	indexCacheMu.Lock()
+	indexCache = idx
+	indexCacheTime = time.Now()
+	indexCacheMu.Unlock()
+
 	return nil
 }
 

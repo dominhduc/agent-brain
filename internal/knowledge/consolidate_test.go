@@ -246,16 +246,32 @@ func TestApplyConsolidation(t *testing.T) {
 	}
 }
 
-func TestWrapText(t *testing.T) {
-	result := wrapText("short", 10)
-	if result != "short" {
-		t.Errorf("wrapText('short', 10) = %q, want 'short'", result)
+func TestClusterEntries_UnrelatedNotClustered(t *testing.T) {
+	entries := []TopicEntry{
+		{Timestamp: "2026-01-01 00:00:00", Message: "Go const cannot be overridden by ldflags"},
+		{Timestamp: "2026-01-02 00:00:00", Message: "GitHub private repos require GITHUB_TOKEN for downloads"},
+		{Timestamp: "2026-01-03 00:00:00", Message: "Always handle os.UserHomeDir errors explicitly"},
+	}
+	clusters := ClusterEntries(entries, "gotchas")
+	if len(clusters) != 0 {
+		t.Errorf("unrelated entries should not cluster, got %d clusters", len(clusters))
+		for i, c := range clusters {
+			t.Logf("  cluster %d: %d members", i, len(c.Members))
+		}
+	}
+}
+
+func TestClusterEntries_AvgStrengthPopulated(t *testing.T) {
+	entries := []TopicEntry{
+		{Timestamp: "2026-04-15 10:00:00", Message: "Use filepath.Join for joining file paths, not string concatenation with slashes"},
+		{Timestamp: "2026-04-16 11:00:00", Message: "Use filepath.Join for file paths instead of string concatenation with slashes"},
 	}
 
-	long := "This is a very long sentence that should be wrapped to multiple lines"
-	result = wrapText(long, 30)
-	lines := strings.Split(result, "\n")
-	if len(lines) < 2 {
-		t.Errorf("wrapText long text should produce multiple lines, got %d", len(lines))
+	clusters := ClusterEntries(entries, "gotchas")
+	if len(clusters) == 0 {
+		t.Fatal("expected at least 1 cluster")
+	}
+	if clusters[0].AvgStrength <= 0 {
+		t.Errorf("expected positive AvgStrength, got %.2f", clusters[0].AvgStrength)
 	}
 }

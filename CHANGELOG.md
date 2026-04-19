@@ -5,30 +5,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.0.2] - 2026-04-19
+
+### Security
+- SHA-256 checksum verification for binary updates — rejects tampered or corrupted downloads
+- Gemini API key moved from URL query parameter to `x-goog-api-key` header (no longer logged in server access logs)
+- API key masking in `brain config get llm.api_key` — shows `sk-or...****v1` instead of full key
+- Path traversal hardening in binary update and tar extraction — prevents writing outside target directory
+- Dedicated `internal/secrets/` package with 17 detection patterns, shared by knowledge and daemon layers
+- Strict YAML parsing with graceful fallback — rejects duplicate keys in config files
+- HTTP client timeout (120s) replaces `http.DefaultClient` for all update requests
+- Diff size cap reduced to 50K with hostname redaction via `looksInternal()` to prevent leaking internal hostnames
+
+### Performance
+- Config caching with 5s TTL — avoids redundant disk reads in tight loops
+- Index caching with 2s TTL — avoids redundant index reloads across rapid commands
+- Cache invalidated automatically on `Save()` calls
+
+### Fixed
+- `FindBrainDir` race condition — replaced `sync.Once` with mutex + nil check for concurrent goroutine safety
+- Queue path evaluation uses `filepath.EvalSymlinks` — handles symlinked `.brain/` paths correctly
+
+## [v2.0.1] - 2026-04-18
+
+### Fixed
+- `--global` flag parsing was position-dependent — now stripped before topic detection so `brain add gotcha "msg" --global` works in any position
+- Budget allocation ignored 4 of 5 topics — two-pass allocation ensures every topic gets its guaranteed share before distributing leftovers
+- Consolidation clustering produced nonsense merges — raised Jaccard threshold to 0.45, added stop-word stripping, fixed sentence deduplication
+- Budget 0 or negative values caused silent failures — now returns clear error messages
+- Removed dead code: `formatConsolidationProposal`, `consolidationScanner`, `newConsolidationScanner` from `consolidate.go`
+- `AvgStrength` now populated correctly in `ClusterEntries` via `entryStrength()` helper
+- Added 3 regression tests: unrelated entries not clustered, AvgStrength populated, multi-topic budget retrieval
+
 ## [v1.4.4] - 2026-04-15
 
 ### Added
 - `brain add --eval` now auto-runs skill reflection — skill files adapt automatically at session end
 - `brain update` now auto-syncs skill files to the latest template after binary update
 
-## [Unreleased]
+## [v2.0.0] - 2026-04-18
 
-**Core commands** (the only ones most users need):
-- `brain init` — Setup (unchanged)
-- `brain get <topic>` — Read knowledge (absorbs `search`: auto-detects non-topic args as search queries)
-- `brain add <topic> "<msg>"` — Write knowledge (absorbs `eval`: use `brain add --eval`)
-- `brain clean` — All maintenance (absorbs `prune`, `dedup`, `sleep`, `index rebuild`)
-- `brain doctor` — Health check (absorbs `status`)
-- `brain daemon <action>` — Daemon management (absorbs `review` as `daemon review`)
-- `brain config <action>` — Configuration (unchanged)
-- `brain update` — Self-update (absorbs `skill` via `--skills` flags)
-
-**Backward compatibility**: All old commands still work via aliases that print migration notices.
-
-**Removed deprecated commands**: `brain wm`, `brain handoff`, `brain outcome` (were already deprecated)
+### Added
+- Token-budget retrieval: `brain get all --budget N`, `--context`, `--focus`
+- Entry lifecycle: `brain edit`, `brain supersede`
+- Consolidation: `brain consolidate` with Jaccard clustering
+- Semantic search: `brain embed` with Ollama/OpenAI + hybrid RRF fusion
+- Cross-project knowledge sharing: `brain sync`, `brain add --global`
+- Pure-Go embedding library (`chromem-go`) — zero external dependencies
+- Consolidated command surface: all old aliases migrated to modern commands
 
 ### Removed
-- `brain search` → use `brain get <query>` (auto-searches non-topic args)
+- `brain search` → use `brain get <query>`
 - `brain eval` → use `brain add --eval`
 - `brain prune` → use `brain clean --patterns`
 - `brain dedup` → use `brain clean --duplicates`

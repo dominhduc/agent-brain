@@ -11,7 +11,7 @@ import (
 
 var (
 	cachedBrainDir string
-	brainDirOnce   sync.Once
+	cachedErr      error
 	brainDirMu     sync.Mutex
 )
 
@@ -29,11 +29,14 @@ func Open(brainDir string) (*Hub, error) {
 func FindBrainDir() (string, error) {
 	brainDirMu.Lock()
 	defer brainDirMu.Unlock()
-	var err error
-	brainDirOnce.Do(func() {
-		cachedBrainDir, err = findBrainDirFromUncached()
-	})
-	return cachedBrainDir, err
+	if cachedBrainDir != "" {
+		return cachedBrainDir, nil
+	}
+	if cachedErr != nil {
+		return "", cachedErr
+	}
+	cachedBrainDir, cachedErr = findBrainDirFromUncached()
+	return cachedBrainDir, cachedErr
 }
 
 func FindBrainDirFrom(cwd string) (string, error) {
@@ -69,8 +72,8 @@ func findBrainDirFromUncached() (string, error) {
 func ResetCache() {
 	brainDirMu.Lock()
 	defer brainDirMu.Unlock()
-	brainDirOnce = sync.Once{}
 	cachedBrainDir = ""
+	cachedErr = nil
 }
 
 func BrainDirExists(cwd string) bool {

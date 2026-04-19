@@ -24,6 +24,16 @@ func isKnownTopic(arg string) bool {
 	return false
 }
 
+func filterFlags(args []string) []string {
+	var filtered []string
+	for _, arg := range args {
+		if !strings.HasPrefix(arg, "-") {
+			filtered = append(filtered, arg)
+		}
+	}
+	return filtered
+}
+
 func cmdAdd() {
 	evalFlag := hasFlag("--eval")
 	globalFlag := hasFlag("--global")
@@ -33,11 +43,12 @@ func cmdAdd() {
 		return
 	}
 
-	if len(os.Args) < 4 {
+	if len(os.Args) < 3 {
 		fmt.Println("Usage: brain add <topic> \"<message>\"")
 		fmt.Println("       brain add <8-topic> <topic> \"<message>\"")
 		fmt.Println("       brain add --wm \"<message>\"")
 		fmt.Println("       brain add --eval            (session evaluation)")
+		fmt.Println("       brain add --global <topic> \"<message>\"")
 		fmt.Println("Topics: gotcha, pattern, decision, architecture, memory")
 		fmt.Println("8-Topics: ui, backend, infrastructure, database, security, testing, architecture, general")
 		fmt.Println("What to do: provide a topic and a message to add.")
@@ -68,14 +79,23 @@ func cmdAdd() {
 	var messageTopic string
 	var message string
 
-	if len(os.Args) >= 5 && isKnownTopic(os.Args[2]) {
-		topicTag := os.Args[2]
-		entryTopic = os.Args[3]
-		message = strings.Join(os.Args[4:], " ")
-		messageTopic = topicTag
+	args := filterFlags(os.Args[2:])
+	if len(args) == 0 {
+		fmt.Fprintln(os.Stderr, "Error: no topic specified.")
+		fmt.Fprintln(os.Stderr, "What to do: use one of: gotcha, pattern, decision, architecture, memory")
+		os.Exit(1)
+	}
+
+	if len(args) >= 3 && isKnownTopic(args[0]) {
+		messageTopic = args[0]
+		entryTopic = args[1]
+		message = strings.Join(args[2:], " ")
+	} else if len(args) >= 2 {
+		entryTopic = args[0]
+		message = strings.Join(args[1:], " ")
 	} else {
-		entryTopic = os.Args[2]
-		message = strings.Join(os.Args[3:], " ")
+		entryTopic = args[0]
+		message = ""
 	}
 
 	if strings.TrimSpace(entryTopic) == "" {

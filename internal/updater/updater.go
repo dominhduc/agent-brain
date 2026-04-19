@@ -5,14 +5,19 @@ import (
 	"archive/zip"
 	"bytes"
 	"compress/gzip"
+	"crypto/sha256"
+	"crypto/subtle"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type GitHubAsset struct {
@@ -22,8 +27,20 @@ type GitHubAsset struct {
 }
 
 type GitHubRelease struct {
-	TagName string        `json:"tag_name"`
-	Assets  []GitHubAsset `json:"assets"`
+	TagName   string        `json:"tag_name"`
+	Assets    []GitHubAsset `json:"assets"`
+	Body      string        `json:"body"`
+	Checksums map[string]string
+}
+
+var updateClient = &http.Client{
+	Timeout: 120 * time.Second,
+	Transport: &http.Transport{
+		MaxIdleConns:          5,
+		IdleConnTimeout:       60 * time.Second,
+		DisableCompression:    false,
+		ResponseHeaderTimeout: 30 * time.Second,
+	},
 }
 
 type FetchOptions struct {
@@ -37,7 +54,6 @@ func FetchLatestRelease(opts FetchOptions) (GitHubRelease, error) {
 
 	url := fmt.Sprintf("%s/repos/%s/%s/releases/latest", opts.APIBaseURL, opts.Owner, opts.Repo)
 
-	client := &http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return release, fmt.Errorf("creating request: %w", err)
@@ -47,7 +63,7 @@ func FetchLatestRelease(opts FetchOptions) (GitHubRelease, error) {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
 
-	resp, err := client.Do(req)
+	resp, err := updateClient.Do(req)
 	if err != nil {
 		return release, fmt.Errorf("fetching release info: %w", err)
 	}
@@ -159,7 +175,7 @@ func downloadFile(url string) ([]byte, error) {
 	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := updateClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("downloading update: %w", err)
 	}
@@ -186,7 +202,7 @@ func DownloadAsset(apiBaseURL string, assetID int) ([]byte, error) {
 	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := updateClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("downloading asset: %w", err)
 	}
@@ -207,7 +223,7 @@ func DownloadFile(url string) ([]byte, error) {
 	return downloadFile(url)
 }
 
-func ReplaceBinary(archiveData []byte, filename, binPath string) error {
+func ReplaceBinary(archiveData []byte, filename, binPath string, releaseChecksums map[string]string) error {
 	var binaryData []byte
 	var err error
 
@@ -228,6 +244,14 @@ func ReplaceBinary(archiveData []byte, filename, binPath string) error {
 
 	if len(binaryData) == 0 {
 		return fmt.Errorf("extracted binary is empty")
+	}
+
+	if releaseChecksums != nil {
+		if expected, ok := releaseChecksums[filename]; ok {
+			if !VerifyChecksum(binaryData, expected) {
+				return fmt.Errorf("CHECKSUM MISMATCH: binary integrity verification failed — refusing to install. Expected %s for %s", expected, filename)
+			}
+		}
 	}
 
 	backupPath := binPath + ".bak"
@@ -259,7 +283,7 @@ func DownloadAndReplace(downloadURL, binPath string) error {
 	if idx := strings.LastIndex(downloadURL, "/"); idx >= 0 {
 		filename = downloadURL[idx+1:]
 	}
-	return ReplaceBinary(body, filename, binPath)
+	return ReplaceBinary(body, filename, binPath, nil)
 }
 
 func extractFromTarGz(data []byte) ([]byte, error) {
@@ -278,7 +302,7 @@ func extractFromTarGz(data []byte) ([]byte, error) {
 		if err != nil {
 			return nil, fmt.Errorf("reading tar: %w", err)
 		}
-		if hdr.Typeflag == tar.TypeReg && isBrainBinary(filepath.Base(hdr.Name)) {
+		if hdr.Typeflag == tar.TypeReg && !strings.Contains(hdr.Name, "..") && isBrainBinary(filepath.Base(hdr.Name)) {
 			return io.ReadAll(tr)
 		}
 	}
@@ -308,6 +332,9 @@ func extractFromZip(data []byte) ([]byte, error) {
 }
 
 func isBrainBinary(name string) bool {
+	if strings.Contains(name, "..") || strings.Contains(name, "/") || strings.Contains(name, "\\") {
+		return false
+	}
 	return name == "brain" || name == "brain.exe" || strings.HasPrefix(name, "brain_")
 }
 
@@ -324,4 +351,24 @@ func CheckLatest(currentVersion string) (string, error) {
 		return release.TagName, nil
 	}
 	return "", nil
+}
+
+func ParseChecksums(body string) map[string]string {
+	checksums := make(map[string]string)
+	re := regexp.MustCompile(`(?m)(?:SHA256\(([^)]+)\)|sha256\s+)?([a-fA-F0-9]{64})\s+(?:\*\s*)?(\S+)`)
+	matches := re.FindAllStringSubmatch(body, -1)
+	for _, m := range matches {
+		filename := m[1]
+		if filename == "" {
+			filename = m[3]
+		}
+		checksums[filepath.Base(filename)] = m[2]
+	}
+	return checksums
+}
+
+func VerifyChecksum(data []byte, expectedHex string) bool {
+	h := sha256.Sum256(data)
+	actual := hex.EncodeToString(h[:])
+	return subtle.ConstantTimeCompare([]byte(actual), []byte(expectedHex)) == 1
 }

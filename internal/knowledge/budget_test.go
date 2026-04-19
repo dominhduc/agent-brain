@@ -1,6 +1,7 @@
 package knowledge
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -236,5 +237,41 @@ func TestDefaultBudget(t *testing.T) {
 	totalPct := budget.GotchasPct + budget.PatternsPct + budget.DecisionsPct + budget.ArchitecturePct + budget.RemainingPct
 	if totalPct != 1.0 {
 		t.Errorf("budget percentages don't sum to 1.0: got %.2f", totalPct)
+	}
+}
+
+func TestRetrieveWithBudget_MultiTopic(t *testing.T) {
+	tmpDir := t.TempDir()
+	brainDir := filepath.Join(tmpDir, ".brain")
+	os.MkdirAll(brainDir, 0755)
+
+	for _, topic := range []string{"gotchas", "patterns", "decisions", "architecture"} {
+		filename := topic + ".md"
+		if topic == "memory" {
+			filename = "MEMORY.md"
+		}
+		content := fmt.Sprintf("# %s\n\n### [2026-04-15 10:00:00] Test %s entry one\n\n### [2026-04-16 10:00:00] Test %s entry two\n", topic, topic, topic)
+		os.WriteFile(filepath.Join(brainDir, filename), []byte(content), 0600)
+	}
+
+	hub, err := Open(brainDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	budget := DefaultBudget()
+	budget.MaxTokens = 2000
+	result, err := hub.RetrieveWithBudget(budget, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	topicSet := make(map[string]bool)
+	for _, e := range result.Entries {
+		topicSet[e.Topic] = true
+	}
+
+	if len(topicSet) < 3 {
+		t.Errorf("expected entries from at least 3 topics, got %d: %v", len(topicSet), topicSet)
 	}
 }

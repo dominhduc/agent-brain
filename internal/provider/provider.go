@@ -201,13 +201,14 @@ type Gemini struct{}
 
 func (p *Gemini) Name() string { return "gemini" }
 
-func (p *Gemini) BuildURL(model, apiKey string) string {
-	return fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", model, apiKey)
+func (p *Gemini) BuildURL(model, _ string) string {
+	return fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent", model)
 }
 
-func (p *Gemini) BuildHeaders(_ string) map[string]string {
+func (p *Gemini) BuildHeaders(apiKey string) map[string]string {
 	return map[string]string{
-		"Content-Type": "application/json",
+		"Content-Type":   "application/json",
+		"x-goog-api-key": apiKey,
 	}
 }
 

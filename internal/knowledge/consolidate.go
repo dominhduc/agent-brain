@@ -1,7 +1,6 @@
 package knowledge
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -23,11 +22,20 @@ func ConsolidateCluster(entries []TopicEntry) string {
 	baseSentences := extractSentences(base)
 
 	var additions []string
+	addedNormalized := make(map[string]bool)
+	for _, s := range baseSentences {
+		addedNormalized[normalizeTextForCluster(s)] = true
+	}
 	for i := 1; i < len(entries); i++ {
 		sentences := extractSentences(entries[i].Message)
 		for _, s := range sentences {
+			norm := normalizeTextForCluster(s)
+			if addedNormalized[norm] {
+				continue
+			}
 			if !isSentenceDuplicate(s, baseSentences) {
 				additions = append(additions, s)
+				addedNormalized[norm] = true
 			}
 		}
 	}
@@ -56,13 +64,6 @@ func extractSentences(text string) []string {
 	}
 
 	if current.Len() > 0 {
-		s := strings.TrimSpace(current.String())
-		if s != "" {
-			sentences = append(sentences, s)
-		}
-	}
-
-	if len(sentences) == 0 && current.Len() > 0 {
 		s := strings.TrimSpace(current.String())
 		if s != "" {
 			sentences = append(sentences, s)
@@ -113,29 +114,26 @@ func (h *Hub) FindConsolidations() ([]ConsolidationProposal, error) {
 			var sources []ConsolidationSource
 			var clusterEntries []TopicEntry
 
-			idx, _ := h.LoadIndex()
-			for _, ts := range cluster.Members {
-				msg := ""
-				for _, e := range entries {
-					if e.Timestamp == ts {
-						msg = e.Message
-						break
-					}
+			index, _ := h.LoadIndex()
+			for _, entryIdx := range cluster.MemberIndices {
+				if entryIdx < 0 || entryIdx >= len(entries) {
+					continue
 				}
+				e := entries[entryIdx]
 				var strength float64 = 1.0
-				if idx != nil {
-					if ie, found := idx.Get(topic, ts); found {
+				if index != nil {
+					if ie, found := index.Get(topic, e.Timestamp); found {
 						strength = ie.Strength
 					}
 				}
 				sources = append(sources, ConsolidationSource{
-					Timestamp: ts,
-					Message:   msg,
+					Timestamp: e.Timestamp,
+					Message:   e.Message,
 					Strength:  strength,
 				})
 				clusterEntries = append(clusterEntries, TopicEntry{
-					Timestamp: ts,
-					Message:   msg,
+					Timestamp: e.Timestamp,
+					Message:   e.Message,
 				})
 			}
 
@@ -262,63 +260,4 @@ func (h *Hub) SaveConsolidationPending(proposals []ConsolidationProposal) error 
 		}
 	}
 	return nil
-}
-
-func formatConsolidationProposal(proposals []ConsolidationProposal) string {
-	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("CONSOLIDATION PROPOSAL (%d clusters found)\n", len(proposals)))
-	sb.WriteString(strings.Repeat("─", 50) + "\n\n")
-
-	for i, p := range proposals {
-		sb.WriteString(fmt.Sprintf("Cluster %d: %s (%d entries → 1)\n", i+1, p.Topic, len(p.Sources)))
-		sb.WriteString("  Sources:\n")
-		for _, s := range p.Sources {
-			sb.WriteString(fmt.Sprintf("    • %q (strength: %.2f)\n", s.Message, s.Strength))
-		}
-		sb.WriteString("  Proposed:\n")
-
-		wrapped := wrapText("    • "+p.Consolidated, 76)
-		sb.WriteString(wrapped + "\n")
-		sb.WriteString("\n")
-	}
-
-	sb.WriteString("Run 'brain consolidate --apply' to apply these consolidations.\n")
-	return sb.String()
-}
-
-func wrapText(text string, width int) string {
-	if len(text) <= width {
-		return text
-	}
-
-	var result strings.Builder
-	var current strings.Builder
-	words := strings.Fields(text)
-
-	for _, word := range words {
-		if current.Len() > 0 && current.Len()+1+len(word) > width {
-			result.WriteString(current.String())
-			result.WriteString("\n")
-			current.Reset()
-		}
-		if current.Len() > 0 {
-			current.WriteString(" ")
-		}
-		current.WriteString(word)
-	}
-	if current.Len() > 0 {
-		result.WriteString(current.String())
-	}
-
-	return result.String()
-}
-
-type consolidationScanner struct {
-	scanner *bufio.Scanner
-}
-
-func newConsolidationScanner(content string) *consolidationScanner {
-	return &consolidationScanner{
-		scanner: bufio.NewScanner(strings.NewReader(content)),
-	}
 }
