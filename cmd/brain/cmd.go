@@ -9,7 +9,7 @@ import (
 	"github.com/dominhduc/agent-brain/internal/otel"
 )
 
-var version = "v2.0.2"
+var version = "v2.1.0"
 
 var (
 	commit string
@@ -216,16 +216,19 @@ COMMANDS
   DAEMON
     brain daemon <action>      Actions: start, stop, restart, status, failed, retry, run, review
     brain daemon review        Interactive TUI to approve/reject pending entries
-                                Flags: --all, --yes/-y, --tty
+                                 Flags: --all, --yes/-y, --tty
+                                 Uses systemd on Linux, launchd on macOS,
+                                 nohup on systems without systemd (Termux, proot)
 
   CONFIG
     brain config list          List all settings
     brain config get <key>     Get a value
-    brain config set <key> <value>  Set a value
+    brain config set <key> <value>  Set a value (auto-detects project scope)
+    brain config set <key> <value> --global  Force write to global config
     brain config reset <key>   Reset to default
     brain config setup         Interactive setup wizard
-                                Config can be global (-g/--global)
-                                or project-specific (.brain/config.yaml)
+                                 Project config: .brain/config.yaml (auto-created)
+                                 Global config: ~/.config/brain/config.yaml
 
   SKILLS & UPDATE
     brain update               Update agent-brain to latest version

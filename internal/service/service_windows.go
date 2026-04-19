@@ -36,6 +36,30 @@ func isRunningSystemd(workDir string) bool {
 	return false
 }
 
+func isRunningNohup(workDir string) bool {
+	return false
+}
+
+func registerNohup(execPath, workDir string) error {
+	return fmt.Errorf("nohup is not available on Windows")
+}
+
+func startNohup(workDir string) error {
+	return fmt.Errorf("nohup is not available on Windows")
+}
+
+func stopNohup(workDir string) error {
+	return fmt.Errorf("nohup is not available on Windows")
+}
+
+func nohupAvailable() bool {
+	return false
+}
+
+func systemdAvailable() bool {
+	return false
+}
+
 func listServices() ([]ServiceInfo, error) {
 	return nil, fmt.Errorf("service listing not supported on Windows")
 }

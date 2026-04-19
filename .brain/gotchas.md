@@ -410,3 +410,169 @@
 
 
 
+
+### [2026-04-15 13:29:10] CLI aliases were undocumented - 11 backward-compat aliases now documented in full help
+
+
+### [2026-04-15 13:29:10] Future timestamps showing negative time applied by idx criteria, handle EOF properly when stdin empty
+
+
+### [2026-04-15 13:29:10] Auto-restart daemon after update with error handling that may log warnings on failure
+
+
+### [2026-04-15 13:29:10] Default Go exit of 0 even with errors causes silent failure
+
+
+### [2026-04-15 13:29:10] Go strings package from strings import not strings
+
+
+### [2026-04-15 13:29:10] Silent deprecation of aliases risks breaking user scripts relying on old commands.
+
+
+### [2026-04-15 13:33:30] 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### [2026-04-15 14:15:34] A gotcha entry
+
+
+
+
+### [2026-04-15 16:05:39] Project uses argon2, NOT bcrypt
+
+
+### [2026-04-15 16:24:55] CLI aliases deprecated breaking user scripts
+
+
+### [2026-04-15 16:24:55] Go default exit code 0 causes silent failures
+
+
+### [2026-04-15 16:24:55] Cross-platform TTY detection requires standard library packages
+
+
+### [2026-04-15 16:24:55] Version inconsistency betwen CHANGELOG and build flags
+
+
+### [2026-04-15 16:24:55] CLI aliases undocumented - backward compat alias deprecation risks breaking user scripts
+
+
+### [2026-04-15 16:24:55] EOF handling during TUI review requires proper stdin check for graceful exit
+
+
+### [2026-04-15 16:24:55] Future timestamps showing negative time applied by idx criteria may cause display issues.
+
+
+### [2026-04-15 16:24:55] Go silent exit default of 0 requires explicit error handling even when logic fails
+
+
+### [2026-04-15 16:24:55] Backward-compatible CLI aliases require proper documentation to avoid script breakage
+
+
+### [2026-04-15 16:24:55] Daemon may log warnings on restart failures without stopping functionality
+
+
+### [2026-04-15 16:24:55] Using external packages like strings import incorrectly can cause compilation errors
+
+
+### [2026-04-15 16:24:55] Stale locks may persist on Windows crash due to best-effort file deletion
+
+
+### [2026-04-15 16:24:55] PID lock files may become stale on Windows on daemon process crashes without auto-cleanup.
+
+
+### [2026-04-15 16:24:55] Future timestamps may show negative time applied by idx criteria in review logic.
+
+
+### [2026-04-15 16:24:55] Future timestamps appear as negative time when EOF handling is incomplete
+
+
+### [2026-04-15 16:24:55] CLI aliases were undocumented and risk breaking user scripts
+
+
+### [2026-04-15 16:24:55] Testing with same-topic and cross-topic duplicates covers different deduplication scenarios
+
+
+### [2026-04-15 16:24:55] PID lock file on Windows may be stale on crash (best-effort handling)
+
+
+### [2026-04-15 16:24:55] Go exit codes default to 0 causing silent failures if not handled explicitly
+
+
+### [2026-04-15 16:24:55] Silent deprecation of CLI aliases risks breaking existing user scripts without migration
+
+
+### [2026-04-15 16:24:55] Timestamps may appear negative due to index criteria applied to future dates
+
+
+### [2026-04-15 16:24:55] Default handling of non-terminal stdin in TUI mode may cause unexpected graceful exits
+
+
+### [2026-04-19 06:10:03] Test gotcha for v2 testing
+
+
+### [2026-04-19 06:10:17] --global test
+
+
+### [2026-04-19 09:30:06] --global QA test: global flag after topic
+
+
+### [2026-04-19 09:50:43] test global flag position 1
+
+
+### [2026-04-19 09:50:43] test global flag position 2
+
+
+### [2026-04-19 09:50:43] test global flag position 3
+
+
+### [2026-04-19 13:06:18] API key masking verified in config get
+
+
+### [2026-04-19 13:06:18] v2.0.2 test: checksum verification works on update
+
+
+### [2026-04-19 13:14:07] Go silent exit code 0 causes failures without explicit error handling
+
+
+### [2026-04-19 13:14:07] Stale PID lock files persist on Windows crash without auto-cleanup
+
+
+### [2026-04-19 13:14:07] TTL values not documented for retrievals and archives
+
+
+### [2026-04-19 13:14:07] High thresholds on trigram-Jaccard dedup may miss similar entries
+
+
+### [2026-04-19 13:14:07] Future timestamps showing negative time in review logic
+
+
+### [2026-04-19 13:14:07] Unchecked stdin in TUI review causes fatal silent closure
+
+
+### [2026-04-19 13:14:07] Version string defined as var instead of const to allow ldflags override
+
+
+### [2026-04-19 13:14:07] API keys in URL query parameters get logged in server access logs
+
+
+### [2026-04-19 13:14:07] Stale PID lock files may persist on Windows daemon crash
+
+
+### [2026-04-19 13:14:07] Diff size caps prevent leaking internal hostnames
+
+
+### [2026-04-19 13:14:07] Custom providers must be named explicitly instead of 'custom'
+

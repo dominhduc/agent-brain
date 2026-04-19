@@ -13,12 +13,22 @@ type ServiceInfo struct {
 	Project string
 }
 
+func SystemdAvailable() bool {
+	if runtime.GOOS != "linux" {
+		return false
+	}
+	return systemdAvailable()
+}
+
 func Register(execPath, workDir string) error {
 	switch runtime.GOOS {
 	case "darwin":
 		return registerLaunchd(execPath, workDir)
 	case "linux":
-		return registerSystemd(execPath, workDir)
+		if systemdAvailable() {
+			return registerSystemd(execPath, workDir)
+		}
+		return registerNohup(execPath, workDir)
 	default:
 		return fmt.Errorf("unsupported OS for service registration: %s.\nWhat to do: run 'brain daemon run' manually.", runtime.GOOS)
 	}
@@ -29,7 +39,10 @@ func Start(workDir string) error {
 	case "darwin":
 		return startLaunchd(workDir)
 	case "linux":
-		return startSystemd(workDir)
+		if systemdAvailable() {
+			return startSystemd(workDir)
+		}
+		return startNohup(workDir)
 	default:
 		return fmt.Errorf("unsupported OS: %s", runtime.GOOS)
 	}
@@ -40,7 +53,10 @@ func Stop(workDir string) error {
 	case "darwin":
 		return stopLaunchd(workDir)
 	case "linux":
-		return stopSystemd(workDir)
+		if systemdAvailable() {
+			return stopSystemd(workDir)
+		}
+		return stopNohup(workDir)
 	default:
 		return fmt.Errorf("unsupported OS: %s", runtime.GOOS)
 	}
@@ -51,7 +67,10 @@ func IsRunning(workDir string) bool {
 	case "darwin":
 		return isRunningLaunchd(workDir)
 	case "linux":
-		return isRunningSystemd(workDir)
+		if systemdAvailable() {
+			return isRunningSystemd(workDir)
+		}
+		return isRunningNohup(workDir)
 	default:
 		return false
 	}

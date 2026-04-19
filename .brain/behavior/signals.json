@@ -1,32 +1,19 @@
 {
   "command_counts": {
-    "get": 6
+    "get": 1
   },
   "topic_access": {
-    "daemon": {
-      "retrievals": 1,
-      "last_access": "2026-04-15T06:52:47.861514817+07:00"
-    },
     "gotchas": {
-      "retrievals": 5,
-      "last_access": "2026-04-15T08:32:47.184520836+07:00"
-    },
-    "patterns": {
       "retrievals": 1,
-      "last_access": "2026-04-15T06:38:12.69280014+07:00"
+      "last_access": "2026-04-19T13:06:57.486708166+07:00"
     }
   },
-  "search_queries": [
-    {
-      "query": "daemon",
-      "count": 1
-    }
-  ],
+  "search_queries": [],
   "eval_outcomes": {
     "good": 0,
     "bad": 0,
     "total_sessions": 0,
     "last_eval": "0001-01-01T00:00:00Z"
   },
-  "last_updated": "2026-04-15T08:32:47.184521007+07:00"
+  "last_updated": "2026-04-19T13:06:57.48670838+07:00"
 }

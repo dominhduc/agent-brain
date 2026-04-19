@@ -271,6 +271,29 @@ func SaveToProject(cfg Config, brainDir string) error {
 	return nil
 }
 
+func SaveToPath(cfg Config, path string) error {
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		return fmt.Errorf("failed to create config directory: %w", err)
+	}
+
+	data, err := yaml.Marshal(&cfg)
+	if err != nil {
+		return fmt.Errorf("failed to marshal config: %w", err)
+	}
+
+	if err := os.WriteFile(path, data, 0600); err != nil {
+		return fmt.Errorf("failed to write config file: %w", err)
+	}
+
+	configCacheMu.Lock()
+	configCache = &cfg
+	configCacheTime = time.Now()
+	configCacheMu.Unlock()
+
+	return nil
+}
+
 func GetAPIKey() string {
 	// Check env var first
 	if key := os.Getenv("BRAIN_API_KEY"); key != "" {

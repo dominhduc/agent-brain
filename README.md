@@ -73,7 +73,7 @@ AI coding agents are brilliant — but they **forget everything** between sessio
 | No institutional memory across sessions | Knowledge compounds and grows smarter |
 | Agent makes the same mistakes repeatedly | Past gotchas are flagged before they happen again |
 
-**v2.0.2** hardens security (SHA-256 checksum verification on updates, API key masking, Gemini header-based auth, path traversal protection, strict YAML parsing, diff size caps with hostname redaction) and improves performance (config and index caching with auto-invalidation). **v2.0** added token-budget retrieval (`brain get all --budget N`, `--context`), entry lifecycle (`brain edit`, `brain supersede`), consolidation (`brain consolidate`), semantic search (`brain embed` with Ollama/OpenAI + hybrid RRF fusion), and cross-project knowledge sharing (`brain sync`, `brain add --global`). Zero new dependencies through Phase 3; one pure-Go library (`chromem-go`) for embeddings.
+**v2.1.0** adds project-aware config (auto-detects `.brain/` for per-project settings, `--global` flag), non-systemd daemon support (nohup fallback for Termux/proot/containers), PID recycling protection, and systemd availability caching. **v2.0.2** hardens security (SHA-256 checksum verification on updates, API key masking, Gemini header-based auth, path traversal protection, strict YAML parsing, diff size caps with hostname redaction) and improves performance (config and index caching with auto-invalidation). **v2.0** added token-budget retrieval (`brain get all --budget N`, `--context`), entry lifecycle (`brain edit`, `brain supersede`), consolidation (`brain consolidate`), semantic search (`brain embed` with Ollama/OpenAI + hybrid RRF fusion), and cross-project knowledge sharing (`brain sync`, `brain add --global`). Zero new dependencies through Phase 3; one pure-Go library (`chromem-go`) for embeddings.
 
 ---
 
@@ -477,9 +477,10 @@ brain doctor --conflicts
 View or modify configuration.
 
 ```bash
-brain config                              # Show current config
+brain config                              # Show current config + source (project/global)
 brain config get api-key                  # Get a single value (API keys are masked)
-brain config set api-key <your-key>       # Set API key
+brain config set api-key <your-key>       # Set API key (writes to project config if .brain/ exists)
+brain config set api-key <your-key> --global  # Force write to global config
 brain config set model anthropic/claude-3.5-haiku  # Change model
 brain config set profile guard            # Set review strictness
 brain config list                         # List all available keys
@@ -659,11 +660,11 @@ You can mix and match: some projects with global config, others with project-spe
 # Check which config is active
 brain config
 
-# Set a project-specific value (uses project config if it exists, otherwise global)
+# Set a value — auto-detects project config if .brain/ exists
 brain config set model anthropic/claude-3.5-haiku
 
-# Switch a project from global to project-specific config
-brain config set provider openai   # This creates .brain/config.yaml if it doesn't exist
+# Force write to global config from inside a project
+brain config set model anthropic/claude-3.5-haiku --global
 ```
 
 Global config file (`~/.config/brain/config.yaml`):
@@ -731,9 +732,10 @@ Based on Claude Haiku pricing via OpenRouter. Cheaper models (Gemini Flash, GPT-
 `brain init` automatically registers the daemon as a system service:
 
 - **macOS:** `launchd` via `~/Library/LaunchAgents/com.dominhduc.brain-daemon.plist`
-- **Linux:** `systemd` via `~/.config/systemd/user/brain-daemon.service`
+- **Linux with systemd:** `systemd` via `~/.config/systemd/user/brain-daemon.service`
+- **Linux without systemd** (Termux, proot, containers): Background process via `nohup` with log at `~/.cache/brain/brain-daemon-*.log`
 
-The daemon starts on login and restarts on crash.
+The daemon starts on login and restarts on crash. On non-systemd Linux, `brain daemon start` backgrounds the process directly.
 
 ---
 
@@ -826,7 +828,8 @@ brain init
 ### Daemon logs
 
 - **macOS:** `/tmp/brain-daemon.log` (stdout), `/tmp/brain-daemon.err` (stderr)
-- **Linux:** `journalctl --user -u brain-daemon`
+- **Linux with systemd:** `journalctl --user -u brain-daemon`
+- **Linux without systemd:** `~/.cache/brain/brain-daemon-*.log`
 
 ---
 

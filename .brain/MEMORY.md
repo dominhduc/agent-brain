@@ -39,5 +39,10 @@ Go 1.24, stdlib only (no external dependencies), net/http/httptest, t.TempDir(),
 - `architecture.md` — Module structure and relationships
 - `decisions.md` — Architecture decisions and rationale
 
+## Knowledge Base Stats (after cleanup)
+- 392 total entries across 5 topics (63 stale entries removed)
+- 0 pending daemon entries, 0 duplicates
+- `.brainprune` file created for ongoing stale entry management
+
 ## Last Updated
-2026-04-06
+2026-04-15

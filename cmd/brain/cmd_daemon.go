@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -73,7 +74,9 @@ func cmdDaemonStart() {
 		os.Exit(1)
 	}
 
-	fmt.Println("Daemon registered. Polling queue every 5s.")
+	if service.SystemdAvailable() || runtime.GOOS == "darwin" {
+		fmt.Println("Daemon registered. Polling queue every 5s.")
+	}
 }
 
 func cmdDaemonStop() {
@@ -136,6 +139,9 @@ func cmdDaemonStatus() {
 		fmt.Println("Status:          running")
 	} else {
 		fmt.Println("Status:          not running")
+		if runtime.GOOS == "linux" && !service.SystemdAvailable() {
+			fmt.Println("Init system:     nohup (systemd not available)")
+		}
 		fmt.Println("What to do: run 'brain daemon start' to start it.")
 	}
 	fmt.Printf("Queue:           %d pending, %d done, %d failed\n", pendingCount, doneCount, failedCount)
@@ -311,18 +317,29 @@ func releaseLock(f *os.File) {
 	os.Remove(f.Name())
 }
 
+func resolveConfigForDaemon() (config.Config, error) {
+	brainDir, err := knowledge.FindBrainDir()
+	if err == nil && config.ProjectConfigExists(brainDir) {
+		return config.LoadForProject(brainDir)
+	}
+	return config.Load()
+}
+
 func runDaemon() {
 	fmt.Println("brain-daemon starting...")
 
-	cfg, err := config.Load()
+	cfg, err := resolveConfigForDaemon()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error loading config: %v\nWhat to do: check ~/.config/brain/config.yaml\n", err)
+		fmt.Fprintf(os.Stderr, "Error loading config: %v\nWhat to do: check ~/.config/brain/config.yaml or .brain/config.yaml\n", err)
 		os.Exit(1)
 	}
 
 	pollInterval := daemon.ParsePollInterval(cfg.Daemon.PollInterval)
 
-	apiKey := config.GetAPIKey()
+	apiKey := cfg.LLM.APIKey
+	if envKey := os.Getenv("BRAIN_API_KEY"); envKey != "" {
+		apiKey = envKey
+	}
 	if apiKey == "" {
 		fmt.Fprintln(os.Stderr, "Warning: OpenRouter API key not configured yet.")
 		fmt.Fprintln(os.Stderr, "What to do: run 'brain config set api-key <your-openrouter-key>'")
@@ -359,12 +376,15 @@ func runDaemon() {
 		cycleCount++
 
 		if cycleCount%10 == 0 {
-			newCfg, err := config.Load()
+			newCfg, err := resolveConfigForDaemon()
 			if err == nil {
 				cfg = newCfg
 				pollInterval = daemon.ParsePollInterval(cfg.Daemon.PollInterval)
 			}
-			apiKey = config.GetAPIKey()
+			apiKey = cfg.LLM.APIKey
+			if envKey := os.Getenv("BRAIN_API_KEY"); envKey != "" {
+				apiKey = envKey
+			}
 		}
 
 		brainDir, err := knowledge.FindBrainDir()
