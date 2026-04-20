@@ -13,6 +13,13 @@ allowed-tools: Bash Read Grep Glob Edit Write
 
 This skill gives you persistent memory across AI agent sessions via the `.brain/` knowledge hub.
 
+## How Knowledge Is Stored
+
+- `.brain/` is your **local working copy** — gitignored, never committed
+- `docs/brain/` is the **tracked shareable copy** — committed to git for teammates
+- `brain sync` exports knowledge from `.brain/` to `docs/brain/` (auto-runs on push)
+- `brain init` imports from `docs/brain/` on fresh clones
+
 ## Session Workflow
 
 ### 1. Session Start — Load Knowledge
@@ -114,6 +121,15 @@ brain doctor --json        # Machine-readable output
 brain doctor --fix         # Auto-repair (rebuild index, requeue failed items)
 ```
 
+### Sync
+```bash
+brain sync                 # Export topic files to docs/brain/ (for sharing)
+brain sync --import        # Import from docs/brain/ into .brain/
+brain sync --dry-run       # Preview without writing files
+```
+
+`.brain/` is gitignored. `brain sync` copies topic files to `docs/brain/` so they're tracked in git. The pre-push hook auto-syncs before every push. On fresh clones, `brain init` imports from `docs/brain/` automatically.
+
 ### Daemon
 ```bash
 brain daemon start         # Register and start the background daemon
@@ -179,3 +195,4 @@ For detailed reference material, see the bundled files:
 4. **Run `brain add --eval` every session** — Even for small sessions. The handoff is invaluable for continuity.
 5. **Search before writing** — `brain get "pagination"` before implementing pagination from scratch.
 6. **Review pending entries** — Run `brain daemon review` periodically to approve/reject daemon-analyzed entries.
+7. **Run `brain sync` before important work** — Ensures `docs/brain/` is up to date so teammates get your latest knowledge.

@@ -71,7 +71,38 @@ brain eval --good
 brain eval --bad
 ```
 
+## Sync Commands
+
+### `brain sync`
+
+Exports topic files from `.brain/` to `docs/brain/` for git-tracked sharing. The `.brain/` directory is gitignored — `docs/brain/` is the shareable copy.
+
+**Flags:**
+- `--import` — Import from `docs/brain/` into `.brain/` (reverse direction)
+- `--dry-run` / `-d` — Preview without writing files
+
+**When it runs:**
+- Manually: `brain sync`
+- Automatically: pre-push hook runs `brain sync` before every push (non-blocking)
+- On init: `brain init` auto-imports from `docs/brain/` if it exists
+
+**Examples:**
+```bash
+brain sync                 # Export .brain/ → docs/brain/
+brain sync --import        # Import docs/brain/ → .brain/
+brain sync --dry-run       # Preview what would be exported
+```
+
+**What gets synced:**
+- `gotchas.md`, `patterns.md`, `decisions.md`, `architecture.md`
+- Stub/empty files are skipped automatically
+- `MEMORY.md`, `index.json`, `sessions/`, `vectors/`, etc. are NOT synced (local-only)
+
 ## Maintenance Commands
+
+### `brain clean`
+
+Runs all cleanup operations.
 
 ### `brain status`
 
@@ -189,6 +220,8 @@ Runs a full health check and diagnostics.
 **Checks:**
 - Git repository status
 - `.brain/` directory structure
+- `.gitignore` status (`.brain/` should be gitignored)
+- Git tracking (`.brain/` should not be tracked)
 - Daemon service status
 - Config validity
 - LLM API connectivity
