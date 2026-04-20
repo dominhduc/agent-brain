@@ -73,7 +73,7 @@ AI coding agents are brilliant — but they **forget everything** between sessio
 | No institutional memory across sessions | Knowledge compounds and grows smarter |
 | Agent makes the same mistakes repeatedly | Past gotchas are flagged before they happen again |
 
-**v2.2.0** adds full `.brain/` gitignore with `docs/brain/` sync for safe knowledge sharing across machines, pre-push auto-sync hook, and doctor checks for tracked `.brain/` files. **v2.1.0** adds project-aware config (auto-detects `.brain/` for per-project settings, `--global` flag), non-systemd daemon support (nohup fallback for Termux/proot/containers), PID recycling protection, and systemd availability caching. **v2.0.2** hardens security (SHA-256 checksum verification on updates, API key masking, Gemini header-based auth, path traversal protection, strict YAML parsing, diff size caps with hostname redaction) and improves performance (config and index caching with auto-invalidation). **v2.0** added token-budget retrieval (`brain get all --budget N`, `--context`), entry lifecycle (`brain edit`, `brain supersede`), consolidation (`brain consolidate`), semantic search (`brain embed` with Ollama/OpenAI + hybrid RRF fusion), and cross-project knowledge sharing (`brain sync`, `brain add --global`). Zero new dependencies through Phase 3; one pure-Go library (`chromem-go`) for embeddings.
+**v2.2.1** fixes profile config resolution — `brain doctor` and `brain daemon review` now read project config (`.brain/config.yaml`) instead of always reading global config, and the `agent` profile's auto-accept behavior is now enforced correctly. **v2.2.0** adds full `.brain/` gitignore with `docs/brain/` sync for safe knowledge sharing across machines, pre-push auto-sync hook, and doctor checks for tracked `.brain/` files. **v2.1.0** adds project-aware config (auto-detects `.brain/` for per-project settings, `--global` flag), non-systemd daemon support (nohup fallback for Termux/proot/containers), PID recycling protection, and systemd availability caching. **v2.0.2** hardens security (SHA-256 checksum verification on updates, API key masking, Gemini header-based auth, path traversal protection, strict YAML parsing, diff size caps with hostname redaction) and improves performance (config and index caching with auto-invalidation).
 
 ---
 
@@ -297,9 +297,13 @@ Review and approve knowledge entries found by the daemon.
 ```bash
 brain daemon review           # Interactive TUI to approve/reject entries
 brain daemon review --all     # Import existing topic entries for re-review
+brain daemon review --yes     # Auto-accept all (same as profile=agent)
+brain daemon review --tty     # Force interactive TUI even with agent profile
 ```
 
 The TUI shows entries grouped by topic. Navigate with arrows, accept with `a`, reject with `r`, press `q` to quit. Only entries you approve become permanent.
+
+**Profile behavior:** When `profile` is set to `agent`, `brain daemon review` auto-accepts all entries without prompting (deduplication still runs). Use `--tty` to force interactive mode. With `guard` or `assist`, the interactive review runs normally.
 
 Accepted entries are deduplicated against existing topic file content using trigram similarity (threshold 0.55). If an accepted entry paraphrases what's already in a topic file, it's skipped automatically.
 
@@ -553,18 +557,22 @@ Entries are tagged with one or more topics for smarter filtering:
 
 ## Autonomy Profiles
 
-Control how much human review is needed:
+Control how much human review is needed when running `brain daemon review`:
 
-| Profile | Auto-Dedup | Auto-Accept | Best For |
+| Profile | Auto-Dedup | Auto-Accept | Behavior |
 |---------|-----------|-------------|----------|
-| `guard` (default) | No | No | New projects, all entries reviewed |
-| `assist` | Yes | No | Stable projects, less noise |
-| `agent` | Yes | Yes | Trusted patterns, fully automatic |
+| `guard` (default) | No | No | Every entry prompts for approval |
+| `assist` | Yes | No | Deduplicates automatically, prompts for new entries |
+| `agent` | Yes | Yes | Fully automatic — accepts all entries, deduplicates, no prompts |
+
+When `profile` is set to `agent`, `brain daemon review` skips interactive prompts entirely and auto-accepts all pending entries (with deduplication). The `guard` and `assist` profiles require interactive review via TUI or line-buffered mode.
 
 ```bash
-brain config set profile assist   # Less strict
-brain config set profile agent    # Fully automatic
+brain config set profile assist   # Auto-dedup, manual approval
+brain config set profile agent    # Fully automatic (no prompts)
 ```
+
+Config resolution follows project-first priority: `brain config set` writes to `.brain/config.yaml` when inside a project. All commands (`brain doctor`, `brain daemon review`, `brain config get`) read from the project config first, falling back to the global config at `~/.config/brain/config.yaml`.
 
 ---
 
@@ -673,6 +681,8 @@ Configuration can be **global** (shared across all projects) or **project-specif
 During `brain init`, you'll be prompted to choose:
 - **Global config** (`~/.config/brain/config.yaml`) — Share LLM settings (provider, model, API key) across all projects. Best if you use the same LLM setup everywhere.
 - **Project config** (`.brain/config.yaml`) — Isolate settings to this project only. Best if different projects need different providers, models, or API keys.
+
+**Resolution priority:** All commands read project config first (`.brain/config.yaml` if it exists), then fall back to global config (`~/.config/brain/config.yaml`). This applies to `brain doctor`, `brain daemon review`, `brain config get`, and all other commands.
 
 You can mix and match: some projects with global config, others with project-specific config. When running `brain config` inside a project, the project config takes precedence over the global config if it exists.
 

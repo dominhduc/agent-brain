@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.2.1] - 2026-04-21
+
+### Fixed
+- **Profile config resolution inconsistency:** `brain doctor` and `brain daemon review` read global config (`~/.config/brain/config.yaml`) instead of project config (`.brain/config.yaml`), so `brain config set profile <X>` appeared to have no effect. Both commands now use project-first resolution, matching `brain config get` behavior.
+- **Profile auto-accept not enforced:** The `agent` profile's `AutoAccept` flag was loaded but never checked. `brain daemon review` now auto-accepts all entries when `profile=agent`, skipping interactive prompts. The `--tty` flag overrides this to force interactive mode.
+
+### Tests
+- Added `TestLoadForProject_PrefersProjectConfig` — verifies project config takes precedence over global
+- Added `TestLoadForProject_NoProjectFile` — verifies graceful fallback to defaults
+
 ## [v2.0.2] - 2026-04-19
 
 ### Security

@@ -9,7 +9,7 @@ import (
 	"github.com/dominhduc/agent-brain/internal/otel"
 )
 
-var version = "v2.2.0"
+var version = "v2.2.1"
 
 var (
 	commit string
@@ -215,8 +215,9 @@ COMMANDS
 
   DAEMON
     brain daemon <action>      Actions: start, stop, restart, status, failed, retry, run, review
-    brain daemon review        Interactive TUI to approve/reject pending entries
-                                 Flags: --all, --yes/-y, --tty
+    brain daemon review        Approve/reject pending entries (respects profile)
+                                 Flags: --all, --yes/-y (auto-accept), --tty (force interactive)
+                                 Profile=agent auto-accepts; guard/assist prompts interactively
                                  Uses systemd on Linux, launchd on macOS,
                                  nohup on systems without systemd (Termux, proot)
 

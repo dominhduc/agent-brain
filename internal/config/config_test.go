@@ -384,3 +384,48 @@ func TestGetValue_InvalidDotPath(t *testing.T) {
 		t.Error("expected error for invalid dot path")
 	}
 }
+
+func TestLoadForProject_PrefersProjectConfig(t *testing.T) {
+	setupTestConfig(t)
+
+	globalCfg := DefaultConfig()
+	globalCfg.Review.Profile = "agent"
+	globalCfg.LLM.Model = "global-model"
+	Save(globalCfg)
+
+	brainDir := t.TempDir()
+	projectCfg := DefaultConfig()
+	projectCfg.Review.Profile = "guard"
+	projectCfg.LLM.Model = "project-model"
+	SaveToProject(projectCfg, brainDir)
+
+	loaded, err := LoadForProject(brainDir)
+	if err != nil {
+		t.Fatalf("LoadForProject failed: %v", err)
+	}
+	if loaded.Review.Profile != "guard" {
+		t.Errorf("expected project profile 'guard', got %q", loaded.Review.Profile)
+	}
+	if loaded.LLM.Model != "project-model" {
+		t.Errorf("expected project model 'project-model', got %q", loaded.LLM.Model)
+	}
+
+	global, _ := Load()
+	if global.Review.Profile != "agent" {
+		t.Errorf("global config should still be 'agent', got %q", global.Review.Profile)
+	}
+}
+
+func TestLoadForProject_NoProjectFile(t *testing.T) {
+	setupTestConfig(t)
+
+	brainDir := t.TempDir()
+
+	loaded, err := LoadForProject(brainDir)
+	if err != nil {
+		t.Fatalf("LoadForProject with no config file should not error: %v", err)
+	}
+	if loaded.Review.Profile != "guard" {
+		t.Errorf("expected default profile 'guard', got %q", loaded.Review.Profile)
+	}
+}

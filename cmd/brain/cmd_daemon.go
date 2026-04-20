@@ -533,7 +533,12 @@ func cmdDaemonReview(allFlag, yesFlag, ttyFlag bool) {
 		return
 	}
 
-	cfg, err := config.Load()
+	var cfg config.Config
+	if config.ProjectConfigExists(brainDir) {
+		cfg, err = config.LoadForProject(brainDir)
+	} else {
+		cfg, err = config.Load()
+	}
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
 		os.Exit(1)
@@ -545,6 +550,19 @@ func cmdDaemonReview(allFlag, yesFlag, ttyFlag bool) {
 	}
 
 	fmt.Printf("Reviewing %d pending entries (profile: %s)\n\n", len(entries), prof.Name)
+
+	if prof.AutoAccept && !ttyFlag {
+		mode := "auto"
+		doAutoAcceptDaemon(ctx, span, entries, prof, pendingDir, false)
+
+		otel.SetAttributes(span,
+			otel.BrainProfile.String(prof.Name),
+			otel.BrainReviewMode.String(mode),
+			otel.BrainReviewTotal.Int(len(entries)),
+			otel.BrainDurationMs.Int64(0),
+		)
+		return
+	}
 
 	canUseTTY := tui.CanUseRawMode()
 	useTUI := !yesFlag && !ttyFlag && canUseTTY

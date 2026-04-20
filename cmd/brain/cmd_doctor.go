@@ -73,7 +73,13 @@ func cmdDoctor(jsonFlag, fixFlag bool) {
 	}
 
 	// Config
-	cfg, cfgErr := config.Load()
+	var cfg config.Config
+	var cfgErr error
+	if brainDir != "" && config.ProjectConfigExists(brainDir) {
+		cfg, cfgErr = config.LoadForProject(brainDir)
+	} else {
+		cfg, cfgErr = config.Load()
+	}
 	provider := "unknown"
 	model := ""
 	apiKeySet := false
@@ -395,7 +401,14 @@ func checkDoctorBrainDir() (string, bool, string) {
 }
 
 func checkDoctorConfig() (string, bool, string) {
-	cfg, err := config.Load()
+	brainDir, _ := knowledge.FindBrainDir()
+	var cfg config.Config
+	var err error
+	if brainDir != "" && config.ProjectConfigExists(brainDir) {
+		cfg, err = config.LoadForProject(brainDir)
+	} else {
+		cfg, err = config.Load()
+	}
 	if err != nil {
 		return "Config", false, fmt.Sprintf("error: %v", err)
 	}
