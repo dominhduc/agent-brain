@@ -9,7 +9,7 @@ import (
 	"github.com/dominhduc/agent-brain/internal/otel"
 )
 
-var version = "v2.1.0"
+var version = "v2.2.0"
 
 var (
 	commit string
@@ -210,8 +210,8 @@ COMMANDS
   EMBEDDINGS
     brain embed                Embed entries for semantic search
                                 Flags: --all, --status
-    brain sync                 Sync knowledge with global store
-                                Flags: --push, --apply
+    brain sync                 Export topic files to docs/brain/ for sharing
+                                Flags: --import (import from docs/brain/), --dry-run/-d
 
   DAEMON
     brain daemon <action>      Actions: start, stop, restart, status, failed, retry, run, review

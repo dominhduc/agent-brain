@@ -73,7 +73,7 @@ AI coding agents are brilliant — but they **forget everything** between sessio
 | No institutional memory across sessions | Knowledge compounds and grows smarter |
 | Agent makes the same mistakes repeatedly | Past gotchas are flagged before they happen again |
 
-**v2.1.0** adds project-aware config (auto-detects `.brain/` for per-project settings, `--global` flag), non-systemd daemon support (nohup fallback for Termux/proot/containers), PID recycling protection, and systemd availability caching. **v2.0.2** hardens security (SHA-256 checksum verification on updates, API key masking, Gemini header-based auth, path traversal protection, strict YAML parsing, diff size caps with hostname redaction) and improves performance (config and index caching with auto-invalidation). **v2.0** added token-budget retrieval (`brain get all --budget N`, `--context`), entry lifecycle (`brain edit`, `brain supersede`), consolidation (`brain consolidate`), semantic search (`brain embed` with Ollama/OpenAI + hybrid RRF fusion), and cross-project knowledge sharing (`brain sync`, `brain add --global`). Zero new dependencies through Phase 3; one pure-Go library (`chromem-go`) for embeddings.
+**v2.2.0** adds full `.brain/` gitignore with `docs/brain/` sync for safe knowledge sharing across machines, pre-push auto-sync hook, and doctor checks for tracked `.brain/` files. **v2.1.0** adds project-aware config (auto-detects `.brain/` for per-project settings, `--global` flag), non-systemd daemon support (nohup fallback for Termux/proot/containers), PID recycling protection, and systemd availability caching. **v2.0.2** hardens security (SHA-256 checksum verification on updates, API key masking, Gemini header-based auth, path traversal protection, strict YAML parsing, diff size caps with hostname redaction) and improves performance (config and index caching with auto-invalidation). **v2.0** added token-budget retrieval (`brain get all --budget N`, `--context`), entry lifecycle (`brain edit`, `brain supersede`), consolidation (`brain consolidate`), semantic search (`brain embed` with Ollama/OpenAI + hybrid RRF fusion), and cross-project knowledge sharing (`brain sync`, `brain add --global`). Zero new dependencies through Phase 3; one pure-Go library (`chromem-go`) for embeddings.
 
 ---
 
@@ -104,33 +104,39 @@ That's it. Every commit is analyzed automatically. Every agent session loads acc
 │  You code   │────▶│  Git commit  │────▶│  Git push       │
 │  + agent    │     │  + push      │     │                 │
 └─────────────┘     └──────────────┘     └────────┬────────┘
-                                                  │
-                                         pre-push hook
-                                                  │
-                                         ┌────────▼────────┐
-                                         │  Queue item     │
-                                         │  (.brain/.queue)│
-                                         └────────┬────────┘
-                                                  │
-                                       brain-daemon (background)
-                                                  │
-                                       OpenRouter LLM analysis
-                                                  │
-                                       ┌──────────▼──────────┐
-                                       │  .brain/pending/    │
-                                       │  (review queue)     │
-                                       └──────────┬──────────┘
-                                                  │
-                                       brain daemon review (human approves)
-                                                  │
-                                       ┌──────────▼──────────┐
-                                       │  .brain/ knowledge  │
-                                       │  files (permanent)  │
-                                       └──────────┬──────────┘
-                                                  │
-                                     Next session: agent loads knowledge
-                                                  │
-                                       Agent makes fewer mistakes
+                                                   │
+                                          pre-push hook
+                                          (auto brain sync)
+                                                   │
+                                          ┌────────▼────────┐
+                                          │  docs/brain/    │
+                                          │  (tracked)      │
+                                          └────────┬────────┘
+                                                   │
+                                          ┌────────▼────────┐
+                                          │  Queue item     │
+                                          │  (.brain/.queue)│
+                                          └────────┬────────┘
+                                                   │
+                                        brain-daemon (background)
+                                                   │
+                                        OpenRouter LLM analysis
+                                                   │
+                                        ┌──────────▼──────────┐
+                                        │  .brain/pending/    │
+                                        │  (review queue)     │
+                                        └──────────┬──────────┘
+                                                   │
+                                        brain daemon review (human approves)
+                                                   │
+                                        ┌──────────▼──────────┐
+                                        │  .brain/ knowledge  │
+                                        │  files (local)      │
+                                        └──────────┬──────────┘
+                                                   │
+                                      Next push: brain sync exports to docs/brain/
+                                                   │
+                                      Teammates pull and get shared knowledge
 ```
 
 ### The Three Layers
@@ -140,6 +146,7 @@ That's it. Every commit is analyzed automatically. Every agent session loads acc
 | **Git Hook** | Captures pushed commits and queues them | Yes — fires on every push |
 | **Daemon** | Analyzes queued commits via LLM, writes to pending | Yes — runs in background |
 | **Review Gate** | Human approves/rejects findings before they become permanent | Via `brain daemon review` |
+| **Knowledge Sync** | Exports topic files to `docs/brain/` for sharing across machines | Yes — pre-push hook |
 | **Agent Instructions** | Tells the agent to load knowledge, add learnings, self-evaluate | Yes — loaded every session via AGENTS.md |
 | **Self-Learning** | `brain update --skills --reflect` adapts agent instructions based on usage patterns | On-demand — run periodically |
 
@@ -173,7 +180,7 @@ cd your-project
 brain init
 ```
 
-Creates `.brain/` directory, `AGENTS.md` (agent instructions), compatibility wrappers (`CLAUDE.md`, `.cursorrules`, `.windsurfrules`), installs git hooks, and starts the background daemon.
+Creates `.brain/` directory (gitignored), `AGENTS.md` (agent instructions), compatibility wrappers (`CLAUDE.md`, `.cursorrules`, `.windsurfrules`), installs git hooks (including pre-push sync), adds `.brain/` to `.gitignore`, and starts the background daemon. If `docs/brain/` exists from a teammate, imports their knowledge automatically.
 
 **Run once per project.** After that, everything is automatic.
 
@@ -450,15 +457,22 @@ brain config set embedding.provider openai    # OpenAI API
 
 #### `brain sync`
 
-Sync knowledge with the global store (`~/.brain/global/`).
+Export topic files to `docs/brain/` for cross-machine sharing. The `.brain/` directory is gitignored — `docs/brain/` is the tracked, shareable copy.
 
 ```bash
-brain sync                    # Pull relevant global entries
-brain sync --push             # Propose pushing project entries to global
-brain sync --push --apply     # Actually push to global
+brain sync                     # Export .brain/ topic files to docs/brain/
+brain sync --import            # Import from docs/brain/ into .brain/
+brain sync --dry-run           # Preview without writing
 ```
 
-High-strength, high-retrieval entries can be promoted to the global store for sharing across projects.
+**How it works:**
+
+- `.brain/` is fully gitignored (local working copy, never committed)
+- `docs/brain/` stores the tracked topic files (`gotchas.md`, `patterns.md`, `decisions.md`, `architecture.md`)
+- `brain init` auto-imports from `docs/brain/` if it exists (fresh clones get accumulated knowledge)
+- The pre-push hook auto-runs `brain sync` before every push
+
+Stub/empty files are skipped automatically. Only meaningful knowledge is exported.
 
 #### `brain doctor --conflicts`
 
@@ -563,24 +577,30 @@ your-project/
 ├── .cursorrules                 # "See AGENTS.md"
 ├── .windsurfrules               # "See AGENTS.md"
 │
-├── .brain/                      # Knowledge hub (git-tracked)
-│   ├── MEMORY.md                # Main index (< 200 lines)
+├── docs/brain/                  # Tracked knowledge (shared via git)
 │   ├── gotchas.md               # Error patterns + fixes
 │   ├── patterns.md              # Discovered conventions
 │   ├── decisions.md             # Architecture decisions + rationale
-│   ├── architecture.md          # Module relationships
+│   └── architecture.md          # Module relationships
+│
+├── .brain/                      # Knowledge hub (gitignored, local only)
+│   ├── MEMORY.md                # Main index (< 200 lines)
+│   ├── gotchas.md               # Working copy (edited by daemon/agent)
+│   ├── patterns.md              # Working copy
+│   ├── decisions.md             # Working copy
+│   ├── architecture.md          # Working copy
 │   ├── sessions/                # Per-session journals
 │   │   └── 2026-04-02T14-30-00.md
-│   ├── .queue/                  # Daemon queue (local only)
+│   ├── .queue/                  # Daemon queue
 │   │   ├── commit-*.json
 │   │   └── done/
-│   ├── pending/                 # Entries awaiting review (local only)
-│   ├── index.json               # Metadata index (local only)
-│   ├── buffer/                  # Working memory (local only)
-│   ├── behavior/                # Usage signals for self-learning (local only)
+│   ├── pending/                 # Entries awaiting review
+│   ├── index.json               # Metadata index
+│   ├── buffer/                  # Working memory
+│   ├── behavior/                # Usage signals for self-learning
 │   │   └── signals.json
-│   ├── handoffs/                # Session handoffs (local only)
-│   └── archived/                # Pruned entries (local only)
+│   ├── handoffs/                # Session handoffs
+│   └── archived/                # Pruned entries
 │
 └── .brainprune                  # Patterns for knowledge pruning (optional)
 ```

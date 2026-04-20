@@ -1,27 +1,20 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/dominhduc/agent-brain/internal/knowledge"
 )
 
-func cmdSync() {
-	if len(os.Args) < 3 {
-		fmt.Println("Usage: brain sync [flags]")
-		fmt.Println()
-		fmt.Println("Flags:")
-		fmt.Println("  --push       Propose pushing unique project entries to global store")
-		fmt.Println("  --apply      Actually push to global (use with --push)")
-		fmt.Println()
-		fmt.Println("What to do: run 'brain sync' to pull relevant global entries,")
-		fmt.Println("or 'brain sync --push' to propose pushing project entries to global.")
-		os.Exit(1)
-	}
+var topicFileNames = []string{"gotchas.md", "patterns.md", "decisions.md", "architecture.md"}
 
-	pushFlag := hasFlag("--push")
-	applyFlag := hasFlag("--apply")
+func cmdSync() {
+	importFlag := hasFlag("--import")
+	dryRunFlag := hasFlag("--dry-run")
 
 	brainDir, err := knowledge.FindBrainDir()
 	if err != nil {
@@ -30,82 +23,113 @@ func cmdSync() {
 		os.Exit(1)
 	}
 
-	if pushFlag {
-		syncPush(brainDir, applyFlag)
+	projectDir := filepath.Dir(brainDir)
+	docsBrainDir := filepath.Join(projectDir, "docs", "brain")
+
+	if importFlag {
+		syncImport(docsBrainDir, brainDir, dryRunFlag)
 	} else {
-		syncPull(brainDir)
+		syncExport(brainDir, docsBrainDir, dryRunFlag)
 	}
 }
 
-func syncPull(brainDir string) {
-	globalEntries, err := knowledge.LoadGlobalEntriesForMerge()
-	if err != nil {
-		fmt.Println("No global knowledge store found.")
-		return
-	}
+func syncExport(brainDir, docsBrainDir string, dryRun bool) {
+	exported := 0
+	skipped := 0
 
-	if len(globalEntries) == 0 {
-		fmt.Println("Global knowledge store is empty.")
-		return
-	}
-
-	fmt.Printf("Global store has %d entries.\n", len(globalEntries))
-	fmt.Println("Run 'brain get all' to see merged project + global knowledge.")
-}
-
-func syncPush(brainDir string, applyFlag bool) {
-	hub, err := knowledge.Open(brainDir)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
-	}
-
-	idx, err := hub.LoadIndex()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error loading index: %v\n", err)
-		os.Exit(1)
-	}
-
-	type candidate struct {
-		topic   string
-		timestamp string
-		message string
-	}
-	var candidates []candidate
-	for _, topic := range knowledge.AvailableTopics() {
-		entries, err := knowledge.GetTopicEntriesForDir(topic, brainDir)
+	for _, name := range topicFileNames {
+		src := filepath.Join(brainDir, name)
+		data, err := os.ReadFile(src)
 		if err != nil {
+			skipped++
 			continue
 		}
-		for _, e := range entries {
-			if ie, found := idx.Get(topic, e.Timestamp); found {
-				if ie.Strength > 0.8 && ie.RetrievalCount > 5 {
-					candidates = append(candidates, candidate{topic, e.Timestamp, e.Message})
-				}
-			}
+
+		if isStubContent(name, data) {
+			skipped++
+			continue
 		}
+
+		if dryRun {
+			fmt.Printf("  Would export: %s (%d bytes)\n", name, len(data))
+			exported++
+			continue
+		}
+
+		dst := filepath.Join(docsBrainDir, name)
+		if err := os.MkdirAll(docsBrainDir, 0755); err != nil {
+			fmt.Fprintf(os.Stderr, "Error creating docs/brain/: %v\n", err)
+			os.Exit(1)
+		}
+		if err := os.WriteFile(dst, data, 0644); err != nil {
+			fmt.Fprintf(os.Stderr, "Error writing %s: %v\n", dst, err)
+			continue
+		}
+		fmt.Printf("  Exported: %s\n", name)
+		exported++
 	}
 
-	if len(candidates) == 0 {
-		fmt.Println("No entries qualify for promotion (need strength > 0.8 and retrieval count > 5).")
-		return
-	}
-
-	fmt.Printf("Found %d entries that may be worth sharing globally:\n\n", len(candidates))
-	for i, c := range candidates {
-		fmt.Printf("%d. [%s] %s\n", i+1, c.timestamp, c.message)
-	}
-
-	if !applyFlag {
-		fmt.Println("\nRun 'brain sync --push --apply' to actually push these entries.")
+	if dryRun {
+		fmt.Printf("\nDry run: %d files would be exported, %d skipped (missing or stub).\n", exported, skipped)
 	} else {
-		pushed := 0
-		for _, c := range candidates {
-			if _, err := knowledge.AddGlobalEntry(c.topic, c.message); err != nil {
-				continue
-			}
-			pushed++
-		}
-		fmt.Printf("\nPushed %d entries to global store.\n", pushed)
+		fmt.Printf("\nExported %d topic files to docs/brain/ (%d skipped).\n", exported, skipped)
 	}
+}
+
+func syncImport(docsBrainDir, brainDir string, dryRun bool) {
+	imported := 0
+	skipped := 0
+
+	for _, name := range topicFileNames {
+		src := filepath.Join(docsBrainDir, name)
+		data, err := os.ReadFile(src)
+		if err != nil {
+			skipped++
+			continue
+		}
+
+		if isStubContent(name, data) {
+			skipped++
+			continue
+		}
+
+		if dryRun {
+			fmt.Printf("  Would import: %s (%d bytes)\n", name, len(data))
+			imported++
+			continue
+		}
+
+		dst := filepath.Join(brainDir, name)
+		if err := os.WriteFile(dst, data, 0600); err != nil {
+			fmt.Fprintf(os.Stderr, "Error writing %s: %v\n", dst, err)
+			continue
+		}
+		fmt.Printf("  Imported: %s\n", name)
+		imported++
+	}
+
+	if dryRun {
+		fmt.Printf("\nDry run: %d files would be imported, %d skipped.\n", imported, skipped)
+	} else {
+		fmt.Printf("\nImported %d topic files from docs/brain/ (%d skipped).\n", imported, skipped)
+	}
+}
+
+func isStubContent(name string, data []byte) bool {
+	if len(bytes.TrimSpace(data)) == 0 {
+		return true
+	}
+	topicName := strings.TrimSuffix(name, ".md")
+	content := string(data)
+	switch topicName {
+	case "gotchas":
+		return strings.HasPrefix(content, "# Gotchas\n<!--") && len(content) < 100
+	case "patterns":
+		return strings.HasPrefix(content, "# Patterns\n<!--") && len(content) < 100
+	case "decisions":
+		return strings.HasPrefix(content, "# Decisions\n<!--") && len(content) < 100
+	case "architecture":
+		return strings.HasPrefix(content, "# Architecture\n<!--") && len(content) < 100
+	}
+	return false
 }

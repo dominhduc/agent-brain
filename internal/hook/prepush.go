@@ -14,6 +14,12 @@ const PrePushHookContent = `#!/bin/bash
 
 BRAIN_DIR="$(git rev-parse --show-toplevel)/.brain"
 QUEUE_DIR="$BRAIN_DIR/.queue"
+PROJECT_DIR="$(git rev-parse --show-toplevel)"
+
+# Sync knowledge to docs/brain/ before push (non-blocking)
+if command -v brain >/dev/null 2>&1; then
+    brain sync 2>/dev/null || true
+fi
 
 if [ ! -d "$QUEUE_DIR" ]; then
     exit 0

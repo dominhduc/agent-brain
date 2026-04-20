@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -103,30 +104,16 @@ func cmdInit() {
 	}
 
 	gitignorePath := filepath.Join(cwd, ".gitignore")
-	entries := []string{".brain/archived/", ".brain/.queue/", ".brain/pending/", ".brain/knowledge.json", ".brain/buffer/", ".brain/handoffs/", ".brain/.session/"}
-	existing := ""
-	if data, err := os.ReadFile(gitignorePath); err == nil {
-		existing = string(data)
+	if err := updateGitignore(gitignorePath); err != nil {
+		fmt.Fprintf(os.Stderr, "Error updating .gitignore: %v\nWhat to do: check file permissions.\n", err)
+		os.Exit(1)
 	}
-	var newEntries []string
-	for _, entry := range entries {
-		if !strings.Contains(existing, entry) {
-			newEntries = append(newEntries, entry)
-		}
-	}
-	if len(newEntries) > 0 {
-		f, err := os.OpenFile(gitignorePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error updating .gitignore: %v\nWhat to do: check file permissions.\n", err)
-			os.Exit(1)
-		}
-		defer f.Close()
-		if !strings.HasSuffix(existing, "\n") && existing != "" {
-			f.WriteString("\n")
-		}
-		f.WriteString("# agent-brain\n")
-		for _, entry := range newEntries {
-			f.WriteString(entry + "\n")
+
+	docsBrainDir := filepath.Join(cwd, "docs", "brain")
+	if info, err := os.Stat(docsBrainDir); err == nil && info.IsDir() {
+		importCount := importDocsBrain(docsBrainDir, brainDir)
+		if importCount > 0 {
+			fmt.Printf("Imported %d topic files from docs/brain/\n", importCount)
 		}
 	}
 
@@ -294,6 +281,93 @@ const agentsTemplate = "# Project Instructions\n\n" +
 	"When corrected, add the learning: `brain add gotcha|pattern|decision \"<message>\"`\n\n" +
 	"### At Session End\n" +
 		"Run `brain add --eval` to write a self-evaluation and create a handoff for the next session.\n"
+
+func updateGitignore(gitignorePath string) error {
+	existing := ""
+	if data, err := os.ReadFile(gitignorePath); err == nil {
+		existing = string(data)
+	}
+
+	oldEntries := []string{
+		".brain/archived/",
+		".brain/.queue/",
+		".brain/pending/",
+		".brain/knowledge.json",
+		".brain/buffer/",
+		".brain/handoffs/",
+		".brain/.session/",
+		".brain/index.json",
+		".brain/sessions/",
+	}
+
+	if strings.Contains(existing, ".brain/") && !containsAnyOldEntry(existing, oldEntries) {
+		return nil
+	}
+
+	var lines []string
+	if existing != "" {
+		lines = strings.Split(existing, "\n")
+	}
+
+	var filtered []string
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		skip := false
+		for _, old := range oldEntries {
+			if trimmed == old {
+				skip = true
+				break
+			}
+		}
+		if trimmed == "# agent-brain" {
+			skip = true
+		}
+		if !skip {
+			filtered = append(filtered, line)
+		}
+	}
+
+	result := strings.Join(filtered, "\n")
+	if !strings.HasSuffix(result, "\n") && result != "" {
+		result += "\n"
+	}
+	result += "# agent-brain\n.brain/\n"
+
+	return os.WriteFile(gitignorePath, []byte(result), 0644)
+}
+
+func containsAnyOldEntry(content string, entries []string) bool {
+	for _, e := range entries {
+		if strings.Contains(content, e) {
+			return true
+		}
+	}
+	return false
+}
+
+func importDocsBrain(docsBrainDir, brainDir string) int {
+	topicFiles := []string{"gotchas.md", "patterns.md", "decisions.md", "architecture.md"}
+	imported := 0
+	for _, name := range topicFiles {
+		src := filepath.Join(docsBrainDir, name)
+		dst := filepath.Join(brainDir, name)
+		data, err := os.ReadFile(src)
+		if err != nil {
+			continue
+		}
+		if len(bytes.TrimSpace(data)) == 0 {
+			continue
+		}
+		header := "# " + strings.TrimSuffix(name, ".md")
+		if strings.Contains(string(data), header+" <!--") && len(bytes.TrimSpace(data)) < 200 {
+			continue
+		}
+		if err := os.WriteFile(dst, data, 0600); err == nil {
+			imported++
+		}
+	}
+	return imported
+}
 
 func promptConfigChoice(brainDir string) string {
 	reader := bufio.NewReader(os.Stdin)

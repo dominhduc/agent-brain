@@ -335,6 +335,8 @@ func cmdDoctor(jsonFlag, fixFlag bool) {
 		checkDoctorConfig,
 		checkDoctorDaemon,
 		checkDoctorPreflight,
+		checkDoctorGitignore,
+		checkDoctorTrackedBrain,
 	}
 
 	fmt.Println("Health")
@@ -424,4 +426,42 @@ func checkDoctorDaemon() (string, bool, string) {
 		return "Daemon", true, "running"
 	}
 	return "Daemon", false, "not running (run 'brain daemon start')"
+}
+
+func checkDoctorGitignore() (string, bool, string) {
+	cwd, _ := os.Getwd()
+	gitignorePath := filepath.Join(cwd, ".gitignore")
+	data, err := os.ReadFile(gitignorePath)
+	if err != nil {
+		return ".gitignore", true, "not found (optional)"
+	}
+	content := string(data)
+	if strings.Contains(content, ".brain/") {
+		return ".gitignore", true, ".brain/ is gitignored"
+	}
+	oldEntries := []string{
+		".brain/archived/",
+		".brain/.queue/",
+		".brain/sessions/",
+	}
+	for _, e := range oldEntries {
+		if strings.Contains(content, e) {
+			return ".gitignore", false, "uses legacy selective entries — run 'brain init' to update"
+		}
+	}
+	return ".gitignore", false, ".brain/ not in .gitignore — run 'brain init' to add"
+}
+
+func checkDoctorTrackedBrain() (string, bool, string) {
+	cmd := exec.Command("git", "ls-files", ".brain/")
+	out, err := cmd.Output()
+	if err != nil {
+		return "Git tracking", true, "cannot check (not a git repo or git unavailable)"
+	}
+	files := strings.TrimSpace(string(out))
+	if files == "" {
+		return "Git tracking", true, ".brain/ not tracked in git"
+	}
+	count := len(strings.Split(files, "\n"))
+	return "Git tracking", false, fmt.Sprintf(".brain/ has %d tracked file(s) — run 'git rm -r --cached .brain/' to untrack", count)
 }
