@@ -348,6 +348,12 @@ func containsAnyOldEntry(content string, entries []string) bool {
 func importDocsBrain(docsBrainDir, brainDir string) int {
 	topicFiles := []string{"gotchas.md", "patterns.md", "decisions.md", "architecture.md"}
 	imported := 0
+	topicHeaders := map[string]string{
+		"gotchas.md":      "# Gotchas\n<!--",
+		"patterns.md":     "# Patterns\n<!--",
+		"decisions.md":    "# Decisions\n<!--",
+		"architecture.md": "# Architecture\n<!--",
+	}
 	for _, name := range topicFiles {
 		src := filepath.Join(docsBrainDir, name)
 		dst := filepath.Join(brainDir, name)
@@ -358,9 +364,10 @@ func importDocsBrain(docsBrainDir, brainDir string) int {
 		if len(bytes.TrimSpace(data)) == 0 {
 			continue
 		}
-		header := "# " + strings.TrimSuffix(name, ".md")
-		if strings.Contains(string(data), header+" <!--") && len(bytes.TrimSpace(data)) < 200 {
-			continue
+		if stubPrefix, ok := topicHeaders[name]; ok {
+			if strings.HasPrefix(string(data), stubPrefix) && len(bytes.TrimSpace(data)) < 200 {
+				continue
+			}
 		}
 		if err := os.WriteFile(dst, data, 0600); err == nil {
 			imported++
