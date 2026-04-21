@@ -10,6 +10,11 @@ EXECUTION_PLAN.md
 REPO_AGENTS.md
 docs/plans/
 .worktrees/
-.opencode/skills/
-.claude/skills/
-.agents/skills/
+.opencode/
+.claude/
+.agents/
+docs/superpowers/
+CLAUDE.md
+AGENTS.md
+.cursorrules
+.windsurfrules
