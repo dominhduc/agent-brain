@@ -6,6 +6,7 @@ dist/
 *.so
 *.dylib
 .brain/
+docs/brain/
 EXECUTION_PLAN.md
 REPO_AGENTS.md
 docs/plans/
