@@ -462,15 +462,31 @@ func runDaemon() {
 			return string(out), nil
 		}
 
-			analyzeFn := func(req daemon.AnalyzeRequest) (daemon.Finding, error) {
-				return daemon.Analyze(daemon.AnalyzeRequest{
+		analyzeFn := func(req daemon.AnalyzeRequest) (daemon.Finding, error) {
+			brainDir, _ := knowledge.FindBrainDir()
+			var guidance string
+			if brainDir != "" {
+				if hub, err := knowledge.Open(brainDir); err == nil {
+					guidance = hub.BuildAdaptiveGuidance()
+				}
+			}
+			if cfg.Daemon.ContrastiveTrials >= 2 {
+				return daemon.ContrastiveAnalyze(daemon.AnalyzeRequest{
 					Diff:     req.Diff,
 					APIKey:   apiKey,
 					Model:    cfg.LLM.Model,
 					Provider: cfg.LLM.Provider,
 					BaseURL:  cfg.LLM.BaseURL,
-				})
+				}, cfg.Daemon.ContrastiveTrials, guidance)
 			}
+			return daemon.AnalyzeWithPrompt(daemon.AnalyzeRequest{
+				Diff:     req.Diff,
+				APIKey:   apiKey,
+				Model:    cfg.LLM.Model,
+				Provider: cfg.LLM.Provider,
+				BaseURL:  cfg.LLM.BaseURL,
+			}, guidance)
+		}
 
 			processed, err := daemon.ProcessItemWithDeps(
 				context.Background(), processingPath, queueDir, brainDir,
@@ -799,5 +815,27 @@ func removeEntriesDaemon(accepted []knowledge.PendingEntry, rejectedIDs []string
 	}
 	for _, e := range accepted {
 		knowledge.RemovePendingEntry(pendingDir, e.ID)
+	}
+
+	brainDir, _ := knowledge.FindBrainDir()
+	if brainDir != "" {
+		if hub, err := knowledge.Open(brainDir); err == nil {
+			acceptedCounts := make(map[string]int)
+			for _, e := range accepted {
+				acceptedCounts[e.Topic]++
+			}
+			pendingEntries, _ := knowledge.LoadPendingEntries(pendingDir)
+			rejectedCounts := make(map[string]int)
+			rejectedSet := make(map[string]bool)
+			for _, id := range rejectedIDs {
+				rejectedSet[id] = true
+			}
+			for _, pe := range pendingEntries {
+				if rejectedSet[pe.ID] {
+					rejectedCounts[pe.Topic]++
+				}
+			}
+			hub.UpdateExtractionStats(acceptedCounts, rejectedCounts)
+		}
 	}
 }

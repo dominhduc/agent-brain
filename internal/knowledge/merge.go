@@ -102,3 +102,38 @@ func LoadGlobalEntriesForMerge() ([]MergedEntry, error) {
 
 	return entries, nil
 }
+
+func FilterGlobalByStack(entries []MergedEntry, stack []string) []MergedEntry {
+	stackSet := make(map[string]bool)
+	for _, s := range stack {
+		stackSet[s] = true
+	}
+
+	if len(stackSet) == 0 {
+		return entries
+	}
+
+	var filtered []MergedEntry
+	for _, e := range entries {
+		entryTags := DetectTopics(e.Message)
+		relevant := false
+		for _, tag := range entryTags {
+			if stackSet[tag] {
+				relevant = true
+				break
+			}
+		}
+		if !relevant {
+			for _, tag := range entryTags {
+				if tag == "general" {
+					relevant = true
+					break
+				}
+			}
+		}
+		if relevant {
+			filtered = append(filtered, e)
+		}
+	}
+	return filtered
+}

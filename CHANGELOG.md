@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v3.0.0] - 2026-04-23
+
+### Added
+- **`brain grade`** — Grade knowledge entries for accuracy, specificity, and generality via LLM. Produces keep/rewrite/archive verdicts. Supports `--dry-run`.
+- **`brain trace`** — Capture reasoning traces from agent sessions. Subcommands: `step` (append a step), `save` (finalize with outcome), `extract` (extract knowledge via LLM), `list`.
+- **LLM-powered consolidation** — `brain consolidate --llm` uses semantic merging via LLM instead of deterministic sentence stitching.
+- **Contrastive extraction** — Self-consistency decoding runs 2-4 independent extractions and keeps only consensus items. Configurable via `contrastive_trials` config key.
+- **Instruction-aware retrieval** — Embedding search prepends task context to queries for more relevant results.
+- **Memory feedback loop** — Tracks which retrieved entries helped (`SuccessfulRetrievals` in index). High success-rate entries get extended half-life.
+- **Cross-project stack detection** — `DetectStack()` identifies project tech stack; `FilterGlobalByStack()` filters global knowledge by relevance.
+- **Adaptive extraction guidance** — Daemon tracks acceptance rates per topic and generates adaptive prompts based on review history.
+- **`CallLLM()`** — New public function for raw prompt→text LLM calls (used by grading).
+
+### Fixed
+- **Grade command was non-functional** — Response was parsed through the generic extraction prompt, mapping wrong fields. Now uses `CallLLM()` + `ParseGradingResponse()` directly.
+- **Path traversal in trace operations** — `validateSessionID()` now enforces alphanumeric + dash + underscore only, max 128 chars.
+- **N+1 file I/O in `GradeCandidates`** — Topic files now read once and cached instead of once per index entry.
+- **Swallowed errors** — `json.MarshalIndent` in `BuildGradingPrompt` and `json.Unmarshal` in trace loading now properly checked.
+- **Trace marked extracted on partial failure** — Only marks extracted when all entries succeed.
+- **LLM output in `ApplyConsolidationLLM`** — Now validates non-empty, caps at 2000 chars, strips markdown header patterns.
+- **`ParseGradingResponse`** — Now validates verdicts against whitelist, clamps scores to [0,1].
+- **Embedding search** — Query truncated to 8000 chars, `topK` clamped to [1, 100].
+- **O(N²) string concatenation** in `BuildAdaptiveGuidance` — Replaced with `strings.Join`.
+
+### Changed
+- Unbounded growth caps: traces (500 max), consolidation proposals (20 max), search queries (200 max).
+- Consolidation prompt uses structured `ConsolidateWithLLMPrompt()` with clear merging rules.
+
 ## [v2.2.1] - 2026-04-21
 
 ### Fixed

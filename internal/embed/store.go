@@ -72,12 +72,28 @@ func (s *Store) IndexEntries(entries []IndexEntry, provider Provider) error {
 	return s.collection.Add(ctx, ids, embeddings, metadatas, documents)
 }
 
+const retrievalInstruction = "Given the current coding context, retrieve past knowledge entries that would help avoid mistakes, apply patterns, or understand decisions relevant to this work. "
+
+const maxEmbeddingQueryLen = 8000
+
 func (s *Store) Search(query string, provider Provider, topK int) ([]SearchResult, error) {
 	if _, ok := provider.(*NoneProvider); ok {
 		return nil, fmt.Errorf("embedding not configured")
 	}
 
-	embedding, err := provider.Embed(query)
+	if topK <= 0 {
+		topK = 10
+	}
+	if topK > 100 {
+		topK = 100
+	}
+
+	if len(query) > maxEmbeddingQueryLen {
+		query = query[:maxEmbeddingQueryLen]
+	}
+
+	instructionQuery := retrievalInstruction + query
+	embedding, err := provider.Embed(instructionQuery)
 	if err != nil {
 		return nil, err
 	}

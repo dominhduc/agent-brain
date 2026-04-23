@@ -66,9 +66,10 @@ type AnalysisConfig struct {
 }
 
 type DaemonConfig struct {
-	PollInterval string `yaml:"poll_interval"`
-	MaxRetries   int    `yaml:"max_retries"`
-	RetryBackoff string `yaml:"retry_backoff"`
+	PollInterval      string `yaml:"poll_interval"`
+	MaxRetries        int    `yaml:"max_retries"`
+	RetryBackoff      string `yaml:"retry_backoff"`
+	ContrastiveTrials int    `yaml:"contrastive_trials"`
 }
 
 func ConfigDir() string {
@@ -376,6 +377,15 @@ func SetValue(dotPath, value string) error {
 			cfg.Daemon.MaxRetries = n
 		case "retry_backoff":
 			cfg.Daemon.RetryBackoff = value
+		case "contrastive_trials":
+			n, err := strconv.Atoi(value)
+			if err != nil {
+				return fmt.Errorf("invalid value for contrastive_trials: %q is not a number", value)
+			}
+			if n < 0 || n > 4 {
+				return fmt.Errorf("contrastive_trials must be between 0 and 4, got %d", n)
+			}
+			cfg.Daemon.ContrastiveTrials = n
 		default:
 			return fmt.Errorf("unknown daemon config key: %s", parts[1])
 		}
@@ -526,6 +536,8 @@ func GetValue(dotPath string) (string, error) {
 			return strconv.Itoa(cfg.Daemon.MaxRetries), nil
 		case "retry_backoff":
 			return cfg.Daemon.RetryBackoff, nil
+		case "contrastive_trials":
+			return strconv.Itoa(cfg.Daemon.ContrastiveTrials), nil
 		default:
 			return "", fmt.Errorf("unknown daemon config key: %s", parts[1])
 		}

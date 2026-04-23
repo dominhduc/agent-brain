@@ -9,7 +9,7 @@ import (
 	"github.com/dominhduc/agent-brain/internal/otel"
 )
 
-var version = "v2.2.1"
+var version = "v3.0.0"
 
 var (
 	commit string
@@ -81,6 +81,10 @@ func main() {
 		cmdEmbed()
 	case "sync":
 		cmdSync()
+	case "grade":
+		cmdGrade()
+	case "trace":
+		cmdTrace()
 	case "--help", "-h", "help":
 		printUsage(hasFlag("--full"))
 
@@ -142,6 +146,9 @@ COMMANDS
   add <topic> "<msg>" Record a learning or decision
   add --eval          End session with self-evaluation
   clean               Run all cleanup (dedup, prune, decay, rebuild)
+  grade               Grade entries for accuracy and usefulness
+  trace <action>      Capture session reasoning (save|step|extract|list)
+  consolidate         Find and merge duplicate entries
   doctor              Hub health check & diagnostics
   daemon <action>     Manage daemon (start|stop|status|review|failed|retry)
   config <action>     Manage settings (list|get|set|setup|reset)
@@ -196,13 +203,25 @@ COMMANDS
     brain add --eval           Session evaluation + handoff (auto-adapts skills)
                                Flags: --good, --bad
 
+  REASONING (v3)
+    brain grade                Grade entries for accuracy, specificity, generality
+                                Flags: --dry-run/-d (preview without applying)
+    brain trace <action>       Capture session reasoning traces
+                                 save    Finalize current trace
+                                           Flags: --outcome <success|partial|failure>, --goal "<desc>"
+                                 step    Append a reasoning step to current trace
+                                           Flags: --action, --target, --outcome, --reasoning
+                                 extract Extract knowledge from traces via LLM
+                                           Flags: --dry-run/-d
+                                 list    Show all traces
+
   MAINTENANCE
     brain clean                Run all cleanup (prune + dedup + decay + rebuild)
                                 Flags: --dry-run/-d, --patterns, --duplicates, --decay, --rebuild, --fuzzy
     brain doctor               Hub statistics, health check & diagnostics
                                 Flags: --json/-j, --fix, --conflicts
     brain consolidate          Find and merge duplicate entries
-                                Flags: --dry-run, --apply, --topic
+                                Flags: --dry-run, --apply, --topic, --llm (semantic merge via LLM)
     brain edit <topic> <ts>    Update an entry in-place
                                 Flags: --message "<new text>"
     brain supersede <topic> <old-ts> <new-ts>  Mark entry as superseded
@@ -258,6 +277,9 @@ EXAMPLES
   brain add infrastructure gotcha "VPS uses Ubuntu 22.04"
   brain add pattern "All handlers use middleware chain: logging -> auth -> rate-limit"
   brain add --eval --good
+  brain grade --dry-run
+  brain trace step --action "debug" --target "auth.go" --reasoning "Found nil pointer"
+  brain trace save --outcome success --goal "Fix auth bug"
   brain clean --dry-run
   brain doctor
   brain daemon review

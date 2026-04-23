@@ -149,7 +149,8 @@ func ProcessItemWithDeps(ctx context.Context, processingPath, queueDir, brainDir
 	analyzeStart := time.Now()
 		finding, err = analyzeFn(AnalyzeRequest{Diff: diff})
 		latencyMs := time.Since(analyzeStart).Milliseconds()
-		otel.SetAttributes(analyzeSpan, otel.BrainLLMLatencyMs.Int64(latencyMs), otel.BrainLLMConfidence.String(finding.Confidence), otel.BrainFindingsGotchas.Int(len(finding.Gotchas)), otel.BrainFindingsPatterns.Int(len(finding.Patterns)), otel.BrainFindingsDecisions.Int(len(finding.Decisions)), otel.BrainFindingsArchitecture.Int(len(finding.Architecture)))
+		itemCount := len(finding.Items)
+		otel.SetAttributes(analyzeSpan, otel.BrainLLMLatencyMs.Int64(latencyMs), otel.BrainLLMConfidence.String(finding.Confidence), otel.BrainFindingsGotchas.Int(itemCount))
 	} else {
 		err = fmt.Errorf("no analyze function provided")
 	}
@@ -171,7 +172,7 @@ func ProcessItemWithDeps(ctx context.Context, processingPath, queueDir, brainDir
 	pendingDir := filepath.Join(brainDir, "pending")
 	entryCount := 0
 
-	writePending := func(topic, content string, topics []string) {
+	writePending := func(topic, content string, topics []string, itemConfidence string) {
 		if content == "" {
 			return
 		}
@@ -182,24 +183,16 @@ func ProcessItemWithDeps(ctx context.Context, processingPath, queueDir, brainDir
 			Content:    content,
 			CommitSHA:  "",
 			Timestamp:  time.Now(),
-			Confidence: finding.Confidence,
+			Confidence: itemConfidence,
 			Source:     "daemon",
 			Topics:     topics,
 		}
 		knowledge.SavePendingEntry(pendingDir, entry)
 	}
 
-	for _, g := range finding.Gotchas {
-		writePending("gotchas", g, finding.Topics)
-	}
-	for _, p := range finding.Patterns {
-		writePending("patterns", p, finding.Topics)
-	}
-	for _, d := range finding.Decisions {
-		writePending("decisions", d, finding.Topics)
-	}
-	for _, a := range finding.Architecture {
-		writePending("architecture", a, finding.Topics)
+	for _, fi := range finding.Items {
+		content := fi.Title + ": " + fi.Content
+		writePending(fi.Topic, content, fi.Tags, fi.Confidence)
 	}
 
 	moveToDone(processingPath, queueDir)

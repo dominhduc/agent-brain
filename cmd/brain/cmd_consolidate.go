@@ -15,6 +15,7 @@ func cmdConsolidate() {
 		fmt.Println("Flags:")
 		fmt.Println("  --dry-run    Show proposals without applying")
 		fmt.Println("  --apply      Apply consolidations")
+		fmt.Println("  --llm        Use LLM-guided consolidation (opt-in)")
 		fmt.Println("  --topic      Filter to specific topic (e.g., --topic gotchas)")
 		fmt.Println()
 		fmt.Println("What to do: run 'brain consolidate --dry-run' first to review proposals.")
@@ -24,6 +25,7 @@ func cmdConsolidate() {
 	dryRun := hasFlag("--dry-run")
 	applyFlag := hasFlag("--apply")
 	autoFlag := hasFlag("--auto")
+	llmFlag := hasFlag("--llm")
 
 	topicFilter := ""
 	for i := 3; i < len(os.Args); i++ {
@@ -45,7 +47,12 @@ func cmdConsolidate() {
 		os.Exit(1)
 	}
 
-	proposals, err := hub.FindConsolidations()
+	var proposals []knowledge.ConsolidationProposal
+	if llmFlag {
+		proposals, err = hub.FindConsolidationsLLM()
+	} else {
+		proposals, err = hub.FindConsolidations()
+	}
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error finding consolidations: %v\n", err)
 		os.Exit(1)

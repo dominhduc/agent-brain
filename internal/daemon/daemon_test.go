@@ -44,7 +44,9 @@ func TestProcessItem_ValidItem(t *testing.T) {
 	}
 	mockAnalyze := func(req AnalyzeRequest) (Finding, error) {
 		return Finding{
-			Gotchas:    []string{"test gotcha"},
+			Items: []FindingItem{
+				{Title: "Test", Topic: "gotchas", Content: "test gotcha", Confidence: "HIGH", Tags: []string{"general"}},
+			},
 			Confidence: "HIGH",
 		}, nil
 	}
@@ -71,7 +73,7 @@ func TestProcessItem_ValidItem(t *testing.T) {
 	if entries[0].Topic != "gotchas" {
 		t.Errorf("expected topic gotchas, got %s", entries[0].Topic)
 	}
-	if entries[0].Content != "test gotcha" {
+	if entries[0].Content != "Test: test gotcha" {
 		t.Errorf("expected content 'test gotcha', got %q", entries[0].Content)
 	}
 	if entries[0].Confidence != "HIGH" {

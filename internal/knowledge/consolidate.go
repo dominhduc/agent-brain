@@ -47,6 +47,36 @@ func ConsolidateCluster(entries []TopicEntry) string {
 	return base + " " + strings.Join(additions, " ")
 }
 
+func ConsolidateWithLLMPrompt(entries []TopicEntry) string {
+	if len(entries) < 2 {
+		if len(entries) == 1 {
+			return entries[0].Message
+		}
+		return ""
+	}
+
+	var entriesText strings.Builder
+	for i, e := range entries {
+		entriesText.WriteString(fmt.Sprintf("Entry %d: %s\n", i+1, e.Message))
+	}
+
+	prompt := fmt.Sprintf(`You are consolidating duplicate knowledge base entries into a single, higher-quality entry.
+
+Rules:
+1. Merge the information, keeping the STRONGEST, most SPECIFIC advice from each entry.
+2. If entries conflict, keep the more recent or more specific one and note the exception.
+3. The result should be ONE sentence that is more useful than any individual entry.
+4. Do NOT lose specific values, function names, or thresholds that appear in any entry.
+5. Remove any redundancy.
+
+Entries to consolidate:
+%s
+
+Consolidated entry (one sentence):`, entriesText.String())
+
+	return prompt
+}
+
 func extractSentences(text string) []string {
 	var sentences []string
 	var current strings.Builder
@@ -152,6 +182,83 @@ func (h *Hub) FindConsolidations() ([]ConsolidationProposal, error) {
 	}
 
 	return proposals, nil
+}
+
+func (h *Hub) FindConsolidationsLLM() ([]ConsolidationProposal, error) {
+	var proposals []ConsolidationProposal
+	const maxLLMProposals = 20
+
+	for _, topic := range AvailableTopics() {
+		if len(proposals) >= maxLLMProposals {
+			break
+		}
+		entries, err := GetTopicEntriesForDir(topic, h.dir)
+		if err != nil {
+			continue
+		}
+
+		clusters := ClusterEntries(entries, topic)
+		for _, cluster := range clusters {
+			if len(proposals) >= maxLLMProposals {
+				break
+			}
+			if len(cluster.MemberIndices) < 3 {
+				continue
+			}
+
+			var sources []ConsolidationSource
+			var clusterEntries []TopicEntry
+
+			index, _ := h.LoadIndex()
+			for _, entryIdx := range cluster.MemberIndices {
+				if entryIdx < 0 || entryIdx >= len(entries) {
+					continue
+				}
+				e := entries[entryIdx]
+				var strength float64 = 1.0
+				if index != nil {
+					if ie, found := index.Get(topic, e.Timestamp); found {
+						strength = ie.Strength
+					}
+				}
+				sources = append(sources, ConsolidationSource{
+					Timestamp: e.Timestamp,
+					Message:   e.Message,
+					Strength:  strength,
+				})
+				clusterEntries = append(clusterEntries, TopicEntry{
+					Timestamp: e.Timestamp,
+					Message:   e.Message,
+				})
+			}
+
+			consolidated := ConsolidateWithLLMPrompt(clusterEntries)
+
+			proposals = append(proposals, ConsolidationProposal{
+				Topic:        topic,
+				Sources:      sources,
+				Consolidated: consolidated,
+				ID:           fmt.Sprintf("%s-%s-llm", topic, cluster.Representative),
+			})
+		}
+	}
+
+	return proposals, nil
+}
+
+func (h *Hub) ApplyConsolidationLLM(proposal ConsolidationProposal, llmResult string) error {
+	llmResult = strings.TrimSpace(llmResult)
+	if llmResult == "" {
+		return fmt.Errorf("LLM returned empty consolidation result")
+	}
+	if len(llmResult) > 2000 {
+		llmResult = llmResult[:2000]
+	}
+	if strings.Contains(llmResult, "### [") {
+		llmResult = strings.ReplaceAll(llmResult, "### [", "[")
+	}
+	proposal.Consolidated = llmResult
+	return h.ApplyConsolidation(proposal)
 }
 
 func (h *Hub) ApplyConsolidation(proposal ConsolidationProposal) error {

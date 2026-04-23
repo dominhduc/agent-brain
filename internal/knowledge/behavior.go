@@ -9,12 +9,19 @@ import (
 	"time"
 )
 
+type MemoryFeedback struct {
+	Key       string    `json:"key"`
+	Retrieved time.Time `json:"retrieved"`
+	Helped    *bool     `json:"helped,omitempty"`
+}
+
 type BehaviorSignals struct {
-	CommandCounts map[string]int              `json:"command_counts"`
-	TopicAccess   map[string]*TopicAccessInfo `json:"topic_access"`
-	SearchQueries []SearchQuery               `json:"search_queries"`
-	EvalOutcomes  EvalOutcomeInfo             `json:"eval_outcomes"`
-	LastUpdated   time.Time                   `json:"last_updated"`
+	CommandCounts   map[string]int              `json:"command_counts"`
+	TopicAccess     map[string]*TopicAccessInfo `json:"topic_access"`
+	SearchQueries   []SearchQuery               `json:"search_queries"`
+	EvalOutcomes    EvalOutcomeInfo             `json:"eval_outcomes"`
+	MemoryFeedbacks []MemoryFeedback            `json:"memory_feedbacks"`
+	LastUpdated     time.Time                   `json:"last_updated"`
 }
 
 type TopicAccessInfo struct {
@@ -118,6 +125,9 @@ func (h *Hub) TrackSearch(query string) error {
 		}
 	}
 	signals.SearchQueries = append(signals.SearchQueries, SearchQuery{Query: query, Count: 1})
+	if len(signals.SearchQueries) > 200 {
+		signals.SearchQueries = signals.SearchQueries[len(signals.SearchQueries)-200:]
+	}
 	return h.SaveBehavior(signals)
 }
 
@@ -138,8 +148,75 @@ func (h *Hub) TrackEvalOutcome(good bool) error {
 
 func (h *Hub) emptyBehavior() *BehaviorSignals {
 	return &BehaviorSignals{
-		CommandCounts: make(map[string]int),
-		TopicAccess:   make(map[string]*TopicAccessInfo),
-		SearchQueries: []SearchQuery{},
+		CommandCounts:   make(map[string]int),
+		TopicAccess:     make(map[string]*TopicAccessInfo),
+		SearchQueries:   []SearchQuery{},
+		MemoryFeedbacks: []MemoryFeedback{},
 	}
+}
+
+func (h *Hub) RecordMemoryFeedback(keys []string, helped bool) error {
+	signals, err := h.LoadBehavior()
+	if err != nil {
+		return err
+	}
+	now := time.Now()
+	for _, key := range keys {
+		signals.MemoryFeedbacks = append(signals.MemoryFeedbacks, MemoryFeedback{
+			Key:       key,
+			Retrieved: now,
+			Helped:    &helped,
+		})
+	}
+	if len(signals.MemoryFeedbacks) > 100 {
+		signals.MemoryFeedbacks = signals.MemoryFeedbacks[len(signals.MemoryFeedbacks)-100:]
+	}
+	return h.SaveBehavior(signals)
+}
+
+func (h *Hub) ApplyFeedbackToStrength() (int, error) {
+	signals, err := h.LoadBehavior()
+	if err != nil {
+		return 0, err
+	}
+
+	keyHelpCount := make(map[string]int)
+	keyTotalCount := make(map[string]int)
+	for _, fb := range signals.MemoryFeedbacks {
+		keyTotalCount[fb.Key]++
+		if fb.Helped != nil && *fb.Helped {
+			keyHelpCount[fb.Key]++
+		}
+	}
+
+	idx, err := h.LoadIndex()
+	if err != nil {
+		return 0, err
+	}
+
+	updated := 0
+	for key, entry := range idx.Entries {
+		total := keyTotalCount[key]
+		if total == 0 {
+			continue
+		}
+		helpCount := keyHelpCount[key]
+		successRate := float64(helpCount) / float64(total)
+
+		bonus := successRate * 7.0
+		effectiveHalfLife := float64(entry.HalfLifeDays) + float64(entry.RetrievalCount)*2 + bonus
+		if effectiveHalfLife > float64(entry.HalfLifeDays)+14 {
+			effectiveHalfLife = float64(entry.HalfLifeDays) + 14
+		}
+		entry.HalfLifeDays = int(effectiveHalfLife)
+		idx.Entries[key] = entry
+		updated++
+	}
+
+	if updated > 0 {
+		if err := idx.Save(h.dir); err != nil {
+			return 0, err
+		}
+	}
+	return updated, nil
 }

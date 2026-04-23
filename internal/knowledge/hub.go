@@ -155,3 +155,51 @@ func IsGitRepo(cwd string) bool {
 	cmd := exec.Command("git", "-C", cwd, "rev-parse", "--git-dir")
 	return cmd.Run() == nil
 }
+
+func DetectStack(cwd string) []string {
+	var stack []string
+
+	if _, err := os.Stat(filepath.Join(cwd, "go.mod")); err == nil {
+		stack = append(stack, "go")
+	}
+	if _, err := os.Stat(filepath.Join(cwd, "package.json")); err == nil {
+		stack = append(stack, "node")
+		data, _ := os.ReadFile(filepath.Join(cwd, "package.json"))
+		content := string(data)
+		if strings.Contains(content, `"react"`) {
+			stack = append(stack, "react")
+		}
+		if strings.Contains(content, `"next"`) {
+			stack = append(stack, "nextjs")
+		}
+		if strings.Contains(content, `"express"`) {
+			stack = append(stack, "express")
+		}
+		if strings.Contains(content, `"vue"`) {
+			stack = append(stack, "vue")
+		}
+		if strings.Contains(content, `"svelte"`) {
+			stack = append(stack, "svelte")
+		}
+	}
+	if _, err := os.Stat(filepath.Join(cwd, "Cargo.toml")); err == nil {
+		stack = append(stack, "rust")
+	}
+	if _, err := os.Stat(filepath.Join(cwd, "requirements.txt")); err == nil {
+		stack = append(stack, "python")
+	}
+	if _, err := os.Stat(filepath.Join(cwd, "pyproject.toml")); err == nil {
+		stack = append(stack, "python")
+	}
+	if _, err := os.Stat(filepath.Join(cwd, "Dockerfile")); err == nil {
+		stack = append(stack, "docker")
+	}
+	if _, err := os.Stat(filepath.Join(cwd, ".github", "workflows")); err == nil {
+		stack = append(stack, "github-actions")
+	}
+	if matches, _ := filepath.Glob(filepath.Join(cwd, "*migration*")); len(matches) > 0 {
+		stack = append(stack, "database-migrations")
+	}
+
+	return stack
+}

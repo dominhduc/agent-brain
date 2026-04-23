@@ -15,12 +15,13 @@ import (
 )
 
 type IndexEntry struct {
-	Strength       float64   `json:"strength"`
-	RetrievalCount int       `json:"retrieval_count"`
-	LastRetrieved  time.Time `json:"last_retrieved"`
-	HalfLifeDays   int       `json:"half_life_days"`
-	Confidence     string    `json:"confidence"`
-	Topics         []string  `json:"topics"`
+	Strength             float64   `json:"strength"`
+	RetrievalCount       int       `json:"retrieval_count"`
+	SuccessfulRetrievals int       `json:"successful_retrievals"`
+	LastRetrieved        time.Time `json:"last_retrieved"`
+	HalfLifeDays         int       `json:"half_life_days"`
+	Confidence           string    `json:"confidence"`
+	Topics               []string  `json:"topics"`
 
 	SupersededBy string    `json:"superseded_by,omitempty"`
 	Supersedes   string    `json:"supersedes,omitempty"`
@@ -247,6 +248,11 @@ func CalculateStrength(e IndexEntry, now time.Time) float64 {
 		halfLife = 7
 	}
 	effectiveHalfLife := halfLife + float64(e.RetrievalCount)*2
+
+	if e.SuccessfulRetrievals > 0 && e.RetrievalCount > 0 {
+		successRate := float64(e.SuccessfulRetrievals) / float64(e.RetrievalCount)
+		effectiveHalfLife += successRate * 7
+	}
 
 	var ageDays float64
 	if !e.LastRetrieved.IsZero() {

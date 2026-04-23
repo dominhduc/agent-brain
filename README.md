@@ -20,6 +20,7 @@
   - [Daemon Commands](#daemon-commands)
   - [Skill Commands](#skill-commands)
   - [Maintenance Commands](#maintenance-commands)
+  - [Reasoning Commands](#reasoning-commands)
   - [Configuration Commands](#configuration-commands)
 - [The 8-Topic Taxonomy](#the-8-topic-taxonomy)
 - [Autonomy Profiles](#autonomy-profiles)
@@ -73,7 +74,7 @@ AI coding agents are brilliant — but they **forget everything** between sessio
 | No institutional memory across sessions | Knowledge compounds and grows smarter |
 | Agent makes the same mistakes repeatedly | Past gotchas are flagged before they happen again |
 
-**v2.2.1** fixes profile config resolution — `brain doctor` and `brain daemon review` now read project config (`.brain/config.yaml`) instead of always reading global config, and the `agent` profile's auto-accept behavior is now enforced correctly. **v2.2.0** adds full `.brain/` gitignore with `docs/brain/` sync for safe knowledge sharing across machines, pre-push auto-sync hook, and doctor checks for tracked `.brain/` files. **v2.1.0** adds project-aware config (auto-detects `.brain/` for per-project settings, `--global` flag), non-systemd daemon support (nohup fallback for Termux/proot/containers), PID recycling protection, and systemd availability caching. **v2.0.2** hardens security (SHA-256 checksum verification on updates, API key masking, Gemini header-based auth, path traversal protection, strict YAML parsing, diff size caps with hostname redaction) and improves performance (config and index caching with auto-invalidation).
+**v3.0.0** adds reasoning memory evolution: `brain grade` for evaluating knowledge quality, `brain trace` for capturing agent reasoning sessions, LLM-powered semantic consolidation (`brain consolidate --llm`), contrastive extraction with self-consistency, instruction-aware embedding retrieval, memory feedback loops, and adaptive daemon guidance. **v2.2.1** fixes profile config resolution — `brain doctor` and `brain daemon review` now read project config (`.brain/config.yaml`) instead of always reading global config, and the `agent` profile's auto-accept behavior is now enforced correctly.
 
 ---
 
@@ -439,6 +440,55 @@ brain consolidate --topic gotchas   # Filter to specific topic
 
 Uses trigram Jaccard clustering (threshold 0.45) to find related entries, then deterministically merges them into a single richer entry. Source entries are preserved as HTML comment timelines.
 
+Add `--llm` to use semantic merging via LLM instead of deterministic sentence stitching:
+
+```bash
+brain consolidate --llm --dry-run   # Preview LLM-powered consolidations
+brain consolidate --llm --apply     # Apply with LLM-merged text
+```
+
+---
+
+### Reasoning Commands
+
+#### `brain grade`
+
+Evaluate knowledge entries for accuracy, specificity, and generality. Sends entries to the LLM, which returns keep/rewrite/archive verdicts.
+
+```bash
+brain grade                # Grade all candidates and apply verdicts
+brain grade --dry-run      # Preview verdicts without modifying the index
+```
+
+The LLM scores each entry on three dimensions (0.0–1.0):
+- **Accuracy** — Is this still true?
+- **Specificity** — Is this actionable?
+- **Generality** — Is this reusable?
+
+Entries with low accuracy get archived, low specificity get flagged for rewrite.
+
+#### `brain trace <action>`
+
+Capture reasoning traces from agent sessions, then extract knowledge from them.
+
+```bash
+# Record steps during a session
+brain trace step --action "debug" --target "auth.go" --reasoning "Found nil pointer in handler"
+brain trace step --action "fix" --target "auth.go" --reasoning "Added nil check before deref"
+
+# Finalize the trace with an outcome
+brain trace save --outcome success --goal "Fix auth nil pointer bug"
+
+# Extract knowledge from completed traces
+brain trace extract          # Extract knowledge via LLM
+brain trace extract --dry-run  # Preview without saving
+
+# List all traces
+brain trace list
+```
+
+Traces capture the *reasoning process*, not just outcomes. Failed traces are especially valuable — the LLM extracts "what went wrong and why" lessons that prevent repeated mistakes.
+
 ---
 
 ### Embedding Commands
@@ -513,7 +563,7 @@ brain config setup                        # Interactive setup wizard
 Show knowledge hub statistics with TTY-aware color indicators. Reports warnings for stale MEMORY.md (>7 days since update), pending entries awaiting review, API key status, and failed queue items.
 
 ```
-brain v2.0.2  linux/amd64  abc1234
+brain v3.0.0  linux/amd64  abc1234
 
 Hub
   .brain/      found ✓
@@ -603,6 +653,9 @@ your-project/
 │   │   ├── commit-*.json
 │   │   └── done/
 │   ├── pending/                 # Entries awaiting review
+│   ├── traces/                  # Session reasoning traces
+│   │   ├── current.json         # Active trace being built
+│   │   └── extracted/           # Traces already extracted
 │   ├── index.json               # Metadata index
 │   ├── buffer/                  # Working memory
 │   ├── behavior/                # Usage signals for self-learning
