@@ -9,7 +9,7 @@ import (
 	"github.com/dominhduc/agent-brain/internal/otel"
 )
 
-var version = "v3.0.0"
+var version = "v3.0.1"
 
 var (
 	commit string
@@ -85,6 +85,8 @@ func main() {
 		cmdGrade()
 	case "trace":
 		cmdTrace()
+	case "search":
+		cmdGet(jsonFlag, false, false, false, false)
 	case "--help", "-h", "help":
 		printUsage(hasFlag("--full"))
 

@@ -54,6 +54,7 @@ func cmdGrade() {
 	}
 
 	batchSize := 10
+	totalBatches := (len(candidates) + batchSize - 1) / batchSize
 	var allGrades []knowledge.Grade
 	failedBatches := 0
 	for i := 0; i < len(candidates); i += batchSize {
@@ -62,10 +63,13 @@ func cmdGrade() {
 			end = len(candidates)
 		}
 		batch := candidates[i:end]
+		batchNum := i/batchSize + 1
+
+		fmt.Printf("Grading batch %d/%d (%d entries)...\n", batchNum, totalBatches, len(batch))
 
 		prompt := knowledge.BuildGradingPrompt(batch)
 		if prompt == "" {
-			fmt.Fprintf(os.Stderr, "Warning: failed to build grading prompt for batch\n")
+			fmt.Fprintf(os.Stderr, "Warning: failed to build grading prompt for batch %d\n", batchNum)
 			failedBatches++
 			continue
 		}
@@ -76,7 +80,7 @@ func cmdGrade() {
 			BaseURL:  cfg.LLM.BaseURL,
 		}, prompt)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: grading batch failed: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Warning: grading batch %d failed: %v\n", batchNum, err)
 			failedBatches++
 			continue
 		}

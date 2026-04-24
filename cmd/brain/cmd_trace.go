@@ -136,7 +136,11 @@ func cmdTraceExtract() {
 			}
 		}
 
-		fmt.Printf("Extracted %d entries from trace %s (%s)\n", len(finding.Items), trace.SessionID, trace.Outcome)
+		if dryRun {
+			fmt.Printf("Would extract %d entries from trace %s (%s)\n", len(finding.Items), trace.SessionID, trace.Outcome)
+		} else {
+			fmt.Printf("Extracted %d entries from trace %s (%s)\n", len(finding.Items), trace.SessionID, trace.Outcome)
+		}
 		extracted++
 	}
 
