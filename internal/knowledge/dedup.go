@@ -224,7 +224,7 @@ func RunDedup(brainDir string, dryRun bool) (*DedupReport, error) {
 	return h.RunDedup(dryRun)
 }
 
-const defaultFuzzyThreshold = 0.55
+const defaultFuzzyThreshold = 0.40
 
 func trigrams(s string) map[string]bool {
 	s = strings.ToLower(s)

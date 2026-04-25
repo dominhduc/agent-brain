@@ -154,7 +154,11 @@ func cmdDoctor(jsonFlag, fixFlag bool) {
 		}
 	}
 	if pendingEntries > 0 {
-		warnings = append(warnings, fmt.Sprintf("%d pending entries awaiting review — run 'brain daemon review'", pendingEntries))
+		hint := "run 'brain daemon review'"
+		if profile == "agent" {
+			hint = "run 'brain daemon review' (auto-accept with agent profile)"
+		}
+		warnings = append(warnings, fmt.Sprintf("%d pending entries awaiting review — %s", pendingEntries, hint))
 	}
 
 	if fixFlag {

@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v3.0.2] - 2026-04-25
+
+### Fixed
+- **Fuzzy dedup threshold lowered 0.55 → 0.40** — Catches significantly more near-duplicates. Consolidation cluster threshold aligned to match.
+- **`brain doctor` profile-aware warning** — Pending review hint now shows `"auto-accept with agent profile"` when profile=agent.
+- **`brain trace extract` config resolution** — Was using global config (`config.Load()`), now uses project config when available (`config.LoadForProject()`).
+- **`brain trace extract` progress output** — Shows `"Extracting trace 1/N (trace-xxx)..."` per trace during slow LLM calls.
+- **TOCTOU race in `FinalizeTrace`** — Added retry loop (3 attempts, 50ms delay) on JSON parse failure from concurrent trace step/save.
+- **README restructured** — Cleaner sections, flattened command reference, "What's New in v3" table, simplified TOC.
+- **`brain help` / `help --full` reorganized** — Grouped into CORE, REASONING (v3), MAINTENANCE, DAEMON & CONFIG sections.
+
 ## [v3.0.1] - 2026-04-23
 
 ### Fixed

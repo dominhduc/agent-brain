@@ -9,7 +9,7 @@ import (
 	"github.com/dominhduc/agent-brain/internal/otel"
 )
 
-var version = "v3.0.1"
+var version = "v3.0.2"
 
 var (
 	commit string
@@ -142,19 +142,27 @@ func printUsageBrief(v string) {
 	fmt.Print(`USAGE
   brain <command> [arguments] [flags]
 
-COMMANDS
-  init                Initialize .brain/ knowledge hub
-  get <topic|query>   Retrieve knowledge or search
-  add <topic> "<msg>" Record a learning or decision
-  add --eval          End session with self-evaluation
-  clean               Run all cleanup (dedup, prune, decay, rebuild)
-  grade               Grade entries for accuracy and usefulness
-  trace <action>      Capture session reasoning (save|step|extract|list)
-  consolidate         Find and merge duplicate entries
-  doctor              Hub health check & diagnostics
-  daemon <action>     Manage daemon (start|stop|status|review|failed|retry)
-  config <action>     Manage settings (list|get|set|setup|reset)
-  update              Update brain or skill files
+CORE
+  init                      Initialize .brain/ knowledge hub
+  get <topic|query>         Retrieve knowledge or search
+  add <topic> "<msg>"       Record a learning or decision
+  add --eval                End session with self-evaluation
+
+REASONING (v3)
+  grade                     Grade entries for accuracy and usefulness
+  trace <action>            Capture session reasoning (step|save|extract|list)
+
+MAINTENANCE
+  clean                     Run cleanup (dedup, prune, decay, rebuild)
+  consolidate               Find and merge duplicate entries
+  doctor                    Hub health check & diagnostics
+  edit | supersede          Manage entry lifecycle
+
+DAEMON & CONFIG
+  daemon <action>           start|stop|status|review|failed|retry
+  config <action>           list|get|set|setup|reset
+  update                    Update brain or skill files
+  embed | sync              Embeddings and cross-machine sharing
 
 TOPICS   gotcha, pattern, decision, architecture, memory, wm
 AREAS    ui, backend, infrastructure, database, security, testing, architecture, general
@@ -162,11 +170,11 @@ AREAS    ui, backend, infrastructure, database, security, testing, architecture,
 WORKFLOWS
   Session start     brain get all
   When corrected    brain add gotcha "..."
-  Session end       brain add --eval  (auto-adapts skills)
+  Session end       brain add --eval
 
-FLAGS  --dry-run/-d  --json/-j  --summary/-s  --compact/-c  --full/-f  --yes/-y
+FLAGS   --dry-run/-d  --json/-j  --summary/-s  --compact/-c  --full/-f  --yes/-y
 
-Run 'brain help --full' or 'brain help -f' for complete reference with all flags and examples.
+Run 'brain help --full' for complete reference with flags and examples.
 `)
 }
 
@@ -177,11 +185,10 @@ func printUsageFull(v string) {
   brain <command> [arguments] [flags]
 
 QUICK START
-  brain init                    Initialize knowledge hub in current project
-  brain get all                 Load all accumulated knowledge
-  brain add <topic> "<msg>"     Record a new learning or decision
-  brain add --eval              End session with self-evaluation + handoff (auto-adapts skills)
-  brain get <query>             Search if not a known topic
+  brain init                    Initialize knowledge hub
+  brain get all                 Load accumulated knowledge
+  brain add <topic> "<msg>"     Record a learning or decision
+  brain add --eval              End session with self-evaluation
 
 WORKFLOWS
   Session start     brain get all
@@ -190,78 +197,79 @@ WORKFLOWS
   Session end       brain add --eval  (auto-adapts skills)
 
 COMMANDS
+
   CORE
-    brain init                 Create .brain/ hub, AGENTS.md, git hooks, daemon
-    brain get <topic>          Topics: all, gotchas, patterns, decisions, architecture, memory, wm
-                                  Or search if not a known topic
-                                 Flags: --search (force search), --json/-j, --summary/-s, --compact/-c,
-                                        --message-only/-m, --full/-f, --focus "<topic>",
-                                        --context (boost entries matching git diff),
-                                        --budget N (custom token limit)
-    brain add <topic> "<msg>"  Add entry to a topic (fuzzy dedup at add time)
-                                Flags: --global/-g (also add to global store)
-    brain add <area> <topic> "<msg>"  Add entry with area tag
-    brain add --wm "<msg>"     Add to working memory (temporary)
-    brain add --eval           Session evaluation + handoff (auto-adapts skills)
-                               Flags: --good, --bad
+    init                       Create .brain/ hub, AGENTS.md, git hooks, daemon
+    get <topic|query>          Retrieve knowledge or search
+                                 Topics: all, gotchas, patterns, decisions,
+                                         architecture, memory, wm
+                                 Flags: --search  --json/-j  --summary/-s
+                                        --compact/-c  --message-only/-m  --full/-f
+                                        --focus "<topic>"  --context  --budget N
+    add <topic> "<msg>"        Add entry (fuzzy dedup at add time)
+                                 Flags: --global/-g
+    add <area> <topic> "<msg>" Add entry with area tag
+    add --wm "<msg>"           Add to working memory (temporary)
+    add --eval                 Session evaluation + handoff
+                                 Flags: --good  --bad
 
   REASONING (v3)
-    brain grade                Grade entries for accuracy, specificity, generality
-                                Flags: --dry-run/-d (preview without applying)
-    brain trace <action>       Capture session reasoning traces
-                                 save    Finalize current trace
-                                           Flags: --outcome <success|partial|failure>, --goal "<desc>"
-                                 step    Append a reasoning step to current trace
-                                           Flags: --action, --target, --outcome, --reasoning
-                                 extract Extract knowledge from traces via LLM
-                                           Flags: --dry-run/-d
-                                 list    Show all traces
+    grade                      Grade entries for accuracy, specificity, generality
+                                 Flags: --dry-run/-d
+    trace step                 Append a reasoning step
+                                 Flags: --action  --target  --outcome  --reasoning
+    trace save                 Finalize current trace
+                                 Flags: --outcome  --goal
+    trace extract              Extract knowledge from traces via LLM
+                                 Flags: --dry-run/-d
+    trace list                 Show all traces
 
   MAINTENANCE
-    brain clean                Run all cleanup (prune + dedup + decay + rebuild)
-                                Flags: --dry-run/-d, --patterns, --duplicates, --decay, --rebuild, --fuzzy
-    brain doctor               Hub statistics, health check & diagnostics
-                                Flags: --json/-j, --fix, --conflicts
-    brain consolidate          Find and merge duplicate entries
-                                Flags: --dry-run, --apply, --topic, --llm (semantic merge via LLM)
-    brain edit <topic> <ts>    Update an entry in-place
-                                Flags: --message "<new text>"
-    brain supersede <topic> <old-ts> <new-ts>  Mark entry as superseded
+    clean                      Run cleanup (prune + dedup + decay + rebuild)
+                                 Flags: --dry-run/-d  --patterns  --duplicates
+                                        --decay  --rebuild  --fuzzy
+    doctor                     Hub health check & diagnostics
+                                 Flags: --json/-j  --fix  --conflicts
+    consolidate                Find and merge related entries
+                                 Flags: --dry-run  --apply  --topic  --llm
+    edit <topic> <ts>          Update an entry in-place
+                                 Flags: --message "<new text>"
+    supersede <topic> <old> <new>  Mark entry as superseded
 
-  EMBEDDINGS
-    brain embed                Embed entries for semantic search
-                                Flags: --all, --status
-    brain sync                 Export topic files to docs/brain/ for sharing
-                                Flags: --import (import from docs/brain/), --dry-run/-d
+  EMBEDDINGS & SHARING
+    embed                      Embed entries for semantic search
+                                 Flags: --all  --status
+    sync                       Export to docs/brain/ for sharing
+                                 Flags: --import  --dry-run/-d
 
   DAEMON
-    brain daemon <action>      Actions: start, stop, restart, status, failed, retry, run, review
-    brain daemon review        Approve/reject pending entries (respects profile)
-                                 Flags: --all, --yes/-y (auto-accept), --tty (force interactive)
-                                 Profile=agent auto-accepts; guard/assist prompts interactively
-                                 Uses systemd on Linux, launchd on macOS,
-                                 nohup on systems without systemd (Termux, proot)
+    daemon start|stop|restart  Manage background daemon
+    daemon status              Health check + queue depth
+    daemon review              Approve/reject pending entries
+                                 Flags: --all  --yes/-y  --tty
+    daemon failed              List failed queue items
+    daemon retry               Requeue failed items
+    daemon run                 Run in foreground (debugging)
 
   CONFIG
-    brain config list          List all settings
-    brain config get <key>     Get a value
-    brain config set <key> <value>  Set a value (auto-detects project scope)
-    brain config set <key> <value> --global  Force write to global config
-    brain config reset <key>   Reset to default
-    brain config setup         Interactive setup wizard
-                                 Project config: .brain/config.yaml (auto-created)
-                                 Global config: ~/.config/brain/config.yaml
+    config list                List all settings
+    config get <key>           Get a value (API keys masked)
+    config set <key> <value>   Set a value (auto-detects project scope)
+    config set <key> <value> --global  Force write to global config
+    config reset <key>         Reset to default
+    config setup               Interactive setup wizard
 
   SKILLS & UPDATE
-    brain update               Update agent-brain to latest version
-    brain update --skills      Update skill files (preserves adaptations)
-    brain update --skills -l/--list   Show installed skill locations
-    brain update --skills --diff   Compare installed vs latest templates
-    brain update --skills --install  Install skill files to project directories
-    brain update --skills --install -g/--global  Install to global directories
-    brain update --skills --reflect [--dry-run/-d]  Generate skill adaptations from usage data
+    update                     Update agent-brain to latest version
+    update --skills            Update skill files (preserves adaptations)
+    update --skills --list     Show installed skill locations
+    update --skills --diff     Compare installed vs latest templates
+    update --skills --install  Install skill files to project directories
+    update --skills --install --global  Install globally
+    update --skills --reflect  Generate adaptations from usage data
+                                 Flags: --dry-run/-d
 
-AREA TAXONOMY (8 topics)
+AREA TAXONOMY
   ui            Frontend, styling, components, accessibility
   backend       API, services, middleware, business logic
   infrastructure Deploy, CI/CD, Docker, cloud, monitoring
@@ -275,9 +283,9 @@ EXAMPLES
   brain init
   brain get gotchas
   brain get all --focus "security"
-  brain get "auth error"           # Auto-searches
+  brain get "auth error"                   # Auto-searches
   brain add infrastructure gotcha "VPS uses Ubuntu 22.04"
-  brain add pattern "All handlers use middleware chain: logging -> auth -> rate-limit"
+  brain add pattern "All handlers use middleware chain"
   brain add --eval --good
   brain grade --dry-run
   brain trace step --action "debug" --target "auth.go" --reasoning "Found nil pointer"

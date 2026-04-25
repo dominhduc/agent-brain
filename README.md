@@ -10,19 +10,11 @@
 
 ## Table of Contents
 
-- [For AI Agents (Start Here)](#for-ai-agents-start-here)
-- [Why agent-brain?](#why-agent-brain)
+- [For AI Agents](#for-ai-agents-start-here)
 - [Quick Start](#quick-start)
 - [How It Works](#how-it-works)
 - [Commands](#commands)
-  - [Core Commands](#core-commands)
-  - [Knowledge Commands](#knowledge-commands)
-  - [Daemon Commands](#daemon-commands)
-  - [Skill Commands](#skill-commands)
-  - [Maintenance Commands](#maintenance-commands)
-  - [Reasoning Commands](#reasoning-commands)
-  - [Configuration Commands](#configuration-commands)
-- [The 8-Topic Taxonomy](#the-8-topic-taxonomy)
+- [Topic Taxonomy](#the-8-topic-taxonomy)
 - [Autonomy Profiles](#autonomy-profiles)
 - [File Structure](#file-structure)
 - [Installation](#installation)
@@ -74,7 +66,12 @@ AI coding agents are brilliant — but they **forget everything** between sessio
 | No institutional memory across sessions | Knowledge compounds and grows smarter |
 | Agent makes the same mistakes repeatedly | Past gotchas are flagged before they happen again |
 
-**v3.0.0** adds reasoning memory evolution: `brain grade` for evaluating knowledge quality, `brain trace` for capturing agent reasoning sessions, LLM-powered semantic consolidation (`brain consolidate --llm`), contrastive extraction with self-consistency, instruction-aware embedding retrieval, memory feedback loops, and adaptive daemon guidance. **v2.2.1** fixes profile config resolution — `brain doctor` and `brain daemon review` now read project config (`.brain/config.yaml`) instead of always reading global config, and the `agent` profile's auto-accept behavior is now enforced correctly.
+### What's New in v3
+
+| Version | Highlights |
+|---------|-----------|
+| **v3.0.1** | Restored `brain search` alias, fixed trace dry-run wording, grade progress output |
+| **v3.0.0** | `brain grade`, `brain trace`, LLM consolidation (`--llm`), contrastive extraction, memory feedback loops, adaptive daemon guidance |
 
 ---
 
@@ -166,404 +163,158 @@ That's it. Every commit is analyzed automatically. Every agent session loads acc
 ### Getting Help
 
 ```bash
-brain help              # Brief: commands, topics, workflows (~28 lines)
-brain help --full       # Complete reference: all flags, area taxonomy, examples
+brain help              # Brief: commands, topics, workflows
+brain help --full       # Complete reference: all flags, examples
 ```
 
-### Core Commands
+### `brain init`
 
-#### `brain init`
-
-Initialize a knowledge hub in your current project.
+Initialize a knowledge hub in your project. Creates `.brain/` (gitignored), `AGENTS.md`, compatibility wrappers, git hooks (pre-push sync), and starts the daemon. If `docs/brain/` exists, imports teammate knowledge automatically.
 
 ```bash
-cd your-project
-brain init
+cd your-project && brain init
 ```
 
-Creates `.brain/` directory (gitignored), `AGENTS.md` (agent instructions), compatibility wrappers (`CLAUDE.md`, `.cursorrules`, `.windsurfrules`), installs git hooks (including pre-push sync), adds `.brain/` to `.gitignore`, and starts the background daemon. If `docs/brain/` exists from a teammate, imports their knowledge automatically.
+### `brain get <topic|query>`
 
-**Run once per project.** After that, everything is automatic.
-
----
-
-### Knowledge Commands
-
-#### `brain get <topic>`
-
-Read accumulated knowledge. Entries show a strength indicator (`1.00`) based on recency and usage.
+Retrieve accumulated knowledge. Entries show a strength indicator based on recency and usage. When the argument is not a known topic, auto-searches across all knowledge files.
 
 ```bash
-brain get gotchas                          # See known pitfalls
-brain get patterns                         # See discovered conventions
+brain get gotchas                          # Known pitfalls
 brain get all                              # Budget-aware tiered view
-brain get all --full                       # Complete dump (all entries)
-brain get all --context                    # Boost entries matching current git diff
+brain get all --full                       # Everything
+brain get all --context                    # Boost entries matching git diff
 brain get all --budget 5000                # Custom token budget
 brain get all --focus "infrastructure"     # Filter by topic
-brain get gotchas --compact                # One line per entry, no blank lines
-brain get gotchas --message-only           # Pure message text (no metadata)
-brain get gotchas --json                   # Structured JSON output
+brain get gotchas --compact                # One line per entry
+brain get gotchas --message-only           # No metadata
+brain get gotchas --json                   # Structured JSON
+brain get "auth"                           # Search across topics
+brain get "database" --topic "security"    # Search with topic filter
 ```
 
-**Output modes:**
-- **Default (budget-aware):** Shows the most relevant entries within a token budget (~3000 tokens default), sorted by strength × recency × context affinity
-- **`--full`:** Complete dump of all entries
-- **`--context`:** Reads `git diff --stat HEAD` and boosts entries related to currently changed files
-- **`--budget N`:** Custom token limit (e.g., `--budget 5000` for more entries)
-- **`--compact`:** One line per entry with relative timestamps (e.g., `Apr 26`)
-- **`--message-only`:** Just the message text — ideal for piping to AI agents
-- **`--json`:** Structured format `{topic, entry_count, entries: [{timestamp, message}]}`
+**Output modes:** Default (budget-aware), `--full` (complete), `--compact` (one-liner), `--message-only` (bare text), `--json` (structured). Retrieval automatically strengthens memories.
 
-**Topics:** `memory`, `gotchas`, `patterns`, `decisions`, `architecture`, `all`, `wm` (working memory)
+**Topics:** `gotchas`, `patterns`, `decisions`, `architecture`, `memory`, `all`, `wm`
 
-Retrieval automatically strengthens memories (extends their half-life).
+### `brain add <topic> "<message>"`
 
-#### `brain get wm`
-
-Retrieve working memory entries — temporary notes added via `brain add --wm`.
-
-```bash
-brain get wm                # Show all working memory entries
-brain get working-memory    # Alias
-```
-
-Shows each entry with its importance score and timestamp. Working memory entries are flushed on `brain add --eval`.
-
-#### `brain get <query>` (search mode)
-
-When the argument is not a known topic name, `brain get` auto-searches across all knowledge files. Results are grouped by topic with markdown stripped.
-
-```bash
-brain get "auth"
-brain get "argon2" --topic "security"   # Filter by topic
-brain get "database" --json
-brain get "auth" --search               # Force search mode explicitly
-```
-
-#### `brain add <topic> "<message>"`
-
-Add knowledge manually (or have your agent do it).
+Add knowledge manually. Supports fuzzy dedup (skips near-duplicates).
 
 ```bash
 brain add gotcha "Project uses argon2, NOT bcrypt"
 brain add pattern "Tests use Vitest, not Jest"
-brain add decision "Chose SQLite over PostgreSQL for simplicity"
-brain add infrastructure gotcha "VPS uses Ubuntu 22.04"   # Tag with topic
+brain add infrastructure gotcha "VPS uses Ubuntu 22.04"   # With area tag
 brain add --wm "investigating auth bug"                    # Working memory
-brain add --global pattern "Always use filepath.Join"      # Also add to global store
+brain add --global pattern "Always use filepath.Join"      # Global store
+brain add --eval                                           # Session evaluation
+brain add --eval --good                                    # Positive feedback
+brain add --eval --bad                                     # Negative feedback
 ```
 
-Use an 8-topic prefix (`ui`, `backend`, `infrastructure`, `database`, `security`, `testing`, `architecture`, `general`) before the entry type to tag entries.
+Use an area prefix (`ui`, `backend`, `infrastructure`, `database`, `security`, `testing`, `architecture`, `general`) before the topic to tag entries.
 
-**Duplicate detection:** If a similar entry already exists (fuzzy match via trigram Jaccard similarity), `brain add` prints `Already exists — skipped` instead of creating a duplicate. This catches exact duplicates and near-duplicates that paraphrase the same concept.
+### `brain grade`
 
-**Validation:** Empty topics and messages are rejected with a clear error message.
-
-#### `brain add --eval`
-
-Create a session evaluation file and handoff.
+Evaluate knowledge entries for accuracy, specificity, and generality via LLM. Returns keep/rewrite/archive verdicts.
 
 ```bash
-brain add --eval
-brain add --eval --good    # Apply positive outcome + flush working memory
-brain add --eval --bad     # Apply negative outcome + flush working memory
+brain grade                # Grade and apply verdicts
+brain grade --dry-run      # Preview without modifying
 ```
 
-Creates a session journal with git summary, recent commits, and auto-created handoff with topic detection. Use `--good` or `--bad` to provide feedback on retrieved memories.
+### `brain trace <action>`
 
----
-
-### Daemon Commands
-
-#### `brain daemon start|stop|status`
-
-Manage the background analysis daemon.
+Capture reasoning traces from agent sessions. Subcommands: `step`, `save`, `extract`, `list`.
 
 ```bash
-brain daemon start    # Start background daemon
-brain daemon stop     # Stop daemon
-brain daemon status   # Check health, queue depth
-brain daemon retry    # Requeue all failed items for retry
-```
-
-The daemon watches for new commits, sends diffs to OpenRouter for analysis, and writes findings to a **pending queue** for human review via `brain daemon review`.
-
-If the daemon fails to process a commit (e.g., LLM timeout, API error), the item moves to the failed queue. Use `brain daemon retry` to requeue all failed items for another attempt.
-
-#### `brain daemon review [--all]`
-
-Review and approve knowledge entries found by the daemon.
-
-```bash
-brain daemon review           # Interactive TUI to approve/reject entries
-brain daemon review --all     # Import existing topic entries for re-review
-brain daemon review --yes     # Auto-accept all (same as profile=agent)
-brain daemon review --tty     # Force interactive TUI even with agent profile
-```
-
-The TUI shows entries grouped by topic. Navigate with arrows, accept with `a`, reject with `r`, press `q` to quit. Only entries you approve become permanent.
-
-**Profile behavior:** When `profile` is set to `agent`, `brain daemon review` auto-accepts all entries without prompting (deduplication still runs). Use `--tty` to force interactive mode. With `guard` or `assist`, the interactive review runs normally.
-
-Accepted entries are deduplicated against existing topic file content using trigram similarity (threshold 0.55). If an accepted entry paraphrases what's already in a topic file, it's skipped automatically.
-
----
-
-### Skill Commands
-
-Agent Skills teach coding agents (Claude Code, OpenCode, Cursor, etc.) how to use `brain` automatically. Skills are installed during `brain init` and live in `.claude/skills/agent-brain/`, `.opencode/skills/agent-brain/`, and `.agents/skills/agent-brain/`.
-
-#### `brain update --skills --list`
-
-Show installed skill locations and their status.
-
-```bash
-brain update --skills --list
-```
-
-#### `brain update --skills --diff`
-
-Compare installed skill files against the latest embedded templates.
-
-```bash
-brain update --skills --diff
-```
-
-#### `brain update --skills`
-
-Update skill files to the latest version. Warns about uncommitted git changes. Preserves adaptation markers generated by `brain update --skills --reflect`.
-
-```bash
-brain update --skills
-```
-
-#### `brain update --skills --reflect [--dry-run]`
-
-Generate skill adaptations from accumulated behavior data (command usage, search queries, eval outcomes). Adaptations are appended to installed skill files and preserved across updates.
-
-```bash
-brain update --skills --reflect           # Generate and apply adaptations
-brain update --skills --reflect --dry-run # Preview what would be added
-```
-
-#### `brain update --skills --install [--global]`
-
-Install skill files to project directories (or global with `--global`).
-
-```bash
-brain update --skills --install           # Project-local
-brain update --skills --install --global  # Global (~/.claude/skills/, etc.)
-```
-
----
-
-### Maintenance Commands
-
-#### `brain clean --patterns [--dry-run]`
-
-Archive stale knowledge entries.
-
-```bash
-brain clean --patterns --dry-run   # See what would be pruned
-brain clean --patterns             # Actually prune
-```
-
-Reads patterns from `.brainprune` (like `.gitignore` for knowledge). Moves matching entries to `.brain/archived/`. If no `.brainprune` file exists, shows a hint with instructions to create one.
-
-#### `brain clean --duplicates [--dry-run]`
-
-Find and remove duplicate entries across all topic files.
-
-```bash
-brain clean --duplicates --dry-run   # See what duplicates would be removed
-brain clean --duplicates             # Actually remove duplicates
-brain clean --duplicates --fuzzy     # Also catch near-duplicates (trigram Jaccard, threshold 0.55)
-```
-
-**Exact mode** (default): Uses SHA-256 fingerprinting of normalized content to detect duplicates, including cross-topic duplicates (same entry in multiple files). Keeps the first occurrence, archives removed entries to `.brain/archived/dedup-YYYY-MM-DD.md`, and shows a detailed summary report.
-
-**Fuzzy mode** (`--fuzzy`): Uses character trigram Jaccard similarity (threshold 0.55) to catch near-duplicates — entries that paraphrase the same concept with different wording. In active projects, this typically finds 50%+ more duplicates than exact mode alone.
-
-Run when `brain get --summary` shows `⚠️ duplicates detected`.
-
-#### `brain clean --decay [--dry-run]`
-
-Run memory consolidation — the biological "sleep" cycle.
-
-```bash
-brain clean --decay           # Archive decayed entries, merge related patterns
-brain clean --decay --dry-run # Preview what would change
-```
-
-Entries with strength below threshold (from disuse) are archived. Related patterns are merged into consolidated insights.
-
-#### `brain clean --rebuild`
-
-Rebuild the metadata index from topic files.
-
-```bash
-brain clean --rebuild
-```
-
-Useful if the index gets out of sync. Safe to run anytime.
-
-#### `brain edit <topic> <timestamp-prefix> --message "..."`
-
-Update an entry in-place. Archives the old version to `.brain/archived/versions/`.
-
-```bash
-brain edit gotchas "2026-04-15 10" --message "Updated message text"
-```
-
-The old version is preserved in the archive directory. The index entry's version is bumped and confidence set to "verified".
-
-#### `brain supersede <topic> <old-ts> <new-ts>`
-
-Mark an entry as superseded by another. Applies strikethrough formatting to the old entry and creates bidirectional links in the index.
-
-```bash
-brain supersede gotchas "2026-04-15 10:00:00" "2026-04-18 12:00:00"
-```
-
-Superseded entries are excluded from retrieval (unless `--full`).
-
-#### `brain consolidate [--dry-run] [--apply]`
-
-Find and merge related entries that say similar things.
-
-```bash
-brain consolidate --dry-run    # See consolidation proposals
-brain consolidate --apply      # Apply consolidations
-brain consolidate --topic gotchas   # Filter to specific topic
-```
-
-Uses trigram Jaccard clustering (threshold 0.45) to find related entries, then deterministically merges them into a single richer entry. Source entries are preserved as HTML comment timelines.
-
-Add `--llm` to use semantic merging via LLM instead of deterministic sentence stitching:
-
-```bash
-brain consolidate --llm --dry-run   # Preview LLM-powered consolidations
-brain consolidate --llm --apply     # Apply with LLM-merged text
-```
-
----
-
-### Reasoning Commands
-
-#### `brain grade`
-
-Evaluate knowledge entries for accuracy, specificity, and generality. Sends entries to the LLM, which returns keep/rewrite/archive verdicts.
-
-```bash
-brain grade                # Grade all candidates and apply verdicts
-brain grade --dry-run      # Preview verdicts without modifying the index
-```
-
-The LLM scores each entry on three dimensions (0.0–1.0):
-- **Accuracy** — Is this still true?
-- **Specificity** — Is this actionable?
-- **Generality** — Is this reusable?
-
-Entries with low accuracy get archived, low specificity get flagged for rewrite.
-
-#### `brain trace <action>`
-
-Capture reasoning traces from agent sessions, then extract knowledge from them.
-
-```bash
-# Record steps during a session
-brain trace step --action "debug" --target "auth.go" --reasoning "Found nil pointer in handler"
-brain trace step --action "fix" --target "auth.go" --reasoning "Added nil check before deref"
-
-# Finalize the trace with an outcome
+brain trace step --action "debug" --target "auth.go" --reasoning "Found nil pointer"
 brain trace save --outcome success --goal "Fix auth nil pointer bug"
-
-# Extract knowledge from completed traces
 brain trace extract          # Extract knowledge via LLM
-brain trace extract --dry-run  # Preview without saving
-
-# List all traces
+brain trace extract --dry-run
 brain trace list
 ```
 
-Traces capture the *reasoning process*, not just outcomes. Failed traces are especially valuable — the LLM extracts "what went wrong and why" lessons that prevent repeated mistakes.
+### `brain consolidate`
 
----
-
-### Embedding Commands
-
-#### `brain embed`
-
-Embed entries for semantic search. Requires an embedding provider (Ollama local or OpenAI API).
+Find and merge related entries. Deterministic by default, LLM-powered with `--llm`.
 
 ```bash
-brain embed              # Embed new/stale entries
-brain embed --all        # Re-embed everything
-brain embed --status     # Show embedding coverage
+brain consolidate --dry-run              # Preview
+brain consolidate --apply                # Apply
+brain consolidate --llm --dry-run        # LLM-powered semantic merge
+brain consolidate --topic gotchas        # Filter by topic
 ```
 
-Configure the provider first:
-```bash
-brain config set embedding.provider ollama    # Local (recommended)
-brain config set embedding.provider openai    # OpenAI API
-```
+### `brain clean`
 
-#### `brain sync`
-
-Export topic files to `docs/brain/` for cross-machine sharing. The `.brain/` directory is gitignored — `docs/brain/` is the tracked, shareable copy.
+Run cleanup operations: dedup, prune, decay, rebuild.
 
 ```bash
-brain sync                     # Export .brain/ topic files to docs/brain/
-brain sync --import            # Import from docs/brain/ into .brain/
-brain sync --dry-run           # Preview without writing
+brain clean --duplicates --dry-run       # Preview exact duplicate removal
+brain clean --duplicates --fuzzy         # Near-duplicate removal
+brain clean --patterns --dry-run         # Prune via .brainprune patterns
+brain clean --decay --dry-run            # Archive decayed entries
+brain clean --rebuild                    # Rebuild metadata index
 ```
 
-**How it works:**
+### `brain edit` / `brain supersede`
 
-- `.brain/` is fully gitignored (local working copy, never committed)
-- `docs/brain/` stores the tracked topic files (`gotchas.md`, `patterns.md`, `decisions.md`, `architecture.md`)
-- `brain init` auto-imports from `docs/brain/` if it exists (fresh clones get accumulated knowledge)
-- The pre-push hook auto-runs `brain sync` before every push
-
-Stub/empty files are skipped automatically. Only meaningful knowledge is exported.
-
-#### `brain doctor --conflicts`
-
-Detect potential contradictions between entries (e.g., "Always use X" vs "Never use X").
+Manage entry lifecycle.
 
 ```bash
-brain doctor --conflicts
+brain edit gotchas "2026-04-15 10" --message "Updated message"
+brain supersede gotchas "2026-04-15 10:00:00" "2026-04-18 12:00:00"
 ```
 
----
+### `brain daemon <action>`
 
-### Configuration Commands
+Manage the background analysis daemon. Actions: `start`, `stop`, `restart`, `status`, `retry`, `run`, `review`.
 
-#### `brain config [get|set|list|reset|setup]`
+```bash
+brain daemon start              # Start background daemon
+brain daemon stop               # Stop
+brain daemon status             # Health check + queue depth
+brain daemon review             # Interactive TUI to approve/reject
+brain daemon review --all       # Re-review existing entries
+brain daemon review --yes       # Auto-accept all
+brain daemon retry              # Requeue failed items
+```
+
+### `brain embed` / `brain sync`
+
+Embedding search and cross-machine sharing.
+
+```bash
+brain embed                     # Embed new/stale entries
+brain embed --all               # Re-embed everything
+brain embed --status            # Coverage report
+brain sync                      # Export to docs/brain/
+brain sync --import             # Import from docs/brain/
+```
+
+### `brain config`
 
 View or modify configuration.
 
 ```bash
-brain config                              # Show current config + source (project/global)
-brain config get api-key                  # Get a single value (API keys are masked)
-brain config set api-key <your-key>       # Set API key (writes to project config if .brain/ exists)
-brain config set api-key <your-key> --global  # Force write to global config
-brain config set model anthropic/claude-3.5-haiku  # Change model
-brain config set profile guard            # Set review strictness
-brain config list                         # List all available keys
-brain config reset model                  # Reset one key to default
-brain config setup                        # Interactive setup wizard
+brain config                    # Show config + source
+brain config get api-key        # Single value (keys masked)
+brain config set api-key <key>  # Set (project scope if .brain/ exists)
+brain config set model anthropic/claude-3.5-haiku --global  # Force global
+brain config list               # All available keys
+brain config reset model        # Reset to default
+brain config setup              # Interactive wizard
 ```
 
 **Available keys:** `api-key`, `model`, `provider`, `profile`, `poll-interval`, `max-retries`, `retry-backoff`, `max-diff-lines`, `retrieval.max_tokens`, `retrieval.min_strength`, `retrieval.max_entries`, `retrieval.include_recent_days`
 
-#### `brain doctor [--json]`
+### `brain doctor [--json]`
 
-Show knowledge hub statistics with TTY-aware color indicators. Reports warnings for stale MEMORY.md (>7 days since update), pending entries awaiting review, API key status, and failed queue items.
+Knowledge hub health check with TTY-aware output.
 
 ```
-brain v3.0.0  linux/amd64  abc1234
+brain v3.0.1  linux/amd64  abc1234
 
 Hub
   .brain/      found ✓
@@ -582,8 +333,23 @@ Daemon
   Queue        0 pending, 90 done, 0 failed
 
 Warnings
-  ⚠ MEMORY.md not updated in 12 days — run 'brain get all --summary'
-  ⚠ 3 pending entries awaiting review — run 'brain daemon review'
+  ⚠ MEMORY.md not updated in 12 days
+  ⚠ 3 pending entries awaiting review
+```
+
+### `brain update`
+
+Update brain binary or manage Agent Skills.
+
+```bash
+brain update                            # Update to latest version
+brain update --skills                   # Update skill files
+brain update --skills --list            # Show installed skills
+brain update --skills --diff            # Compare vs templates
+brain update --skills --install         # Install to project
+brain update --skills --install --global  # Install globally
+brain update --skills --reflect         # Generate adaptations from usage
+brain update --skills --reflect --dry-run
 ```
 
 ---

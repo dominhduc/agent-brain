@@ -12,7 +12,7 @@ type EntryCluster struct {
 	Topic          string
 }
 
-const clusterThreshold = 0.55
+const clusterThreshold = 0.40
 
 func ClusterEntries(entries []TopicEntry, topic string) []EntryCluster {
 	if len(entries) == 0 {

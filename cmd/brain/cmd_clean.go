@@ -164,7 +164,7 @@ func cmdCleanDedup(brainDir string, dryRun, fuzzy bool) {
 	var err error
 
 	if fuzzy {
-		report, err = knowledge.RunFuzzyDedup(brainDir, dryRun, 0.55)
+		report, err = knowledge.RunFuzzyDedup(brainDir, dryRun, 0.40)
 	} else {
 		report, err = knowledge.RunDedup(brainDir, dryRun)
 	}

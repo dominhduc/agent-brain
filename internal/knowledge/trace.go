@@ -135,14 +135,20 @@ func (h *Hub) FinalizeTrace(outcome, goal string) error {
 	dir := h.tracesDir()
 	currentPath := filepath.Join(dir, "current.json")
 
-	data, err := os.ReadFile(currentPath)
-	if err != nil {
-		return fmt.Errorf("no active trace found")
-	}
-
 	var trace SessionTrace
-	if err := json.Unmarshal(data, &trace); err != nil {
-		return fmt.Errorf("failed to parse trace: %w", err)
+	for attempt := 0; attempt < 3; attempt++ {
+		data, err := os.ReadFile(currentPath)
+		if err != nil {
+			return fmt.Errorf("no active trace found")
+		}
+		if err := json.Unmarshal(data, &trace); err == nil {
+			break
+		}
+		if attempt < 2 {
+			time.Sleep(50 * time.Millisecond)
+		} else {
+			return fmt.Errorf("failed to parse trace: %w", err)
+		}
 	}
 
 	trace.Outcome = outcome

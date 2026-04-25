@@ -87,7 +87,12 @@ func cmdTraceExtract() {
 		return
 	}
 
-	cfg, err := config.Load()
+	var cfg config.Config
+	if config.ProjectConfigExists(brainDir) {
+		cfg, err = config.LoadForProject(brainDir)
+	} else {
+		cfg, err = config.Load()
+	}
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
 		os.Exit(1)
@@ -99,7 +104,8 @@ func cmdTraceExtract() {
 	}
 
 	extracted := 0
-	for _, trace := range traces {
+	for i, trace := range traces {
+		fmt.Printf("Extracting trace %d/%d (%s)...\n", i+1, len(traces), trace.SessionID)
 		prompt := knowledge.BuildTraceExtractionPrompt(trace)
 		finding, err := daemon.AnalyzeWithPrompt(daemon.AnalyzeRequest{
 			Diff:     prompt,
