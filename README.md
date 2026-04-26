@@ -71,6 +71,7 @@ AI coding agents are brilliant — but they **forget everything** between sessio
 | Version | Highlights |
 |---------|-----------|
 | **v3.0.1** | Restored `brain search` alias, fixed trace dry-run wording, grade progress output |
+| **v3.0.3** | Termux support: auto-process on `brain get all`, `daemon run --once`, Termux-aware init |
 | **v3.0.0** | `brain grade`, `brain trace`, LLM consolidation (`--llm`), contrastive extraction, memory feedback loops, adaptive daemon guidance |
 
 ---
@@ -279,6 +280,7 @@ brain daemon review             # Interactive TUI to approve/reject
 brain daemon review --all       # Re-review existing entries
 brain daemon review --yes       # Auto-accept all
 brain daemon retry              # Requeue failed items
+brain daemon run --once         # Process queue, then exit
 ```
 
 ### `brain embed` / `brain sync`
@@ -582,9 +584,22 @@ Based on Claude Haiku pricing via OpenRouter. Cheaper models (Gemini Flash, GPT-
 
 - **macOS:** `launchd` via `~/Library/LaunchAgents/com.dominhduc.brain-daemon.plist`
 - **Linux with systemd:** `systemd` via `~/.config/systemd/user/brain-daemon.service`
-- **Linux without systemd** (Termux, proot, containers): Background process via `nohup` with log at `~/.cache/brain/brain-daemon-*.log`
+- **Linux without systemd** (proot, containers): Background process via `nohup` with log at `~/.cache/brain/brain-daemon-*.log`
+- **Android/Termux:** Daemon registration is skipped. Use one of the Termux alternatives below.
 
 The daemon starts on login and restarts on crash. On non-systemd Linux, `brain daemon start` backgrounds the process directly.
+
+### Termux & Android
+
+Android aggressively kills background processes, making persistent daemons unreliable. agent-brain handles this with three alternatives:
+
+| Method | When | How |
+|--------|------|-----|
+| **Auto-process on get** | Every session start | `brain get all` automatically processes queued commits before returning knowledge |
+| **One-shot processing** | On demand | `brain daemon run --once` processes all queued commits, then exits |
+| **Foreground polling** | In a tmux session | `brain daemon run` polls continuously like on desktop |
+
+The auto-process method is recommended — it requires zero extra commands. Since AI agents already run `brain get all` at session start, the queue is processed transparently.
 
 ---
 
@@ -612,6 +627,13 @@ Or run in foreground to debug:
 
 ```bash
 brain daemon run
+```
+
+On Termux, the daemon can't run persistently in the background. Instead:
+
+```bash
+brain daemon run --once    # Process queue and exit
+brain get all              # Auto-processes queue before showing knowledge
 ```
 
 ### "Queue has many pending items"

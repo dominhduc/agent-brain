@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v3.0.3] - 2026-04-26
+
+### Added
+- **`brain daemon run --once`** — Process all queued commits then exit. No polling loop, no tied-up terminal. Ideal for environments where background daemons are unreliable.
+- **Auto-process on `brain get all`** — Queued commits are now processed inline before knowledge is returned. Eliminates daemon dependency for Termux, containers, and CI environments.
+- **Termux-aware init** — `brain init` detects Termux, skips daemon registration, and shows Android-specific guidance.
+- **Termux-aware `brain daemon start`** — Prints alternatives instead of failing silently on Android.
+- **Termux hint in `brain daemon status`** — Shows process-on-get hint when daemon isn't running on Termux.
+
+### Changed
+- **Extracted `processQueueItems()`** — Daemon processing loop refactored into a shared function used by `runDaemon`, `--once`, and `autoProcessQueue`.
+
 ## [v3.0.2] - 2026-04-25
 
 ### Fixed

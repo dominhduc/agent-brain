@@ -9,7 +9,7 @@ import (
 	"github.com/dominhduc/agent-brain/internal/otel"
 )
 
-var version = "v3.0.2"
+var version = "v3.0.3"
 
 var (
 	commit string
@@ -96,6 +96,10 @@ func main() {
 		printUsage(false)
 		os.Exit(1)
 	}
+}
+
+func isTermux() bool {
+	return os.Getenv("TERMUX_VERSION") != ""
 }
 
 var flagAliases = map[string]string{
@@ -250,6 +254,7 @@ COMMANDS
     daemon failed              List failed queue items
     daemon retry               Requeue failed items
     daemon run                 Run in foreground (debugging)
+    daemon run --once           Process queued commits, then exit
 
   CONFIG
     config list                List all settings

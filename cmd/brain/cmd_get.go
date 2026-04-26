@@ -70,6 +70,11 @@ func cmdGet(jsonFlag, summaryFlag, compactFlag, messageOnlyFlag, fullFlag bool) 
 		fmt.Fprintln(os.Stderr, "Tip: use \"brain get all --focus <topic>\" for explicit syntax.")
 	}
 
+	// Auto-process queued commits before retrieval
+	if topic == "all" {
+		autoProcessQueue()
+	}
+
 	if hasFlag("--search") {
 		cmdGetSearch(topic, jsonFlag)
 		return

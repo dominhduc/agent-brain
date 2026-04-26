@@ -162,15 +162,22 @@ func cmdInit() {
 	fmt.Println("\nWarning: Diffs are sent to OpenRouter for analysis.")
 	fmt.Println("brain will scan for secrets before sending. If secrets are detected, the commit is skipped for safety.")
 
-	fmt.Println("\nRegistering daemon service...")
-	execPath, err := os.Executable()
-	if err != nil {
-		execPath = "brain"
-	}
-	if err := service.Register(execPath, cwd); err != nil {
-		fmt.Fprintf(os.Stderr, "Warning: Could not register daemon: %v\nWhat to do: start manually with 'brain daemon start'.\n", err)
+	if isTermux() {
+		fmt.Println("\nTermux detected — skipping daemon registration.")
+		fmt.Println("Android may kill background processes. Instead:")
+		fmt.Println("  • Queue is auto-processed when you run 'brain get all' (recommended)")
+		fmt.Println("  • Or run 'brain daemon run --once' to process queued commits manually")
 	} else {
-		fmt.Println("Daemon registered and started.")
+		fmt.Println("\nRegistering daemon service...")
+		execPath, err := os.Executable()
+		if err != nil {
+			execPath = "brain"
+		}
+		if err := service.Register(execPath, cwd); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: Could not register daemon: %v\nWhat to do: start manually with 'brain daemon start'.\n", err)
+		} else {
+			fmt.Println("Daemon registered and started.")
+		}
 	}
 
 	knowledge.ResetCache()
