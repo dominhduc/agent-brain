@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v3.0.4] - 2026-04-26
+
+### Fixed
+- **`brain update` now works on Termux** — Maps `android` → `Linux` in asset lookup so Termux users can self-update using the Linux/arm64 binary.
+- **`isTermux()` detection hardened** — Now checks both `TERMUX_VERSION` env var and `runtime.GOOS == "android"` as fallback.
+- **`brain daemon run --once` clearer output** — Shows "Processed X of Y commit(s)" instead of misleading "No pending items" when items fail LLM analysis.
+
 ## [v3.0.3] - 2026-04-26
 
 ### Added

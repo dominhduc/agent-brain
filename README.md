@@ -71,6 +71,7 @@ AI coding agents are brilliant — but they **forget everything** between sessio
 | Version | Highlights |
 |---------|-----------|
 | **v3.0.1** | Restored `brain search` alias, fixed trace dry-run wording, grade progress output |
+| **v3.0.4** | Fix: `brain update` on Termux, hardened Termux detection, clearer `--once` output |
 | **v3.0.3** | Termux support: auto-process on `brain get all`, `daemon run --once`, Termux-aware init |
 | **v3.0.0** | `brain grade`, `brain trace`, LLM consolidation (`--llm`), contrastive extraction, memory feedback loops, adaptive daemon guidance |
 

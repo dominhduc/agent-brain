@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/dominhduc/agent-brain/internal/otel"
 )
 
-var version = "v3.0.3"
+var version = "v3.0.4"
 
 var (
 	commit string
@@ -99,7 +100,10 @@ func main() {
 }
 
 func isTermux() bool {
-	return os.Getenv("TERMUX_VERSION") != ""
+	if os.Getenv("TERMUX_VERSION") != "" {
+		return true
+	}
+	return runtime.GOOS == "android"
 }
 
 var flagAliases = map[string]string{

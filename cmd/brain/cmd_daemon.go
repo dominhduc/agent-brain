@@ -336,13 +336,13 @@ func resolveConfigForDaemon() (config.Config, error) {
 	return config.Load()
 }
 
-// processQueueItems processes up to maxItems pending queue items. Returns count processed.
+// processQueueItems processes up to maxItems pending queue items. Returns (processed, attempted).
 // maxItems <= 0 means process all. When silent is true, suppresses output.
-func processQueueItems(brainDir string, cfg config.Config, apiKey string, maxItems int, silent bool) int {
+func processQueueItems(brainDir string, cfg config.Config, apiKey string, maxItems int, silent bool) (int, int) {
 	queueDir := filepath.Join(brainDir, ".queue")
 	entries, err := os.ReadDir(queueDir)
 	if err != nil {
-		return 0
+		return 0, 0
 	}
 
 	var pending []string
@@ -353,7 +353,7 @@ func processQueueItems(brainDir string, cfg config.Config, apiKey string, maxIte
 	}
 
 	if len(pending) == 0 {
-		return 0
+		return 0, 0
 	}
 
 	limit := maxItems
@@ -366,6 +366,7 @@ func processQueueItems(brainDir string, cfg config.Config, apiKey string, maxIte
 	}
 
 	processed := 0
+	attempted := 0
 	for i := 0; i < limit; i++ {
 		itemPath := pending[i]
 		processingPath := itemPath + ".processing"
@@ -373,6 +374,7 @@ func processQueueItems(brainDir string, cfg config.Config, apiKey string, maxIte
 		if err := os.Rename(itemPath, processingPath); err != nil {
 			continue
 		}
+		attempted++
 
 		if !silent {
 			fmt.Printf("  Processing: %s\n", filepath.Base(processingPath))
@@ -436,9 +438,9 @@ func processQueueItems(brainDir string, cfg config.Config, apiKey string, maxIte
 	}
 
 	if !silent && processed > 0 {
-		fmt.Printf("Done. Processed %d commit(s).\n\n", processed)
+		fmt.Printf("Done. Processed %d of %d commit(s).\n\n", processed, attempted)
 	}
-	return processed
+	return processed, attempted
 }
 
 // autoProcessQueue checks for pending queue items and processes them inline.
@@ -530,9 +532,11 @@ func runDaemon() {
 			fmt.Fprintln(os.Stderr, "Error: API key not configured.\nWhat to do: run 'brain config set api-key <key>'")
 			os.Exit(1)
 		}
-		count := processQueueItems(brainDir, cfg, apiKey, 0, false)
-		if count == 0 {
+		count, attempted := processQueueItems(brainDir, cfg, apiKey, 0, false)
+		if attempted == 0 {
 			fmt.Println("No pending items to process.")
+		} else if count == 0 {
+			fmt.Printf("Processed 0 of %d commit(s). All failed — check config and retry.\n", attempted)
 		}
 		return
 	}

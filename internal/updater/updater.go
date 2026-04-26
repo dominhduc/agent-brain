@@ -90,6 +90,7 @@ func FindAssetForPlatform(release GitHubRelease, goos, goarch string) (GitHubAss
 		"darwin":  "Darwin",
 		"linux":   "Linux",
 		"windows": "Windows",
+		"android": "Linux", // Termux uses Linux binaries
 	}
 	osName := osNameMap[goos]
 	if osName == "" {
